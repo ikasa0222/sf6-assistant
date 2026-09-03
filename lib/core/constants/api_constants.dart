@@ -12,8 +12,8 @@ class ApiConstants {
   static const String framedataPath = '/framedata';
   
   // GitHub Releases Auto-Update
-  static const String githubOwner = 'OldSea';
-  static const String githubRepo = 'SF6_Assistant';
+  static const String githubOwner = 'ikasa0222';
+  static const String githubRepo = 'sf6-assistant';
   static const String githubReleasesApiUrl = 'https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest';
   static const String githubReleasesWebUrl = 'https://github.com/$githubOwner/$githubRepo/releases/latest';
   static const String githubMirrorProxyPrefix = 'https://ghproxy.net/';

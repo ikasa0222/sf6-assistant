@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/core/storage/database_helper.dart';
@@ -696,71 +697,265 @@ class SettingsScreen extends StatelessWidget {
       platform: activePlatform?.platformType.code ?? '',
     );
 
-    final fullReport = AppLogger.instance.buildComprehensiveReport(
-      activeAccountName: activeAccount?.displayName ?? '未登录',
-      activePlatformName: activePlatform?.platformType.displayName ?? '未选择',
-      activeShortId: activePlatform?.shortId ?? '无',
-      activeLp: activePlatform?.currentLp ?? 0,
-      activeMr: activePlatform?.currentMr ?? 0,
-      dbBattleRecordsCount: dbRecords.length,
-    );
-
     if (!context.mounted) return;
+
+    String selectedFilter = 'ALL';
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: AppColors.bgCard,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (ctx) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return StatefulBuilder(
+          builder: (modalContext, setModalState) {
+            final logs = AppLogger.instance.getLogsByLevel(selectedFilter);
+            final errorWarnCount = AppLogger.instance.errorCount + AppLogger.instance.warnCount;
+            final syncCount = AppLogger.instance.syncCount;
+            final netCount = AppLogger.instance.netCount;
+
+            final conciseSummary = AppLogger.instance.buildConciseDiagnosticSummary(
+              activeAccountName: activeAccount?.displayName ?? '未登录',
+              activePlatformName: activePlatform?.platformType.displayName ?? '未选择',
+              activeShortId: activePlatform?.shortId ?? '无',
+              activeLp: activePlatform?.currentLp ?? 0,
+              activeMr: activePlatform?.currentMr ?? 0,
+              clubName: activePlatform?.clubName ?? '',
+              dbBattleRecordsCount: dbRecords.length,
+            );
+
+            final fullReport = AppLogger.instance.buildComprehensiveReport(
+              activeAccountName: activeAccount?.displayName ?? '未登录',
+              activePlatformName: activePlatform?.platformType.displayName ?? '未选择',
+              activeShortId: activePlatform?.shortId ?? '无',
+              activeLp: activePlatform?.currentLp ?? 0,
+              activeMr: activePlatform?.currentMr ?? 0,
+              clubName: activePlatform?.clubName ?? '',
+              dbBattleRecordsCount: dbRecords.length,
+            );
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.85,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  // Title & Action Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.bug_report, color: AppColors.accentNeonYellow),
-                      SizedBox(width: 8),
-                      Text('全局抓包与流水诊断控制台', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+                      Row(
+                        children: [
+                          const Icon(Icons.monitor_heart, color: AppColors.accentNeonYellow, size: 22),
+                          const SizedBox(width: 8),
+                          const Text('运行黑匣子与诊断日志', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.delete_sweep, color: AppColors.textTertiary, size: 20),
+                            tooltip: '清空历史日志',
+                            onPressed: () {
+                              AppLogger.instance.clear();
+                              setModalState(() {});
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('已清空运行日志缓存'), duration: Duration(seconds: 1)),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                            onPressed: () => Navigator.pop(ctx),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textSecondary),
-                    onPressed: () => Navigator.pop(ctx),
+                  const SizedBox(height: 6),
+
+                  // Filter Chips
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildLogFilterChip('全部 (${AppLogger.instance.logs.length})', 'ALL', selectedFilter, setModalState),
+                        const SizedBox(width: 6),
+                        _buildLogFilterChip('⚠️ 异常/警告 ($errorWarnCount)', 'ISSUES', selectedFilter, setModalState, alertColor: AppColors.loseRed),
+                        const SizedBox(width: 6),
+                        _buildLogFilterChip('🔄 同步流水 ($syncCount)', 'SYNC', selectedFilter, setModalState, alertColor: AppColors.winGreen),
+                        const SizedBox(width: 6),
+                        _buildLogFilterChip('🌐 网络抓包 ($netCount)', 'NET', selectedFilter, setModalState, alertColor: AppColors.accentNeonCyan),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 18),
+
+                  // Log Entries List
+                  Expanded(
+                    child: logs.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check_circle_outline, size: 48, color: AppColors.winGreen.withOpacity(0.5)),
+                                const SizedBox(height: 8),
+                                const Text('当前分类下暂无日志记录，运行良好', style: TextStyle(color: AppColors.textTertiary, fontSize: 13)),
+                              ],
+                            ),
+                          )
+                        : ListView.separated(
+                            itemCount: logs.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 6),
+                            itemBuilder: (c, idx) {
+                              final entry = logs[idx];
+                              Color badgeColor;
+                              Color badgeBg;
+                              switch (entry.level) {
+                                case 'ERROR':
+                                  badgeColor = AppColors.loseRed;
+                                  badgeBg = AppColors.loseRed.withOpacity(0.18);
+                                  break;
+                                case 'WARN':
+                                  badgeColor = AppColors.accentNeonYellow;
+                                  badgeBg = AppColors.accentNeonYellow.withOpacity(0.18);
+                                  break;
+                                case 'SYNC':
+                                  badgeColor = AppColors.winGreen;
+                                  badgeBg = AppColors.winGreen.withOpacity(0.18);
+                                  break;
+                                case 'NET':
+                                  badgeColor = AppColors.accentNeonCyan;
+                                  badgeBg = AppColors.accentNeonCyan.withOpacity(0.18);
+                                  break;
+                                default:
+                                  badgeColor = AppColors.textSecondary;
+                                  badgeBg = AppColors.bgSecondary;
+                              }
+
+                              final timeStr = DateFormat('HH:mm:ss.SSS').format(entry.timestamp);
+
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.bgSecondary,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: badgeColor.withOpacity(0.25)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                          decoration: BoxDecoration(
+                                            color: badgeBg,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            entry.level,
+                                            style: TextStyle(color: badgeColor, fontSize: 9.5, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '[$timeStr]',
+                                          style: const TextStyle(color: AppColors.textTertiary, fontSize: 10.5, fontFamily: 'monospace'),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            entry.tag,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    SelectableText(
+                                      entry.message,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: entry.level == 'ERROR' ? AppColors.loseRed : AppColors.textPrimary,
+                                        fontFamily: 'monospace',
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Bottom Action Buttons: Quick Summary (Recommended) & Full Blackbox
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.content_paste_go, color: Colors.black, size: 16),
+                          label: const Text('📋 复制精简诊断报告 (发给开发)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12.5)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.accentNeonYellow,
+                            padding: const EdgeInsets.symmetric(vertical: 11),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: conciseSummary));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('已复制精简诊断报告！内容精炼，无冗余刷屏，可直接发给开发排查。'), backgroundColor: AppColors.winGreen),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 2,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.copy_all, size: 15, color: AppColors.accentNeonCyan),
+                          label: const Text('复制全量黑匣子', style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 11.5)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.accentNeonCyan),
+                            padding: const EdgeInsets.symmetric(vertical: 11),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: fullReport));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('已复制全量黑匣子流水日志！'), backgroundColor: AppColors.accentNeonCyan),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const Divider(),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: SelectableText(
-                    fullReport,
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: AppColors.accentNeonCyan, height: 1.4),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.copy, color: Colors.black),
-                  label: const Text('📋 一键复制全局诊断报告 (发给开发者诊断)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonYellow),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: fullReport));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('已复制完整全局诊断报告到剪贴板！你可以直接粘贴发给开发者分析。'), backgroundColor: AppColors.winGreen),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _buildLogFilterChip(String label, String value, String selected, void Function(void Function()) setModalState, {Color? alertColor}) {
+    final isSelected = selected == value;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (_) => setModalState(() => selected = value),
+      selectedColor: (alertColor ?? AppColors.accentNeonCyan).withOpacity(0.25),
+      backgroundColor: AppColors.bgSecondary,
+      labelStyle: TextStyle(
+        color: isSelected ? (alertColor ?? AppColors.accentNeonCyan) : AppColors.textSecondary,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        fontSize: 11.5,
+      ),
     );
   }
 }

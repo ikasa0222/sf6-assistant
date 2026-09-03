@@ -414,7 +414,7 @@ class NextDataParser {
       }
       if (cleanNotice.isEmpty) cleanNotice = '欢迎加入战队交流与切磋！';
 
-      final emblem = (infoMap['emblem_url'] ?? (infoMap['emblem'] is Map ? infoMap['emblem']['emblem_url'] : '') ?? '').toString();
+      final emblem = _extractEmblemUrl(infoMap, setting);
 
       // Leader information
       final leaderObj = infoMap['leader'] is Map ? infoMap['leader'] as Map : (infoMap['leader_info'] is Map ? infoMap['leader_info'] as Map : {});
@@ -514,7 +514,7 @@ class NextDataParser {
           final memberCount = _toInt(base['total_member_count'] ?? base['member_count'] ?? setting['member_count'] ?? item['member_count'], 1);
           final maxCount = _toInt(setting['max_circle_member_number'] ?? base['max_member_count'] ?? item['max_members'], 100);
           final points = _toInt(base['recently_point'] ?? base['total_point'] ?? base['total_points'] ?? setting['total_points'] ?? item['total_points'], 0);
-          final emblem = base['emblem'] is Map ? (base['emblem']['emblem_url'] ?? '') : (base['emblem_url'] ?? '');
+          final emblem = _extractEmblemUrl(base, setting);
           final onlineCount = _toInt(item['online_member_count'] ?? base['online_member_count'], 0);
           final isMain = item['main_circle_flg'] == true || (mainCircleId.isNotEmpty && clubId == mainCircleId);
 
@@ -804,5 +804,44 @@ class NextDataParser {
       print('Error parsing official rival matchups: $e');
     }
     return result;
+  }
+
+  static String _extractEmblemUrl(dynamic infoMap, dynamic setting) {
+    final info = infoMap is Map ? infoMap : const {};
+    final sett = setting is Map ? setting : const {};
+
+    for (final candidate in [
+      info['emblem_url'],
+      info['circle_emblem_url'],
+      info['emblem_image_url'],
+      sett['emblem_url'],
+      sett['circle_emblem_url'],
+      sett['emblem_image_url'],
+    ]) {
+      if (candidate != null && candidate.toString().trim().isNotEmpty) {
+        final s = candidate.toString().trim();
+        if (s.startsWith('http://') || s.startsWith('https://')) return s;
+        if (s.startsWith('/')) return 'https://www.streetfighter.com$s';
+      }
+    }
+
+    if (info['emblem'] is Map) {
+      final u = info['emblem']['emblem_url'] ?? info['emblem']['url'] ?? info['emblem']['image_url'];
+      if (u != null && u.toString().trim().isNotEmpty) {
+        final s = u.toString().trim();
+        if (s.startsWith('http://') || s.startsWith('https://')) return s;
+        if (s.startsWith('/')) return 'https://www.streetfighter.com$s';
+      }
+    } else if (info['emblem'] is String && info['emblem'].toString().trim().isNotEmpty) {
+      final s = info['emblem'].toString().trim();
+      if (s.startsWith('http://') || s.startsWith('https://')) return s;
+      if (s.startsWith('/')) return 'https://www.streetfighter.com$s';
+    }
+
+    final emblemId = info['emblem_id'] ?? info['circle_emblem_id'] ?? sett['emblem_id'] ?? sett['circle_emblem_id'];
+    if (emblemId != null && emblemId.toString().trim().isNotEmpty && emblemId.toString() != '0') {
+      return 'https://www.streetfighter.com/6/buckler/assets/circle/emblem/${emblemId.toString().trim()}.png';
+    }
+    return '';
   }
 }

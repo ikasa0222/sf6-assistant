@@ -518,6 +518,19 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                                   child: const Text('主战队', style: TextStyle(color: AppColors.accentNeonYellow, fontSize: 9.5, fontWeight: FontWeight.bold)),
                                 ),
                               ],
+                              if (club.emblemUrl.isNotEmpty) ...[
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(3),
+                                  child: Image.network(
+                                    club.emblemUrl,
+                                    width: 14,
+                                    height: 14,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                              ],
                               Text(
                                 '[${club.tag.isNotEmpty ? club.tag : "CLUB"}] ${club.clubName}',
                                 style: TextStyle(
@@ -587,19 +600,34 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: (isPrimary ? AppColors.accentNeonPink : AppColors.accentNeonCyan).withOpacity(0.2),
+                        if (currentClub.emblemUrl.isNotEmpty) ...[
+                          ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: isPrimary ? AppColors.accentNeonPink : AppColors.accentNeonCyan, width: 1.5),
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: AppColors.bgSecondary,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isPrimary ? AppColors.accentNeonPink : AppColors.accentNeonCyan,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Image.network(
+                                currentClub.emblemUrl,
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => _buildClubTagBadge(currentClub, isPrimary),
+                              ),
+                            ),
                           ),
-                          child: Text(
-                            '[${currentClub.tag.isNotEmpty ? currentClub.tag : "CLUB"}]',
-                            style: TextStyle(color: isPrimary ? AppColors.accentNeonPink : AppColors.accentNeonCyan, fontWeight: FontWeight.w900, fontSize: 14),
-                          ),
-                        ),
+                        ] else ...[
+                          _buildClubTagBadge(currentClub, isPrimary),
+                        ],
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -639,22 +667,28 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                                   ],
                                 ],
                               ),
-                              const SizedBox(height: 3),
-                              Row(
-                                children: [
-                                  Text(
-                                    '总成员: ${currentClub.memberCount}/${currentClub.maxMemberCount} 人',
-                                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                                  ),
-                                  if (currentClub.leaderFighterId.isNotEmpty) ...[
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '• 会长: ${currentClub.leaderFighterId}',
-                                      style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                              const SizedBox(height: 4),
+                              Text(
+                                '总成员: ${currentClub.memberCount}/${currentClub.maxMemberCount} 人',
+                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                              ),
+                              if (currentClub.leaderFighterId.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.stars, size: 12, color: AppColors.accentNeonYellow),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        '会长: ${currentClub.leaderFighterId}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(color: AppColors.accentNeonYellow, fontSize: 11, fontWeight: FontWeight.w600),
+                                      ),
                                     ),
                                   ],
-                                ],
-                              ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -996,6 +1030,21 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildClubTagBadge(ClubModel club, bool isPrimary) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: (isPrimary ? AppColors.accentNeonPink : AppColors.accentNeonCyan).withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: isPrimary ? AppColors.accentNeonPink : AppColors.accentNeonCyan, width: 1.5),
+      ),
+      child: Text(
+        '[${club.tag.isNotEmpty ? club.tag : "CLUB"}]',
+        style: TextStyle(color: isPrimary ? AppColors.accentNeonPink : AppColors.accentNeonCyan, fontWeight: FontWeight.w900, fontSize: 14),
       ),
     );
   }

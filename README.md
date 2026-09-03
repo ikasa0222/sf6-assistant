@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![GitHub Release](https://img.shields.io/badge/Release-v1.2.2-00E5FF?style=for-the-badge&logo=github)
+![GitHub Release](https://img.shields.io/badge/Release-v1.2.3-00E5FF?style=for-the-badge&logo=github)
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter)
 ![Android](https://img.shields.io/badge/Android-5.0+-3DDC84?style=for-the-badge&logo=android)
 ![License](https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge)

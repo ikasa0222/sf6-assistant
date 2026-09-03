@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -80,21 +81,51 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
                   );
                   return;
                 }
-                final foundUrl = await _webViewController?.evaluateJavascript(source: '''
+                String sid = '';
+                final found = await _webViewController?.evaluateJavascript(source: '''
                   (function() {
-                    var el = document.querySelector('a[href*="/profile/"]');
-                    if (el && el.href) return el.href;
+                    var links = document.querySelectorAll('a[href*="/profile/"]');
+                    for (var i = 0; i < links.length; i++) {
+                      var m = (links[i].getAttribute('href') || '').match(/\\/profile\\/(\\d+)/);
+                      if (m && m[1]) return m[1];
+                    }
                     if (window.__NEXT_DATA__ && window.__NEXT_DATA__.props && window.__NEXT_DATA__.props.pageProps) {
                       var p = window.__NEXT_DATA__.props.pageProps;
-                      var sid = p.sid || (p.fighter_banner_info && p.fighter_banner_info.personal_info && p.fighter_banner_info.personal_info.short_id);
-                      if (sid) return 'https://www.streetfighter.com/6/buckler/zh-hans/profile/' + sid;
+                      if (p.sid) return String(p.sid);
+                      if (p.fighter_banner_info && p.fighter_banner_info.personal_info && p.fighter_banner_info.personal_info.short_id) {
+                        return String(p.fighter_banner_info.personal_info.short_id);
+                      }
                     }
                     return '';
                   })()
                 ''');
-                if (foundUrl != null && foundUrl.toString().contains('/profile/')) {
-                  final target = foundUrl.toString().replaceAll('"', '').trim();
-                  await _webViewController?.loadUrl(urlRequest: URLRequest(url: WebUri(target)));
+                if (found != null && found.toString().isNotEmpty && found.toString() != '""') {
+                  sid = found.toString().replaceAll('"', '').trim();
+                }
+                if (sid.isEmpty) {
+                  try {
+                    final cookieManager = CookieManager.instance();
+                    final cookies = await cookieManager.getCookies(url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/'));
+                    final cookieHeader = cookies.map((c) => '${c.name}=${c.value}').join('; ');
+                    if (cookieHeader.isNotEmpty) {
+                      final dio = Dio();
+                      final discRes = await dio.get(
+                        'https://www.streetfighter.com/6/buckler/zh-hans/fighterslist/friend',
+                        options: Options(headers: {'Cookie': cookieHeader}),
+                      );
+                      final fm = RegExp(r'<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)</script>').firstMatch(discRes.data.toString());
+                      if (fm != null) {
+                        final fData = jsonDecode(fm.group(1)!);
+                        final p = fData['props']?['pageProps'];
+                        sid = (p?['fighter_banner_info']?['personal_info']?['short_id'] ?? '').toString();
+                      }
+                    }
+                  } catch (_) {}
+                }
+                if (sid.isNotEmpty) {
+                  await _webViewController?.loadUrl(
+                    urlRequest: URLRequest(url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/profile/$sid')),
+                  );
                 } else {
                   await _webViewController?.loadUrl(
                     urlRequest: URLRequest(url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/')),
@@ -312,113 +343,81 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
         return;
       }
 
-      // 2. If not on profile page, find real short_id and navigate directly to /profile/[sid]
-      if (!currentUrl.contains('/profile/')) {
-        setState(() => _syncStatus = '正在定位当前登录账号的官方个人主页...');
+      // 2. Multi-stage intelligent Short ID discovery (ZERO manual navigation needed)
+      setState(() => _syncStatus = '正在智能识别当前登录账号 Short ID...');
 
-        String targetProfileUrl = '';
-        final knownSid = widget.authService.activePlatform?.shortId ?? '';
-        if (knownSid.isNotEmpty) {
-          targetProfileUrl = 'https://www.streetfighter.com/6/buckler/zh-hans/profile/$knownSid';
-        } else {
-          // Discover from DOM or friend list
-          final probeResult = await controller.evaluateJavascript(source: '''
-            (async function() {
-              try {
-                var el = document.querySelector('a[href*="/profile/"]');
-                if (el && el.href) return el.href;
-                if (window.__NEXT_DATA__ && window.__NEXT_DATA__.props && window.__NEXT_DATA__.props.pageProps) {
-                  var p = window.__NEXT_DATA__.props.pageProps;
-                  var sid = p.sid || (p.fighter_banner_info && p.fighter_banner_info.personal_info && p.fighter_banner_info.personal_info.short_id);
-                  if (sid) return 'https://www.streetfighter.com/6/buckler/zh-hans/profile/' + sid;
+      String finalSid = '';
+      final pageUrl = (await controller.getUrl())?.toString() ?? '';
+      final urlMatch = RegExp(r'/profile/(\d+)').firstMatch(pageUrl);
+      if (urlMatch != null) {
+        finalSid = urlMatch.group(1)!;
+      }
+
+      // Stage A: Query DOM synchronous links / __NEXT_DATA__
+      if (finalSid.isEmpty) {
+        try {
+          final probeSid = await controller.evaluateJavascript(source: '''
+            (function() {
+              var links = document.querySelectorAll('a[href*="/profile/"]');
+              for (var i = 0; i < links.length; i++) {
+                var m = (links[i].getAttribute('href') || '').match(/\\/profile\\/(\\d+)/);
+                if (m && m[1]) return m[1];
+              }
+              if (window.__NEXT_DATA__ && window.__NEXT_DATA__.props && window.__NEXT_DATA__.props.pageProps) {
+                var p = window.__NEXT_DATA__.props.pageProps;
+                if (p.sid) return String(p.sid);
+                if (p.fighter_banner_info && p.fighter_banner_info.personal_info && p.fighter_banner_info.personal_info.short_id) {
+                  return String(p.fighter_banner_info.personal_info.short_id);
                 }
-                var res = await fetch('/6/buckler/zh-hans/fighterslist/friend');
-                var text = await res.text();
-                var m = text.match(/<script id="__NEXT_DATA__"[^>]*>([\\s\\S]*?)<\\/script>/);
-                if (m) {
-                  var data = JSON.parse(m[1]);
-                  var p = data.props && data.props.pageProps;
-                  var sid = p && p.fighter_banner_info && p.fighter_banner_info.personal_info && p.fighter_banner_info.personal_info.short_id;
-                  if (sid) return 'https://www.streetfighter.com/6/buckler/zh-hans/profile/' + sid;
-                }
-              } catch(e) {}
+              }
               return '';
             })()
           ''');
-          if (probeResult != null && probeResult.toString().contains('/profile/')) {
-            targetProfileUrl = probeResult.toString().replaceAll('"', '').trim();
-          }
-        }
-
-        if (targetProfileUrl.isNotEmpty) {
-          AppLogger.instance.sync('SyncEngine', '成功定位个人主页路由: $targetProfileUrl');
-          await controller.loadUrl(urlRequest: URLRequest(url: WebUri(targetProfileUrl)));
-
-          // Adaptive polling: check up to 20 times (350ms each) until on profile page with data ready
-          for (int i = 0; i < 20; i++) {
-            await Future.delayed(const Duration(milliseconds: 350));
-            final check = await controller.evaluateJavascript(source: '''
-              (function() {
-                return !!(window.__NEXT_DATA__ && window.__NEXT_DATA__.props && window.__NEXT_DATA__.props.pageProps && window.__NEXT_DATA__.props.pageProps.fighter_banner_info);
-              })()
-            ''');
-            if (check == true || check.toString() == 'true') {
-              AppLogger.instance.sync('SyncEngine', '个人资料档案数据已就绪 (第 \${i + 1} 次自适应探测成功)');
-              break;
+          if (probeSid != null && probeSid.toString().isNotEmpty && probeSid.toString() != '""') {
+            final sid = probeSid.toString().replaceAll('"', '').trim();
+            if (RegExp(r'^\d+$').hasMatch(sid)) {
+              finalSid = sid;
             }
           }
-        } else {
-          AppLogger.instance.warn('SyncEngine', '未能自动嗅探到个人主页，尝试读取当前页面数据');
-        }
+        } catch (_) {}
       }
 
-      setState(() => _syncStatus = '正在提取个人档案与全量战绩...');
+      // Stage B: Read WebView session cookies and fetch /fighterslist/friend via Dio
+      final cookieManager = CookieManager.instance();
+      final cookies = await cookieManager.getCookies(url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/'));
+      final cookieHeader = cookies.map((c) => '${c.name}=${c.value}').join('; ');
 
-      // 1. Instant extraction of current page Next.js props
-      final nextDataResult = await controller.evaluateJavascript(source: '''
-        (function() {
-          try {
-            if (window.__NEXT_DATA__ && window.__NEXT_DATA__.props && window.__NEXT_DATA__.props.pageProps) {
-              return JSON.stringify(window.__NEXT_DATA__.props.pageProps);
+      if (finalSid.isEmpty && cookieHeader.isNotEmpty) {
+        try {
+          final dio = Dio(BaseOptions(
+            connectTimeout: const Duration(seconds: 8),
+            receiveTimeout: const Duration(seconds: 8),
+            headers: {
+              'Cookie': cookieHeader,
+              'User-Agent': 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+            },
+          ));
+          final discRes = await dio.get('https://www.streetfighter.com/6/buckler/zh-hans/fighterslist/friend');
+          final fm = RegExp(r'<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)</script>').firstMatch(discRes.data.toString());
+          if (fm != null) {
+            final fData = jsonDecode(fm.group(1)!);
+            final fProps = fData['props']?['pageProps'] as Map<String, dynamic>? ?? {};
+            final bInfo = fProps['fighter_banner_info'] as Map<String, dynamic>? ?? {};
+            final pInfo = bInfo['personal_info'] as Map<String, dynamic>? ?? {};
+            final discovered = (pInfo['short_id'] ?? bInfo['short_id'] ?? '').toString().trim();
+            if (discovered.isNotEmpty && RegExp(r'^\d+$').hasMatch(discovered)) {
+              finalSid = discovered;
+              AppLogger.instance.sync('SyncEngine', '通过官方探针成功识别当前 Short ID: $finalSid');
             }
-            var el = document.getElementById('__NEXT_DATA__');
-            if (el && el.innerText) {
-              var parsed = JSON.parse(el.innerText);
-              if (parsed && parsed.props && parsed.props.pageProps) {
-                return JSON.stringify(parsed.props.pageProps);
-              }
-            }
-          } catch(e) {}
-          return "";
-        })()
-      ''');
-
-      Map<String, dynamic> pageProps = {};
-      if (nextDataResult != null && nextDataResult.toString().isNotEmpty && nextDataResult.toString() != '""') {
-        dynamic decoded = nextDataResult;
-        if (decoded is String) {
-          try { decoded = jsonDecode(decoded); } catch (_) {}
-        }
-        if (decoded is String) {
-          try { decoded = jsonDecode(decoded); } catch (_) {}
-        }
-        if (decoded is Map) {
-          pageProps = Map<String, dynamic>.from(decoded);
+          }
+        } catch (e) {
+          AppLogger.instance.warn('SyncEngine', '官方探针定位异常: $e');
         }
       }
 
-      final pageUrl = (await controller.getUrl())?.toString() ?? '';
-      final urlMatch = RegExp(r'/profile/(\d+)').firstMatch(pageUrl);
-      String finalSid = '';
-      if (urlMatch != null) {
-        finalSid = urlMatch.group(1)!;
-      } else if (pageProps['sid'] != null) {
-        finalSid = pageProps['sid'].toString();
-      }
-
-      final bannerInfo = pageProps['fighter_banner_info'] as Map<String, dynamic>? ?? {};
-      if (finalSid.isEmpty && bannerInfo['personal_info'] != null && bannerInfo['personal_info']['short_id'] != null) {
-        finalSid = bannerInfo['personal_info']['short_id'].toString();
+      // Stage C: Fallback to active platform shortId
+      if (finalSid.isEmpty) {
+        finalSid = widget.authService.activePlatform?.shortId ?? '';
       }
 
       if (finalSid.isEmpty) {
@@ -426,13 +425,80 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('未能获取到有效的 Short ID，请确认已在网页中打开个人主页。'),
+              content: Text('⚠️ 未能检测到当前登录账号的 Short ID，请确认卡普空官网已成功登录！'),
               backgroundColor: AppColors.loseRed,
             ),
           );
         }
         return;
       }
+
+      // 3. Extract profile pageProps: directly via fast Dio GET or current WebView
+      setState(() => _syncStatus = '正在提取个人档案与全量战绩...');
+      Map<String, dynamic> pageProps = {};
+
+      if (cookieHeader.isNotEmpty) {
+        try {
+          final dio = Dio(BaseOptions(
+            connectTimeout: const Duration(seconds: 8),
+            receiveTimeout: const Duration(seconds: 8),
+            headers: {
+              'Cookie': cookieHeader,
+              'User-Agent': 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+            },
+          ));
+          final pRes = await dio.get('https://www.streetfighter.com/6/buckler/zh-hans/profile/$finalSid');
+          final pm = RegExp(r'<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)</script>').firstMatch(pRes.data.toString());
+          if (pm != null) {
+            final pData = jsonDecode(pm.group(1)!);
+            pageProps = Map<String, dynamic>.from(pData['props']?['pageProps'] ?? {});
+            AppLogger.instance.sync('SyncEngine', '成功直接提取 profile 档案 pageProps 数据');
+          }
+        } catch (e) {
+          AppLogger.instance.warn('SyncEngine', '直接拉取 profile 档案异常: $e');
+        }
+      }
+
+      // If Dio extraction didn't populate pageProps, try evaluating DOM in WebView
+      if (pageProps.isEmpty || pageProps['fighter_banner_info'] == null) {
+        final nextDataResult = await controller.evaluateJavascript(source: '''
+          (function() {
+            try {
+              if (window.__NEXT_DATA__ && window.__NEXT_DATA__.props && window.__NEXT_DATA__.props.pageProps) {
+                return JSON.stringify(window.__NEXT_DATA__.props.pageProps);
+              }
+              var el = document.getElementById('__NEXT_DATA__');
+              if (el && el.innerText) {
+                var parsed = JSON.parse(el.innerText);
+                if (parsed && parsed.props && parsed.props.pageProps) {
+                  return JSON.stringify(parsed.props.pageProps);
+                }
+              }
+            } catch(e) {}
+            return "";
+          })()
+        ''');
+        if (nextDataResult != null && nextDataResult.toString().isNotEmpty && nextDataResult.toString() != '""') {
+          dynamic decoded = nextDataResult;
+          if (decoded is String) {
+            try { decoded = jsonDecode(decoded); } catch (_) {}
+          }
+          if (decoded is String) {
+            try { decoded = jsonDecode(decoded); } catch (_) {}
+          }
+          if (decoded is Map) {
+            pageProps = Map<String, dynamic>.from(decoded);
+          }
+        }
+      }
+
+      // Also ensure WebView navigates to the profile page for visual feedback
+      final targetProfileUrl = 'https://www.streetfighter.com/6/buckler/zh-hans/profile/$finalSid';
+      if (!pageUrl.contains('/profile/$finalSid')) {
+        controller.loadUrl(urlRequest: URLRequest(url: WebUri(targetProfileUrl)));
+      }
+
+      final bannerInfo = pageProps['fighter_banner_info'] as Map<String, dynamic>? ?? {};
 
       String finalName = '';
       if (bannerInfo['personal_info'] != null && bannerInfo['personal_info']['fighter_id'] != null) {
@@ -516,10 +582,6 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
 
       // 2. Fetch /play, /battlelog (pages 1..5), /friend and /circle using Dio with session cookies
       setState(() => _syncStatus = '正在并发拉取历史对局与全角色胜率...');
-
-      final cookieManager = CookieManager.instance();
-      final cookies = await cookieManager.getCookies(url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/'));
-      final cookieHeader = cookies.map((c) => '${c.name}=${c.value}').join('; ');
 
       final dio = Dio(BaseOptions(
         headers: {
@@ -1411,60 +1473,247 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
 
     if (!mounted) return;
 
+    String selectedFilter = 'ALL';
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: AppColors.bgCard,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (ctx) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return StatefulBuilder(
+          builder: (modalContext, setModalState) {
+            final logs = AppLogger.instance.getLogsByLevel(selectedFilter);
+            final errorWarnCount = AppLogger.instance.errorCount + AppLogger.instance.warnCount;
+            final syncCount = AppLogger.instance.syncCount;
+            final netCount = AppLogger.instance.netCount;
+
+            final conciseSummary = AppLogger.instance.buildConciseDiagnosticSummary(
+              activeAccountName: activeAccount?.displayName ?? '未登录',
+              activePlatformName: activePlatform?.platformType.displayName ?? '未选择',
+              activeShortId: activePlatform?.shortId ?? '无',
+              activeLp: activePlatform?.currentLp ?? 0,
+              activeMr: activePlatform?.currentMr ?? 0,
+              clubName: activePlatform?.clubName ?? '',
+              dbBattleRecordsCount: dbRecords.length,
+              currentUrl: currentUrl,
+            );
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.85,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.bug_report, color: AppColors.accentNeonYellow),
-                      SizedBox(width: 8),
-                      Text('全局抓包与流水诊断控制台', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+                      Row(
+                        children: [
+                          const Icon(Icons.monitor_heart, color: AppColors.accentNeonYellow, size: 22),
+                          const SizedBox(width: 8),
+                          const Text('WebView 实时抓包与诊断', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.delete_sweep, color: AppColors.textTertiary, size: 20),
+                            tooltip: '清空历史日志',
+                            onPressed: () {
+                              AppLogger.instance.clear();
+                              setModalState(() {});
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('已清空运行日志缓存'), duration: Duration(seconds: 1)),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                            onPressed: () => Navigator.pop(ctx),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textSecondary),
-                    onPressed: () => Navigator.pop(ctx),
+                  const SizedBox(height: 6),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildDiagnosticFilterChip('全部 (${AppLogger.instance.logs.length})', 'ALL', selectedFilter, setModalState),
+                        const SizedBox(width: 6),
+                        _buildDiagnosticFilterChip('⚠️ 异常/警告 ($errorWarnCount)', 'ISSUES', selectedFilter, setModalState, alertColor: AppColors.loseRed),
+                        const SizedBox(width: 6),
+                        _buildDiagnosticFilterChip('🔄 同步流水 ($syncCount)', 'SYNC', selectedFilter, setModalState, alertColor: AppColors.winGreen),
+                        const SizedBox(width: 6),
+                        _buildDiagnosticFilterChip('🌐 网络抓包 ($netCount)', 'NET', selectedFilter, setModalState, alertColor: AppColors.accentNeonCyan),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 18),
+                  Expanded(
+                    child: logs.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check_circle_outline, size: 48, color: AppColors.winGreen.withOpacity(0.5)),
+                                const SizedBox(height: 8),
+                                const Text('当前分类下暂无日志记录，运行良好', style: TextStyle(color: AppColors.textTertiary, fontSize: 13)),
+                              ],
+                            ),
+                          )
+                        : ListView.separated(
+                            itemCount: logs.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 6),
+                            itemBuilder: (c, idx) {
+                              final entry = logs[idx];
+                              Color badgeColor;
+                              Color badgeBg;
+                              switch (entry.level) {
+                                case 'ERROR':
+                                  badgeColor = AppColors.loseRed;
+                                  badgeBg = AppColors.loseRed.withOpacity(0.18);
+                                  break;
+                                case 'WARN':
+                                  badgeColor = AppColors.accentNeonYellow;
+                                  badgeBg = AppColors.accentNeonYellow.withOpacity(0.18);
+                                  break;
+                                case 'SYNC':
+                                  badgeColor = AppColors.winGreen;
+                                  badgeBg = AppColors.winGreen.withOpacity(0.18);
+                                  break;
+                                case 'NET':
+                                  badgeColor = AppColors.accentNeonCyan;
+                                  badgeBg = AppColors.accentNeonCyan.withOpacity(0.18);
+                                  break;
+                                default:
+                                  badgeColor = AppColors.textSecondary;
+                                  badgeBg = AppColors.bgSecondary;
+                              }
+
+                              final timeStr = DateFormat('HH:mm:ss.SSS').format(entry.timestamp);
+
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.bgSecondary,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: badgeColor.withOpacity(0.25)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                          decoration: BoxDecoration(
+                                            color: badgeBg,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            entry.level,
+                                            style: TextStyle(color: badgeColor, fontSize: 9.5, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '[$timeStr]',
+                                          style: const TextStyle(color: AppColors.textTertiary, fontSize: 10.5, fontFamily: 'monospace'),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            entry.tag,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    SelectableText(
+                                      entry.message,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: entry.level == 'ERROR' ? AppColors.loseRed : AppColors.textPrimary,
+                                        fontFamily: 'monospace',
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.content_paste_go, color: Colors.black, size: 16),
+                          label: const Text('📋 复制精简诊断报告 (发给开发)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12.5)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.accentNeonYellow,
+                            padding: const EdgeInsets.symmetric(vertical: 11),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: conciseSummary));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('已复制精简诊断报告！内容精炼，无冗余刷屏，可直接发给开发排查。'), backgroundColor: AppColors.winGreen),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 2,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.copy_all, size: 15, color: AppColors.accentNeonCyan),
+                          label: const Text('复制全量黑匣子', style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 11.5)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.accentNeonCyan),
+                            padding: const EdgeInsets.symmetric(vertical: 11),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: fullReport));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('已复制全量黑匣子流水日志！'), backgroundColor: AppColors.accentNeonCyan),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const Divider(),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: SelectableText(
-                    fullReport,
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: AppColors.accentNeonCyan, height: 1.4),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.copy, color: Colors.black),
-                  label: const Text('📋 一键复制全局诊断报告 (发给开发者诊断)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonYellow),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: fullReport));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('已复制完整全局诊断报告到剪贴板！你可以直接粘贴发给开发者分析。'), backgroundColor: AppColors.winGreen),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _buildDiagnosticFilterChip(String label, String value, String selected, void Function(void Function()) setModalState, {Color? alertColor}) {
+    final isSelected = selected == value;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (_) => setModalState(() => selected = value),
+      selectedColor: (alertColor ?? AppColors.accentNeonCyan).withOpacity(0.25),
+      backgroundColor: AppColors.bgSecondary,
+      labelStyle: TextStyle(
+        color: isSelected ? (alertColor ?? AppColors.accentNeonCyan) : AppColors.textSecondary,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        fontSize: 11.5,
+      ),
     );
   }
 }

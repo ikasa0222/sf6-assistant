@@ -73,9 +73,33 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
               icon: const Icon(Icons.account_circle, color: AppColors.accentNeonCyan),
               tooltip: '直达当前登录者个人主页',
               onPressed: () async {
-                await _webViewController?.loadUrl(
-                  urlRequest: URLRequest(url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/profile')),
-                );
+                final knownSid = widget.authService.activePlatform?.shortId ?? '';
+                if (knownSid.isNotEmpty) {
+                  await _webViewController?.loadUrl(
+                    urlRequest: URLRequest(url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/profile/$knownSid')),
+                  );
+                  return;
+                }
+                final foundUrl = await _webViewController?.evaluateJavascript(source: '''
+                  (function() {
+                    var el = document.querySelector('a[href*="/profile/"]');
+                    if (el && el.href) return el.href;
+                    if (window.__NEXT_DATA__ && window.__NEXT_DATA__.props && window.__NEXT_DATA__.props.pageProps) {
+                      var p = window.__NEXT_DATA__.props.pageProps;
+                      var sid = p.sid || (p.fighter_banner_info && p.fighter_banner_info.personal_info && p.fighter_banner_info.personal_info.short_id);
+                      if (sid) return 'https://www.streetfighter.com/6/buckler/zh-hans/profile/' + sid;
+                    }
+                    return '';
+                  })()
+                ''');
+                if (foundUrl != null && foundUrl.toString().contains('/profile/')) {
+                  final target = foundUrl.toString().replaceAll('"', '').trim();
+                  await _webViewController?.loadUrl(urlRequest: URLRequest(url: WebUri(target)));
+                } else {
+                  await _webViewController?.loadUrl(
+                    urlRequest: URLRequest(url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/')),
+                  );
+                }
               },
             ),
             IconButton(
@@ -270,27 +294,81 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
       final currentUrl = (await controller.getUrl())?.toString() ?? '';
       AppLogger.instance.sync('SyncEngine', '触发一键同步，当前 URL: $currentUrl');
 
-      // If not on profile page, auto-navigate to official /profile route
+      // 1. Intercept if on Capcom ID login or Cloudflare challenge
+      if (currentUrl.contains('auth.cid.capcom.com') ||
+          currentUrl.contains('authorize') ||
+          currentUrl.contains('turnstile') ||
+          currentUrl.contains('challenge')) {
+        setState(() => _isSyncing = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              backgroundColor: AppColors.loseRed,
+              content: Text('⚠️ 检测到尚未完成卡普空账号登录或正在进行人机安全验证，请在上方网页勾选验证并成功登录后再点击同步！'),
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
+
+      // 2. If not on profile page, find real short_id and navigate directly to /profile/[sid]
       if (!currentUrl.contains('/profile/')) {
-        setState(() => _syncStatus = '正在自动跳转至当前登录账号的官方个人主页...');
-        AppLogger.instance.sync('SyncEngine', '检测到非个人主页，正在载入官方鉴权路由: /6/buckler/zh-hans/profile');
+        setState(() => _syncStatus = '正在定位当前登录账号的官方个人主页...');
 
-        await controller.loadUrl(
-          urlRequest: URLRequest(url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/profile')),
-        );
-
-        // Adaptive polling: check up to 20 times (350ms each) until on profile page with data ready
-        for (int i = 0; i < 20; i++) {
-          await Future.delayed(const Duration(milliseconds: 350));
-          final check = await controller.evaluateJavascript(source: '''
-            (function() {
-              return !!(window.__NEXT_DATA__ && window.__NEXT_DATA__.props && window.__NEXT_DATA__.props.pageProps && window.__NEXT_DATA__.props.pageProps.fighter_banner_info);
+        String targetProfileUrl = '';
+        final knownSid = widget.authService.activePlatform?.shortId ?? '';
+        if (knownSid.isNotEmpty) {
+          targetProfileUrl = 'https://www.streetfighter.com/6/buckler/zh-hans/profile/$knownSid';
+        } else {
+          // Discover from DOM or friend list
+          final probeResult = await controller.evaluateJavascript(source: '''
+            (async function() {
+              try {
+                var el = document.querySelector('a[href*="/profile/"]');
+                if (el && el.href) return el.href;
+                if (window.__NEXT_DATA__ && window.__NEXT_DATA__.props && window.__NEXT_DATA__.props.pageProps) {
+                  var p = window.__NEXT_DATA__.props.pageProps;
+                  var sid = p.sid || (p.fighter_banner_info && p.fighter_banner_info.personal_info && p.fighter_banner_info.personal_info.short_id);
+                  if (sid) return 'https://www.streetfighter.com/6/buckler/zh-hans/profile/' + sid;
+                }
+                var res = await fetch('/6/buckler/zh-hans/fighterslist/friend');
+                var text = await res.text();
+                var m = text.match(/<script id="__NEXT_DATA__"[^>]*>([\\s\\S]*?)<\\/script>/);
+                if (m) {
+                  var data = JSON.parse(m[1]);
+                  var p = data.props && data.props.pageProps;
+                  var sid = p && p.fighter_banner_info && p.fighter_banner_info.personal_info && p.fighter_banner_info.personal_info.short_id;
+                  if (sid) return 'https://www.streetfighter.com/6/buckler/zh-hans/profile/' + sid;
+                }
+              } catch(e) {}
+              return '';
             })()
           ''');
-          if (check == true || check.toString() == 'true') {
-            AppLogger.instance.sync('SyncEngine', '个人资料档案数据已就绪 (第 ${i + 1} 次自适应探测成功)');
-            break;
+          if (probeResult != null && probeResult.toString().contains('/profile/')) {
+            targetProfileUrl = probeResult.toString().replaceAll('"', '').trim();
           }
+        }
+
+        if (targetProfileUrl.isNotEmpty) {
+          AppLogger.instance.sync('SyncEngine', '成功定位个人主页路由: $targetProfileUrl');
+          await controller.loadUrl(urlRequest: URLRequest(url: WebUri(targetProfileUrl)));
+
+          // Adaptive polling: check up to 20 times (350ms each) until on profile page with data ready
+          for (int i = 0; i < 20; i++) {
+            await Future.delayed(const Duration(milliseconds: 350));
+            final check = await controller.evaluateJavascript(source: '''
+              (function() {
+                return !!(window.__NEXT_DATA__ && window.__NEXT_DATA__.props && window.__NEXT_DATA__.props.pageProps && window.__NEXT_DATA__.props.pageProps.fighter_banner_info);
+              })()
+            ''');
+            if (check == true || check.toString() == 'true') {
+              AppLogger.instance.sync('SyncEngine', '个人资料档案数据已就绪 (第 \${i + 1} 次自适应探测成功)');
+              break;
+            }
+          }
+        } else {
+          AppLogger.instance.warn('SyncEngine', '未能自动嗅探到个人主页，尝试读取当前页面数据');
         }
       }
 

@@ -73,14 +73,25 @@ class AuthService extends ChangeNotifier {
       characterUsages: characterUsages ?? _activeAccount?.activePlatform?.characterUsages ?? const [],
     );
 
+    final currentPlatforms = List<PlatformProfile>.from(_activeAccount?.linkedPlatforms ?? []);
+    final platIdx = currentPlatforms.indexWhere((p) => p.platformType == platformType || p.shortId == cleanShortId);
+    int activeIdx = 0;
+    if (platIdx >= 0) {
+      currentPlatforms[platIdx] = updatedPlatform;
+      activeIdx = platIdx;
+    } else {
+      currentPlatforms.add(updatedPlatform);
+      activeIdx = currentPlatforms.length - 1;
+    }
+
     final currentId = _activeAccount?.id ?? 'acc_$cleanShortId';
     final updatedAccount = CapcomAccount(
       id: currentId,
       capcomId: cleanShortId,
       displayName: cleanFighterId,
       cookieSession: _activeAccount?.cookieSession ?? '',
-      linkedPlatforms: [updatedPlatform],
-      activePlatformIndex: 0,
+      linkedPlatforms: currentPlatforms,
+      activePlatformIndex: activeIdx,
       lastLoginAt: DateTime.now(),
     );
 

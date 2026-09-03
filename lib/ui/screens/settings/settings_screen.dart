@@ -259,7 +259,7 @@ class SettingsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(color: AppColors.accentNeonCyan.withOpacity(0.4)),
                     ),
-                    child: const Text('v1.2.0', style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 11, fontWeight: FontWeight.bold)),
+                    child: Text(AppLogger.currentAppVersion, style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 11, fontWeight: FontWeight.bold)),
                   ),
                   onTap: () => _checkForUpdates(context),
                 ),
@@ -297,11 +297,11 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // 4. Open Source Info & Version
-          const Center(
+          Center(
             child: Text(
-              '街霸6助手 v1.2.0 (SF6 Assistant Open Source)\nPowered by Buckler\'s Boot Camp & Flutter\nDeveloper: Ayakoi',
+              '街霸6助手 ${AppLogger.currentAppVersion} (SF6 Assistant Open Source)\nPowered by Buckler\'s Boot Camp & Flutter\nDeveloper: Ayakoi',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.6),
+              style: const TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.6),
             ),
           ),
           const SizedBox(height: 20),
@@ -326,94 +326,16 @@ class SettingsScreen extends StatelessWidget {
 
     if (!context.mounted) return;
 
-    if (release != null && UpdateService.instance.hasNewVersion) {
-      showDialog(
-        context: context,
-        builder: (ctx) {
-          return AlertDialog(
-            backgroundColor: AppColors.bgCard,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(
-              children: [
-                const Icon(Icons.rocket_launch, color: AppColors.accentNeonCyan),
-                const SizedBox(width: 8),
-                Text('发现新版本: ${release.tagName}', style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '发布日期: ${release.publishDate}' + (release.formattedSize.isNotEmpty ? '  •  安装包: ${release.formattedSize}' : ''),
-                    style: const TextStyle(color: AppColors.accentNeonYellow, fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text('更新日志 (Changelog)：', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.bgSecondary,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.borderSubtle),
-                    ),
-                    child: Text(
-                      release.changelog.isNotEmpty ? release.changelog : '常规功能优化与性能加固。',
-                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, height: 1.5),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('稍后再说', style: TextStyle(color: AppColors.textTertiary)),
-              ),
-              if (release.apkDownloadUrl != null)
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.winGreen,
-                    foregroundColor: Colors.black,
-                  ),
-                  icon: const Icon(Icons.speed, size: 16),
-                  label: const Text('国内高速下载', style: TextStyle(fontWeight: FontWeight.bold)),
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    Clipboard.setData(ClipboardData(text: release.mirrorDownloadUrl));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('已复制国内高速下载链接至剪贴板: ${release.mirrorDownloadUrl}'),
-                        backgroundColor: AppColors.winGreen,
-                      ),
-                    );
-                  },
-                ),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accentNeonCyan,
-                  foregroundColor: Colors.black,
-                ),
-                icon: const Icon(Icons.open_in_browser, size: 16),
-                label: const Text('GitHub 下载', style: TextStyle(fontWeight: FontWeight.bold)),
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  Clipboard.setData(ClipboardData(text: release.apkDownloadUrl ?? release.htmlUrl));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('已复制 GitHub 官方下载链接至剪贴板！'),
-                      backgroundColor: AppColors.accentNeonCyan,
-                    ),
-                  );
-                },
-              ),
-            ],
-          );
-        },
+    if (UpdateService.instance.errorMessage.isNotEmpty && release == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ 未能连接到更新服务器，请确认 GitHub 是否有已发布的 Release 或稍后重试。'),
+          backgroundColor: AppColors.loseRed,
+          duration: Duration(seconds: 4),
+        ),
       );
+    } else if (release != null && UpdateService.instance.hasNewVersion) {
+      UpdateService.instance.showUpdateDialog(context, release);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

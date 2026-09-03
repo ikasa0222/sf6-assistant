@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:sf6_tracker/core/constants/api_constants.dart';
+import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/utils/app_logger.dart';
 
 class ReleaseInfo {
@@ -146,5 +148,101 @@ class UpdateService extends ChangeNotifier {
     } catch (_) {
       return 0;
     }
+  }
+
+  void showUpdateDialog(BuildContext context, ReleaseInfo release) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: AppColors.bgCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.rocket_launch, color: AppColors.accentNeonCyan),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '发现新版本: ${release.tagName}',
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '发布日期: ${release.publishDate}' + (release.formattedSize.isNotEmpty ? '  •  安装包: ${release.formattedSize}' : ''),
+                  style: const TextStyle(color: AppColors.accentNeonYellow, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                const Text('更新日志 (Changelog)：', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgSecondary,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.borderSubtle),
+                  ),
+                  child: Text(
+                    release.changelog.isNotEmpty ? release.changelog : '常规功能优化与性能加固。',
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, height: 1.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('稍后再说', style: TextStyle(color: AppColors.textTertiary)),
+            ),
+            if (release.apkDownloadUrl != null)
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.winGreen,
+                  foregroundColor: Colors.black,
+                ),
+                icon: const Icon(Icons.speed, size: 16),
+                label: const Text('国内高速下载', style: TextStyle(fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  Clipboard.setData(ClipboardData(text: release.mirrorDownloadUrl));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('已复制国内高速下载直链: ${release.mirrorDownloadUrl}'),
+                      backgroundColor: AppColors.winGreen,
+                    ),
+                  );
+                },
+              ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accentNeonCyan,
+                foregroundColor: Colors.black,
+              ),
+              icon: const Icon(Icons.open_in_browser, size: 16),
+              label: const Text('GitHub 直达', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                Clipboard.setData(ClipboardData(text: release.apkDownloadUrl ?? release.htmlUrl));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('已复制 GitHub 官方下载链接至剪贴板！'),
+                    backgroundColor: AppColors.accentNeonCyan,
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }

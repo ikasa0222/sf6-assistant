@@ -25,7 +25,7 @@ class AppLogger {
   AppLogger._();
   static final AppLogger instance = AppLogger._();
 
-  static const String currentAppVersion = 'v1.2.0';
+  static const String currentAppVersion = 'v1.2.2';
   final List<LogEntry> _logs = [];
   static const int _maxLogs = 800;
 

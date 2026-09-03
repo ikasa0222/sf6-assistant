@@ -16,6 +16,7 @@ import 'package:sf6_tracker/ui/screens/analytics/analytics_screen.dart';
 import 'package:sf6_tracker/ui/screens/social/social_screen.dart';
 import 'package:sf6_tracker/ui/screens/tools/tools_screen.dart';
 import 'package:sf6_tracker/ui/screens/settings/settings_screen.dart';
+import 'package:sf6_tracker/services/update_service.dart';
 
 class Sf6App extends StatefulWidget {
   const Sf6App({super.key});
@@ -54,6 +55,25 @@ class _Sf6AppState extends State<Sf6App> {
     setState(() {
       _isInitialized = true;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkDailyUpdate();
+    });
+  }
+
+  Future<void> _checkDailyUpdate() async {
+    try {
+      final now = DateTime.now();
+      final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final lastCheck = await StorageService.instance.getLastUpdateCheckDate();
+      if (lastCheck == todayStr) return;
+
+      await StorageService.instance.setLastUpdateCheckDate(todayStr);
+      final release = await UpdateService.instance.checkForUpdates(isManual: false);
+      if (release != null && UpdateService.instance.hasNewVersion && mounted) {
+        UpdateService.instance.showUpdateDialog(context, release);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadAllData(PlatformProfile? activePlatform) async {

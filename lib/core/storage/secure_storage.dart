@@ -172,4 +172,20 @@ class StorageService {
       return [];
     }
   }
+
+  Future<String?> getLastUpdateCheckDate() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('sf6_last_update_check_date');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> setLastUpdateCheckDate(String dateStr) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('sf6_last_update_check_date', dateStr);
+    } catch (_) {}
+  }
 }

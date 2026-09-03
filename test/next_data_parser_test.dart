@@ -203,5 +203,95 @@ void main() {
       expect(club.members[2].isOnline, isFalse);
       expect(club.members[2].statusText, equals('离线'));
     });
+
+    test('parseClubsList correctly parses multi-club data from /club/list and /profile/[sid]/club', () {
+      final mockMultiClubData = {
+        'props': {
+          'pageProps': {
+            'main_circle_id': 'circle_rooo_01',
+            'joined_circle_list': [
+              {
+                'main_circle_flg': true,
+                'online_member_count': 6,
+                'circle_base_info': {
+                  'circle_id': 'circle_rooo_01',
+                  'name': 'Rooookies',
+                  'circle_tag': 'ROOO',
+                  'total_member_count': 88,
+                  'recently_point': 1250,
+                  'circle_setting': {
+                    'max_circle_member_number': 100,
+                    'comment': 'Rooookies 新人交流切磋战队！',
+                    'tag1': {'tag_name': '新手歓迎', 'tag_option_name': ''},
+                    'tag2': {'tag_name': '格斗中心活跃', 'tag_option_name': ''},
+                  },
+                  'leader': {
+                    'personal_info': {
+                      'short_id': '11002233',
+                      'fighter_id': 'RookieLeader',
+                      'platform_name': 'Steam',
+                    }
+                  }
+                }
+              },
+              {
+                'main_circle_flg': false,
+                'online_member_count': 14,
+                'circle_base_info': {
+                  'circle_id': 'circle_sfcn_02',
+                  'name': 'StreetFightersCN',
+                  'circle_tag': 'SFCN',
+                  'total_member_count': 96,
+                  'recently_point': 4800,
+                  'circle_setting': {
+                    'max_circle_member_number': 100,
+                    'comment': '国内街霸老将切磋互助战队！',
+                    'tag1': {'tag_name': '排位高手', 'tag_option_name': ''},
+                  },
+                  'leader': {
+                    'personal_info': {
+                      'short_id': '99887766',
+                      'fighter_id': 'DaigoFan',
+                      'platform_name': 'PlayStation5',
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      };
+
+      final clubs = NextDataParser.parseClubsList(mockMultiClubData);
+      expect(clubs.length, equals(2));
+
+      // Club 1 (Main Club)
+      final club1 = clubs[0];
+      expect(club1.clubId, equals('circle_rooo_01'));
+      expect(club1.clubName, equals('Rooookies'));
+      expect(club1.tag, equals('ROOO'));
+      expect(club1.isMainClub, isTrue);
+      expect(club1.memberCount, equals(88));
+      expect(club1.maxMemberCount, equals(100));
+      expect(club1.onlineMemberCount, equals(6));
+      expect(club1.totalMonthlyPoints, equals(1250));
+      expect(club1.notice, equals('Rooookies 新人交流切磋战队！'));
+      expect(club1.leaderFighterId, equals('RookieLeader'));
+      expect(club1.tags, contains('新手歓迎'));
+
+      // Club 2 (Secondary Club)
+      final club2 = clubs[1];
+      expect(club2.clubId, equals('circle_sfcn_02'));
+      expect(club2.clubName, equals('StreetFightersCN'));
+      expect(club2.tag, equals('SFCN'));
+      expect(club2.isMainClub, isFalse);
+      expect(club2.memberCount, equals(96));
+      expect(club2.maxMemberCount, equals(100));
+      expect(club2.onlineMemberCount, equals(14));
+      expect(club2.totalMonthlyPoints, equals(4800));
+      expect(club2.notice, equals('国内街霸老将切磋互助战队！'));
+      expect(club2.leaderFighterId, equals('DaigoFan'));
+      expect(club2.tags, contains('排位高手'));
+    });
   });
 }

@@ -355,36 +355,95 @@ class _QuickSyncDialogState extends State<QuickSyncDialog> {
         AppLogger.instance.warn('SyncEngine', '快速同步 /friend 异常: $e');
       });
 
-      // 3. Fetch /profile/$shortId/club and /club/$cid
-      final clubFuture = dio.get('https://www.streetfighter.com/6/buckler/zh-hans/profile/$shortId/club').then((res) async {
-        final cm = RegExp(r'<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)</script>').firstMatch(res.data.toString());
-        if (cm != null) {
-          final cData = jsonDecode(cm.group(1)!);
-          var cClubs = NextDataParser.parseClubsList(cData);
-          if (cClubs.isNotEmpty) {
-            final cid = cClubs.first.clubId;
-            AppLogger.instance.info('SyncEngine', '检测到所属战队 ID: $cid (${cClubs.first.clubName})');
-            if (cid.isNotEmpty && !cid.startsWith('club_')) {
-              try {
-                final detailRes = await dio.get('https://www.streetfighter.com/6/buckler/zh-hans/club/$cid');
-                final dm = RegExp(r'<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)</script>').firstMatch(detailRes.data.toString());
-                if (dm != null) {
-                  final dData = jsonDecode(dm.group(1)!);
-                  final singleClub = NextDataParser.parseClub(dData);
-                  if (singleClub != null && singleClub.members.isNotEmpty) {
-                    AppLogger.instance.info('SyncEngine', '成功获取战队 ${singleClub.clubName} 成员 ${singleClub.members.length} 人 (在线 ${singleClub.members.where((m) => m.isOnline).length} 人)');
-                    cClubs = [singleClub];
-                  }
-                }
-              } catch (e) {
-                AppLogger.instance.warn('SyncEngine', '拉取战队详情 /club/$cid 异常: $e');
+      // 3. Fetch all clubs (/club/list or /profile/$shortId/club) and /club/$cid details
+      final clubFuture = Future(() async {
+        List<ClubModel> parsedClubs = [];
+        
+        // Try official /club/list first
+        try {
+          final listRes = await dio.get('https://www.streetfighter.com/6/buckler/zh-hans/club/list');
+          final m = RegExp(r'<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)</script>').firstMatch(listRes.data.toString());
+          if (m != null) {
+            final cData = jsonDecode(m.group(1)!);
+            parsedClubs = NextDataParser.parseClubsList(cData);
+            if (parsedClubs.isNotEmpty) {
+              AppLogger.instance.info('SyncEngine', '快速同步从 /club/list 发现 ${parsedClubs.length} 个俱乐部');
+            }
+          }
+        } catch (e) {
+          AppLogger.instance.warn('SyncEngine', '快速同步 /club/list 异常: $e');
+        }
+
+        // Fallback to /profile/$shortId/club
+        if (parsedClubs.isEmpty) {
+          try {
+            final profRes = await dio.get('https://www.streetfighter.com/6/buckler/zh-hans/profile/$shortId/club');
+            final m = RegExp(r'<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)</script>').firstMatch(profRes.data.toString());
+            if (m != null) {
+              final cData = jsonDecode(m.group(1)!);
+              parsedClubs = NextDataParser.parseClubsList(cData);
+              if (parsedClubs.isNotEmpty) {
+                AppLogger.instance.info('SyncEngine', '快速同步从 /profile/$shortId/club 解析 ${parsedClubs.length} 个俱乐部');
               }
             }
-            rawClubMembers = cClubs.map((c) => c.toJson()).toList();
+          } catch (e) {
+            AppLogger.instance.warn('SyncEngine', '快速同步 /profile/$shortId/club 异常: $e');
           }
         }
+
+        // Fallback to main_circle from profile banner
+        if (parsedClubs.isEmpty && circleName.isNotEmpty) {
+          parsedClubs.add(ClubModel(
+            clubId: circleInfo['circle_id']?.toString() ?? 'club_${circleName.hashCode.abs()}',
+            clubName: circleName,
+            tag: circleInfo['circle_tag']?.toString() ?? (circleName.length > 4 ? circleName.substring(0, 4).toUpperCase() : circleName.toUpperCase()),
+            isMainClub: true,
+            memberCount: 0,
+            members: [],
+          ));
+        }
+
+        // Concurrently fetch details for all clubs
+        final detailedClubs = <ClubModel>[];
+        for (int i = 0; i < parsedClubs.length; i++) {
+          final cur = parsedClubs[i];
+          if (cur.clubId.isNotEmpty && !cur.clubId.startsWith('club_')) {
+            try {
+              final detailRes = await dio.get('https://www.streetfighter.com/6/buckler/zh-hans/club/${cur.clubId}');
+              final dm = RegExp(r'<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)</script>').firstMatch(detailRes.data.toString());
+              if (dm != null) {
+                final dData = jsonDecode(dm.group(1)!);
+                final detailed = NextDataParser.parseClub(dData);
+                if (detailed != null) {
+                  detailedClubs.add(cur.copyWith(
+                    clubName: detailed.clubName.isNotEmpty ? detailed.clubName : cur.clubName,
+                    tag: detailed.tag.isNotEmpty ? detailed.tag : cur.tag,
+                    notice: detailed.notice.isNotEmpty ? detailed.notice : cur.notice,
+                    memberCount: detailed.memberCount > 0 ? detailed.memberCount : cur.memberCount,
+                    maxMemberCount: detailed.maxMemberCount,
+                    totalMonthlyPoints: detailed.totalMonthlyPoints > 0 ? detailed.totalMonthlyPoints : cur.totalMonthlyPoints,
+                    isMainClub: cur.isMainClub || detailed.isMainClub || (i == 0),
+                    onlineMemberCount: detailed.onlineMemberCount > 0 ? detailed.onlineMemberCount : cur.onlineMemberCount,
+                    leaderFighterId: detailed.leaderFighterId.isNotEmpty ? detailed.leaderFighterId : cur.leaderFighterId,
+                    leaderShortId: detailed.leaderShortId.isNotEmpty ? detailed.leaderShortId : cur.leaderShortId,
+                    leaderPlatform: detailed.leaderPlatform.isNotEmpty ? detailed.leaderPlatform : cur.leaderPlatform,
+                    tags: detailed.tags.isNotEmpty ? detailed.tags : cur.tags,
+                    members: detailed.members.isNotEmpty ? detailed.members : cur.members,
+                  ));
+                  AppLogger.instance.info('SyncEngine', '快速同步获取战队 [${detailed.clubName}] 成员 ${detailed.members.length} 人 (在线 ${detailed.members.where((m) => m.isOnline).length} 人)');
+                  continue;
+                }
+              }
+            } catch (e) {
+              AppLogger.instance.warn('SyncEngine', '快速同步拉取战队详情 /club/${cur.clubId} 异常: $e');
+            }
+          }
+          detailedClubs.add(cur.copyWith(isMainClub: cur.isMainClub || (i == 0)));
+        }
+
+        rawClubMembers = detailedClubs.map((c) => c.toJson()).toList();
       }).catchError((e) {
-        AppLogger.instance.warn('SyncEngine', '快速同步战队 /profile/$shortId/club 异常: $e');
+        AppLogger.instance.warn('SyncEngine', '快速同步战队模块异常: $e');
       });
 
       // 4. Fetch 10 pages of battlelog (up to 100 replays)

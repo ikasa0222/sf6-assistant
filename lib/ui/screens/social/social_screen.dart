@@ -88,7 +88,13 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
               unselectedLabelColor: AppColors.textSecondary,
               tabs: [
                 Tab(text: '好友列表 ($onlineFriends 在线)'),
-                Tab(text: clubs.isNotEmpty ? '战队俱乐部 (${clubs.first.clubName})' : '战队俱乐部'),
+                Tab(
+                  text: clubs.isNotEmpty
+                      ? (clubs.length > 1
+                          ? '战队俱乐部 (${clubs.length})'
+                          : '战队俱乐部 (${clubs.first.clubName})')
+                      : '战队俱乐部',
+                ),
               ],
             ),
           ),
@@ -420,7 +426,12 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
       );
     }
 
-    final primaryClub = clubs.first;
+    final selectedIdx = widget.socialService.selectedClubIndex < clubs.length ? widget.socialService.selectedClubIndex : 0;
+    final currentClub = clubs[selectedIdx];
+    final isPrimary = currentClub.isMainClub || selectedIdx == 0;
+    final onlineMembers = currentClub.members.where((m) => m.isOnline).toList();
+    final displayedMembers = _filterOnlyOnline ? onlineMembers : currentClub.members;
+    final onlineCount = onlineMembers.isNotEmpty ? onlineMembers.length : currentClub.onlineMemberCount;
 
     return RefreshIndicator(
       color: AppColors.accentNeonCyan,
@@ -432,25 +443,141 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Club Main Banner Cards
-          ...clubs.asMap().entries.map((entry) {
-            final idx = entry.key;
-            final club = entry.value;
-            final isPrimary = idx == 0;
+            if (clubs.length > 1) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                child: Row(
+                  children: [
+                    const Icon(Icons.swap_horiz, size: 16, color: AppColors.accentNeonCyan),
+                    const SizedBox(width: 6),
+                    Text(
+                      '已加入的战队俱乐部 (${clubs.length}/3)',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: clubs.asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final club = entry.value;
+                    final isSelected = idx == selectedIdx;
+                    final isMain = club.isMainClub || idx == 0;
+                    final cOnline = club.members.where((m) => m.isOnline).length;
 
-            return InkWell(
-              onTap: () => _showClubDetailModal(context, club),
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () {
+                          setState(() {
+                            widget.socialService.selectClubIndex(idx);
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? (isMain ? AppColors.accentNeonPink.withOpacity(0.18) : AppColors.accentNeonCyan.withOpacity(0.18))
+                                : AppColors.bgCard,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSelected
+                                  ? (isMain ? AppColors.accentNeonPink : AppColors.accentNeonCyan)
+                                  : AppColors.borderSubtle,
+                              width: isSelected ? 1.5 : 1.0,
+                            ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: (isMain ? AppColors.accentNeonPink : AppColors.accentNeonCyan).withOpacity(0.2),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isMain) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                  margin: const EdgeInsets.only(right: 6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accentNeonYellow.withOpacity(0.25),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: AppColors.accentNeonYellow, width: 0.8),
+                                  ),
+                                  child: const Text('主战队', style: TextStyle(color: AppColors.accentNeonYellow, fontSize: 9.5, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                              Text(
+                                '[${club.tag.isNotEmpty ? club.tag : "CLUB"}] ${club.clubName}',
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? (isMain ? AppColors.accentNeonPink : AppColors.accentNeonCyan)
+                                      : AppColors.textPrimary,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  fontSize: 12.5,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: AppColors.bgSecondary,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '${club.memberCount}人',
+                                  style: TextStyle(
+                                    color: isSelected ? AppColors.textPrimary : AppColors.textTertiary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              if (cOnline > 0) ...[
+                                const SizedBox(width: 5),
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.winGreen,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+            InkWell(
+              onTap: () => _showClubDetailModal(context, currentClub),
               borderRadius: BorderRadius.circular(14),
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppColors.bgCard,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: isPrimary ? AppColors.accentNeonPink.withOpacity(0.6) : AppColors.borderSubtle),
+                  border: Border.all(color: isPrimary ? AppColors.accentNeonPink.withOpacity(0.6) : AppColors.accentNeonCyan.withOpacity(0.6)),
                   boxShadow: [
                     BoxShadow(
-                      color: (isPrimary ? AppColors.accentNeonPink : Colors.black).withOpacity(0.15),
+                      color: (isPrimary ? AppColors.accentNeonPink : AppColors.accentNeonCyan).withOpacity(0.12),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -469,7 +596,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                             border: Border.all(color: isPrimary ? AppColors.accentNeonPink : AppColors.accentNeonCyan, width: 1.5),
                           ),
                           child: Text(
-                            '[${club.tag.isNotEmpty ? club.tag : "CLUB"}]',
+                            '[${currentClub.tag.isNotEmpty ? currentClub.tag : "CLUB"}]',
                             style: TextStyle(color: isPrimary ? AppColors.accentNeonPink : AppColors.accentNeonCyan, fontWeight: FontWeight.w900, fontSize: 14),
                           ),
                         ),
@@ -482,14 +609,14 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                                 children: [
                                   Flexible(
                                     child: Text(
-                                      club.clubName,
+                                      currentClub.clubName,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.bold),
                                     ),
                                   ),
+                                  const SizedBox(width: 6),
                                   if (isPrimary) ...[
-                                    const SizedBox(width: 6),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
@@ -499,13 +626,34 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                                       ),
                                       child: const Text('主战队', style: TextStyle(color: AppColors.accentNeonYellow, fontSize: 10, fontWeight: FontWeight.bold)),
                                     ),
+                                  ] else ...[
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.accentNeonCyan.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(color: AppColors.accentNeonCyan.withOpacity(0.5)),
+                                      ),
+                                      child: Text('战队 ${selectedIdx + 1}', style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 10, fontWeight: FontWeight.bold)),
+                                    ),
                                   ],
                                 ],
                               ),
                               const SizedBox(height: 3),
-                              Text(
-                                '战队成员: ${club.memberCount}/${club.maxMemberCount} 人 · 状态: 活跃',
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                              Row(
+                                children: [
+                                  Text(
+                                    '总成员: ${currentClub.memberCount}/${currentClub.maxMemberCount} 人',
+                                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                  ),
+                                  if (currentClub.leaderFighterId.isNotEmpty) ...[
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '• 会长: ${currentClub.leaderFighterId}',
+                                      style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ],
                           ),
@@ -514,19 +662,39 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                       ],
                     ),
                     const SizedBox(height: 12),
-                    // Quick stats grid
                     Row(
                       children: [
-                        _buildClubStatItem('总成员', '${club.memberCount} 人', AppColors.accentNeonCyan),
+                        _buildClubStatItem('总成员', '${currentClub.memberCount} 人', AppColors.accentNeonCyan),
                         const SizedBox(width: 8),
-                        _buildClubStatItem('在线状态', '活跃', AppColors.winGreen),
+                        _buildClubStatItem('在线活跃', '$onlineCount 人在线', onlineCount > 0 ? AppColors.winGreen : AppColors.textTertiary),
                         const SizedBox(width: 8),
-                        _buildClubStatItem('月度积分', '${club.totalMonthlyPoints} pt', AppColors.accentNeonYellow),
+                        _buildClubStatItem('月度积分', '${currentClub.totalMonthlyPoints} pt', AppColors.accentNeonYellow),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    const Divider(height: 1),
+                    if (currentClub.tags.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: currentClub.tags.map((tag) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.bgSecondary,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: AppColors.borderSubtle),
+                            ),
+                            child: Text(
+                              '# $tag',
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                     const SizedBox(height: 10),
+                    const Divider(height: 1),
+                    const SizedBox(height: 8),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -534,7 +702,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            club.notice.isNotEmpty ? club.notice : '欢迎加入战队交流与切磋！',
+                            currentClub.notice.isNotEmpty ? currentClub.notice : '欢迎加入战队交流与切磋！',
                             style: const TextStyle(color: AppColors.accentNeonYellow, fontSize: 12, height: 1.4),
                           ),
                         ),
@@ -543,272 +711,294 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                   ],
                 ),
               ),
-            );
-          }),
-
-          // 2. Club Members Section & Filter
-          if (primaryClub.members.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            // 分段切换与统计条
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () => setState(() => _filterOnlyOnline = false),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: !_filterOnlyOnline ? AppColors.accentNeonCyan.withOpacity(0.18) : AppColors.bgSecondary,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: !_filterOnlyOnline ? AppColors.accentNeonCyan : AppColors.borderSubtle,
+            ),
+            if (currentClub.members.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => setState(() => _filterOnlyOnline = false),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: !_filterOnlyOnline ? AppColors.accentNeonCyan.withOpacity(0.18) : AppColors.bgSecondary,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: !_filterOnlyOnline ? AppColors.accentNeonCyan : AppColors.borderSubtle,
+                            ),
                           ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '全部成员 (${primaryClub.members.length})',
-                            style: TextStyle(
-                              color: !_filterOnlyOnline ? AppColors.accentNeonCyan : AppColors.textSecondary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                          child: Center(
+                            child: Text(
+                              '全部成员 (${currentClub.members.length})',
+                              style: TextStyle(
+                                color: !_filterOnlyOnline ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () => setState(() => _filterOnlyOnline = true),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: _filterOnlyOnline ? AppColors.winGreen.withOpacity(0.18) : AppColors.bgSecondary,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: _filterOnlyOnline ? AppColors.winGreen : AppColors.borderSubtle,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => setState(() => _filterOnlyOnline = true),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _filterOnlyOnline ? AppColors.winGreen.withOpacity(0.18) : AppColors.bgSecondary,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _filterOnlyOnline ? AppColors.winGreen : AppColors.borderSubtle,
+                            ),
                           ),
-                        ),
-                        child: Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 7,
-                                height: 7,
-                                decoration: BoxDecoration(
-                                  color: primaryClub.members.where((m) => m.isOnline).isNotEmpty ? AppColors.winGreen : AppColors.textTertiary,
-                                  shape: BoxShape.circle,
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    color: onlineMembers.isNotEmpty ? AppColors.winGreen : AppColors.textTertiary,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                '仅看在线 (${primaryClub.members.where((m) => m.isOnline).length})',
-                                style: TextStyle(
-                                  color: _filterOnlyOnline ? AppColors.winGreen : AppColors.textSecondary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+                                const SizedBox(width: 6),
+                                Text(
+                                  '仅看在线 (${onlineMembers.length})',
+                                  style: TextStyle(
+                                    color: _filterOnlyOnline ? AppColors.winGreen : AppColors.textSecondary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 6),
-            ...primaryClub.members
-                .where((m) => !_filterOnlyOnline || m.isOnline)
-                .map((member) {
-              final statusColor = member.isOnline
-                  ? (member.statusText.contains('排位')
-                      ? AppColors.winGreen
-                      : (member.statusText.contains('格斗中心')
-                          ? AppColors.accentNeonPink
-                          : (member.statusText.contains('训练') || member.statusText.contains('练习')
-                              ? AppColors.accentNeonYellow
-                              : (member.statusText.contains('休闲')
-                                  ? AppColors.accentNeonCyan
-                                  : AppColors.winGreen))))
-                  : AppColors.textTertiary;
-
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.bgCard,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: member.isOnline ? statusColor.withOpacity(0.35) : AppColors.borderSubtle,
-                  ),
+                  ],
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
+              ),
+              const SizedBox(height: 6),
+              ...displayedMembers.map((member) {
+                final statusColor = member.isOnline
+                    ? (member.statusText.contains('排位')
+                        ? AppColors.winGreen
+                        : (member.statusText.contains('格斗中心')
+                            ? AppColors.accentNeonPink
+                            : (member.statusText.contains('训练') || member.statusText.contains('练习')
+                                ? AppColors.accentNeonYellow
+                                : (member.statusText.contains('休闲')
+                                    ? AppColors.accentNeonCyan
+                                    : AppColors.winGreen))))
+                    : AppColors.textTertiary;
+
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgCard,
                     borderRadius: BorderRadius.circular(10),
-                    onTap: () => _showMemberDetailModal(context, member),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Stack(
-                            children: [
-                              CharacterAvatar(characterId: member.mainCharacterId, size: 42),
-                              Positioned(
-                                right: 0,
-                                bottom: 0,
-                                child: Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    color: statusColor,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: AppColors.bgCard, width: 1.5),
-                                  ),
+                    border: Border.all(
+                      color: member.isOnline ? statusColor.withOpacity(0.35) : AppColors.borderSubtle,
+                    ),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () => _showMemberDetailModal(context, member),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                        Stack(
+                          children: [
+                            CharacterAvatar(characterId: member.mainCharacterId, size: 42),
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: statusColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AppColors.bgCard, width: 1.5),
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // 第 1 行：游戏名字 + （仅限会长/副会长职务标签）
-                                Row(
-                                  children: [
-                                    Flexible(
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      member.fighterId,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.bgSecondary,
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                    child: Text(
+                                      _formatPlatform(member.platform),
+                                      style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 9, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  if (member.role.isNotEmpty && (member.role.contains('会长') || member.role.contains('Leader'))) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                      decoration: BoxDecoration(
+                                        color: (member.role.contains('副') ? AppColors.accentNeonPink : AppColors.accentNeonYellow).withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(
+                                          color: (member.role.contains('副') ? AppColors.accentNeonPink : AppColors.accentNeonYellow).withOpacity(0.6),
+                                          width: 0.8,
+                                        ),
+                                      ),
                                       child: Text(
-                                        member.fighterId,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: AppColors.textPrimary,
-                                          fontSize: 14,
+                                        member.role,
+                                        style: TextStyle(
+                                          color: member.role.contains('副') ? AppColors.accentNeonPink : AppColors.accentNeonYellow,
+                                          fontSize: 9.5,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ),
-                                    if (member.role.isNotEmpty && (member.role.contains('会长') || member.role.contains('Leader'))) ...[
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                        decoration: BoxDecoration(
-                                          color: (member.role.contains('副') ? AppColors.accentNeonPink : AppColors.accentNeonCyan).withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(4),
-                                          border: Border.all(
-                                            color: (member.role.contains('副') ? AppColors.accentNeonPink : AppColors.accentNeonCyan).withOpacity(0.5),
-                                            width: 0.8,
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: statusColor.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          width: 6,
+                                          height: 6,
+                                          decoration: BoxDecoration(
+                                            color: statusColor,
+                                            shape: BoxShape.circle,
                                           ),
                                         ),
-                                        child: Text(
-                                          member.role,
+                                        const SizedBox(width: 5),
+                                        Text(
+                                          member.isOnline ? member.statusText : '离线',
                                           style: TextStyle(
-                                            color: member.role.contains('副') ? AppColors.accentNeonPink : AppColors.accentNeonCyan,
-                                            fontSize: 9.5,
+                                            color: statusColor,
+                                            fontSize: 11,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                // 第 2 行：在线状态（不在线显示离线，在线显示具体在做什么）
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: statusColor.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Container(
-                                            width: 6,
-                                            height: 6,
-                                            decoration: BoxDecoration(
-                                              color: statusColor,
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 5),
-                                          Text(
-                                            member.isOnline ? member.statusText : '离线',
-                                            style: TextStyle(
-                                              color: statusColor,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 5),
-                                // 第 3 行：段位积分
-                                if (member.lp > 0 || member.mr > 0)
-                                  RankBadge(lp: member.lp, mr: member.mr, showPoints: true, scale: 0.8)
-                                else
-                                  const Text(
-                                    '未定级  •  0 LP',
-                                    style: TextStyle(color: AppColors.textTertiary, fontSize: 11),
                                   ),
-                              ],
-                            ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    Sf6Characters.getById(member.mainCharacterId).nameZh,
+                                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 5),
+                              if (member.lp > 0 || member.mr > 0)
+                                RankBadge(lp: member.lp, mr: member.mr, showPoints: true, scale: 0.8)
+                              else
+                                const Text(
+                                  '未定级  •  0 LP',
+                                  style: TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                                ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              );
-            }),
-          ] else ...[
-            const SizedBox(height: 12),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.bgCard,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderSubtle),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.shield_moon, color: AppColors.accentNeonCyan, size: 18),
-                      SizedBox(width: 8),
-                      Text('战队在线与状态概览', style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '官方同步已成功关联你的战队档案。战队成员总数为 ${primaryClub.memberCount > 0 ? primaryClub.memberCount : primaryClub.members.length} 人。在官网个人资料或游戏中可直接发起战队切磋与语音交流。',
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.5),
-                  ),
-                ],
+            );
+              }),
+            ] else ...[
+              const SizedBox(height: 12),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.bgCard,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.borderSubtle),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.shield_moon, color: AppColors.accentNeonCyan, size: 18),
+                        SizedBox(width: 8),
+                        Text('战队在线与状态概览', style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '已成功关联战队 [${currentClub.clubName}]。战队成员总数为 ${currentClub.memberCount} 人，月度积分为 ${currentClub.totalMonthlyPoints} pt。点击下方按钮即可一键拉取战队完整成员列表与在线切磋状态。',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.5),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.sync, size: 16, color: AppColors.accentNeonCyan),
+                        label: const Text('一键同步战队成员与在线状态', style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 12, fontWeight: FontWeight.bold)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.accentNeonCyan),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: _handleRefresh,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildClubStatItem(String label, String value, Color color) {
     return Expanded(

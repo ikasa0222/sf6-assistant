@@ -1,7 +1,7 @@
 name: sf6_tracker
 description: "街霸6助手 (SF6 Assistant) - Street Fighter 6 Companion App (Android/Flutter)"
 publish_to: 'none'
-version: 1.2.0+2200
+version: 1.2.1+2300
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

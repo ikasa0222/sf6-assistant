@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
-import 'package:sf6_tracker/models/frame_data_model.dart';
 import 'package:sf6_tracker/models/player_note.dart';
 import 'package:sf6_tracker/services/frame_data_service.dart';
 import 'package:sf6_tracker/services/notes_service.dart';

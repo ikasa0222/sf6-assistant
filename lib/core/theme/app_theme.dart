@@ -10,7 +10,6 @@ class AppTheme {
       case AppThemeMode.materialYou:
         return _materialYouTheme;
       case AppThemeMode.esportsDark:
-      default:
         return _esportsDarkTheme;
     }
   }

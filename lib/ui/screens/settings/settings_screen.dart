@@ -330,7 +330,7 @@ class SettingsScreen extends StatelessWidget {
     if (UpdateService.instance.errorMessage.isNotEmpty && release == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('⚠️ 未能连接到更新服务器，请确认 GitHub 是否有已发布的 Release 或稍后重试。'),
+          content: Text('未能连接到更新服务器，请确认 GitHub 是否有已发布的 Release 或稍后重试。'),
           backgroundColor: AppColors.loseRed,
           duration: Duration(seconds: 4),
         ),
@@ -340,7 +340,7 @@ class SettingsScreen extends StatelessWidget {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('🎉 当前已是最新版本 (${AppLogger.currentAppVersion})，暂无更新！'),
+          content: Text('当前已是最新版本 (${AppLogger.currentAppVersion})，暂无更新！'),
           backgroundColor: AppColors.winGreen,
         ),
       );
@@ -781,11 +781,11 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         _buildLogFilterChip('全部 (${AppLogger.instance.logs.length})', 'ALL', selectedFilter, setModalState),
                         const SizedBox(width: 6),
-                        _buildLogFilterChip('⚠️ 异常/警告 ($errorWarnCount)', 'ISSUES', selectedFilter, setModalState, alertColor: AppColors.loseRed),
+                        _buildLogFilterChip('异常/警告 ($errorWarnCount)', 'ISSUES', selectedFilter, setModalState, alertColor: AppColors.loseRed),
                         const SizedBox(width: 6),
-                        _buildLogFilterChip('🔄 同步流水 ($syncCount)', 'SYNC', selectedFilter, setModalState, alertColor: AppColors.winGreen),
+                        _buildLogFilterChip('同步流水 ($syncCount)', 'SYNC', selectedFilter, setModalState, alertColor: AppColors.winGreen),
                         const SizedBox(width: 6),
-                        _buildLogFilterChip('🌐 网络抓包 ($netCount)', 'NET', selectedFilter, setModalState, alertColor: AppColors.accentNeonCyan),
+                        _buildLogFilterChip('网络抓包 ($netCount)', 'NET', selectedFilter, setModalState, alertColor: AppColors.accentNeonCyan),
                       ],
                     ),
                   ),
@@ -899,7 +899,7 @@ class SettingsScreen extends StatelessWidget {
                         flex: 3,
                         child: ElevatedButton.icon(
                           icon: const Icon(Icons.content_paste_go, color: Colors.black, size: 16),
-                          label: const Text('📋 复制精简诊断报告 (发给开发)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12.5)),
+                          label: const Text('复制精简诊断报告 (发给开发)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12.5)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.accentNeonYellow,
                             padding: const EdgeInsets.symmetric(vertical: 11),

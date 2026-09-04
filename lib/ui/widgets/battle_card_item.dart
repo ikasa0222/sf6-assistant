@@ -5,7 +5,6 @@ import 'package:sf6_tracker/models/battle_record.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
-import 'package:sf6_tracker/ui/widgets/rank_badge.dart';
 import 'package:sf6_tracker/ui/widgets/share_battle_card.dart';
 
 class BattleCardItem extends StatefulWidget {
@@ -183,7 +182,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
                               Clipboard.setData(ClipboardData(text: r.opponentShortId));
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('📋 已复制对手 Short ID: ${r.opponentShortId} (可在游戏内搜索)'),
+                                  content: Text('已复制对手 Short ID: ${r.opponentShortId} (可在游戏内搜索)'),
                                   backgroundColor: AppColors.winGreen,
                                   duration: const Duration(seconds: 2),
                                 ),

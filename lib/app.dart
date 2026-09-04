@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sf6_tracker/core/theme/app_theme.dart';
@@ -37,6 +38,7 @@ class _Sf6AppState extends State<Sf6App> {
   int _currentIndex = 0;
   bool _isInitialized = false;
   DateTime? _lastBackPressTime;
+  Timer? _backgroundSyncTimer;
 
   @override
   void initState() {
@@ -58,6 +60,12 @@ class _Sf6AppState extends State<Sf6App> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkDailyUpdate();
+      Future.delayed(const Duration(seconds: 4), () {
+        _triggerSilentBackgroundSync();
+      });
+      _backgroundSyncTimer = Timer.periodic(const Duration(minutes: 10), (_) {
+        _triggerSilentBackgroundSync();
+      });
     });
   }
 
@@ -103,8 +111,21 @@ class _Sf6AppState extends State<Sf6App> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _triggerSilentBackgroundSync() async {
+    if (!mounted) return;
+    if (_authService.activePlatform == null) return;
+    try {
+      await _battleLogService.performBackgroundSync(
+        authService: _authService,
+        statsService: _statsService,
+        socialService: _socialService,
+      );
+    } catch (_) {}
+  }
+
   @override
   void dispose() {
+    _backgroundSyncTimer?.cancel();
     _authService.removeListener(_onAuthChanged);
     super.dispose();
   }

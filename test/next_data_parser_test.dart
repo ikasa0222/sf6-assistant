@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sf6_tracker/core/network/next_data_parser.dart';
 import 'package:sf6_tracker/core/constants/ranks.dart';
-import 'package:sf6_tracker/models/battle_record.dart';
 
 void main() {
   group('NextDataParser Tests', () {

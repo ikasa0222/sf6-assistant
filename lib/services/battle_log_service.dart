@@ -5,17 +5,43 @@ import 'package:sf6_tracker/models/user_profile.dart';
 import 'package:sf6_tracker/core/storage/database_helper.dart';
 
 import 'package:sf6_tracker/core/storage/secure_storage.dart';
+import 'package:sf6_tracker/core/network/capcom_sync_engine.dart';
+import 'package:sf6_tracker/services/auth_service.dart';
+import 'package:sf6_tracker/services/stats_service.dart';
+import 'package:sf6_tracker/services/social_service.dart';
 
 class BattleLogService extends ChangeNotifier {
   final DatabaseHelper _db = DatabaseHelper.instance;
 
   List<BattleRecord> _records = [];
   bool _isLoading = false;
+  bool _isBackgroundSyncing = false;
   UserProfile? _userProfile;
 
   List<BattleRecord> get records => _records;
   bool get isLoading => _isLoading;
+  bool get isBackgroundSyncing => _isBackgroundSyncing;
   UserProfile? get userProfile => _userProfile;
+
+  void setSyncing(bool val) {
+    _isBackgroundSyncing = val;
+    notifyListeners();
+  }
+
+  Future<bool> performBackgroundSync({
+    required AuthService authService,
+    StatsService? statsService,
+    SocialService? socialService,
+  }) async {
+    if (_isBackgroundSyncing) return false;
+    final res = await CapcomSyncEngine.performFullSync(
+      authService: authService,
+      battleLogService: this,
+      statsService: statsService,
+      socialService: socialService,
+    );
+    return res.success;
+  }
 
   int get recentWins => _records.take(20).where((r) => r.isWin).length;
   int get recentTotal => min(20, _records.length);

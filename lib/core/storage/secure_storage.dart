@@ -188,4 +188,47 @@ class StorageService {
       await prefs.setString('sf6_last_update_check_date', dateStr);
     } catch (_) {}
   }
+
+  static const String _followedPlayersPrefKey = 'sf6_followed_short_ids';
+
+  Future<List<String>> getFollowedShortIds() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final str = prefs.getString(_followedPlayersPrefKey);
+      if (str == null || str.isEmpty) return [];
+      final list = jsonDecode(str) as List;
+      return list.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> saveFollowedShortIds(List<String> ids) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_followedPlayersPrefKey, jsonEncode(ids));
+    } catch (_) {}
+  }
+
+  Future<bool> isFollowing(String shortId) async {
+    if (shortId.trim().isEmpty) return false;
+    final list = await getFollowedShortIds();
+    return list.contains(shortId.trim());
+  }
+
+  Future<bool> toggleFollow(String shortId) async {
+    final sId = shortId.trim();
+    if (sId.isEmpty) return false;
+    final list = await getFollowedShortIds();
+    bool nowFollowed;
+    if (list.contains(sId)) {
+      list.remove(sId);
+      nowFollowed = false;
+    } else {
+      list.insert(0, sId);
+      nowFollowed = true;
+    }
+    await saveFollowedShortIds(list);
+    return nowFollowed;
+  }
 }

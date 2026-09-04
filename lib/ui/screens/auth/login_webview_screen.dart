@@ -13,7 +13,6 @@ import 'package:sf6_tracker/core/utils/app_logger.dart';
 import 'package:sf6_tracker/models/account_profile.dart';
 import 'package:sf6_tracker/models/battle_record.dart';
 import 'package:sf6_tracker/models/club_model.dart';
-import 'package:sf6_tracker/models/friend_model.dart';
 import 'package:sf6_tracker/models/matchup_stat.dart';
 import 'package:sf6_tracker/models/user_profile.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
@@ -283,7 +282,7 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
                 ),
                 icon: const Icon(Icons.cloud_sync, size: 22, color: Colors.black),
                 label: const Text(
-                  '✅ 已完成登录，立即一键同步战绩',
+                  '已完成登录，立即一键同步战绩',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
                 ),
                 onPressed: () {
@@ -335,7 +334,7 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               backgroundColor: AppColors.loseRed,
-              content: Text('⚠️ 检测到尚未完成卡普空账号登录或正在进行人机安全验证，请在上方网页勾选验证并成功登录后再点击同步！'),
+              content: Text('检测到尚未完成卡普空账号登录或正在进行人机安全验证，请在上方网页勾选验证并成功登录后再点击同步！'),
               duration: Duration(seconds: 4),
             ),
           );
@@ -425,7 +424,7 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('⚠️ 未能检测到当前登录账号的 Short ID，请确认卡普空官网已成功登录！'),
+              content: Text('未能检测到当前登录账号的 Short ID，请确认卡普空官网已成功登录！'),
               backgroundColor: AppColors.loseRed,
             ),
           );
@@ -708,8 +707,14 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
 
           // 4. Concurrently fetch full details for each club (/club/[clubid])
           final detailedClubs = <ClubModel>[];
+          final realMainClubId = parsedClubs.any((c) => c.isMainClub)
+              ? parsedClubs.firstWhere((c) => c.isMainClub).clubId
+              : (parsedClubs.isNotEmpty ? parsedClubs.first.clubId : '');
+
           for (int i = 0; i < parsedClubs.length; i++) {
             final cur = parsedClubs[i];
+            final bool isThisMain = cur.clubId == realMainClubId || (realMainClubId.isEmpty && i == 0);
+
             if (cur.clubId.isNotEmpty && !cur.clubId.startsWith('club_')) {
               try {
                 final detailRes = await dio.get('https://www.streetfighter.com/6/buckler/zh-hans/club/${cur.clubId}');
@@ -721,11 +726,12 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
                     detailedClubs.add(cur.copyWith(
                       clubName: detailed.clubName.isNotEmpty ? detailed.clubName : cur.clubName,
                       tag: detailed.tag.isNotEmpty ? detailed.tag : cur.tag,
+                      emblemUrl: detailed.emblemUrl.isNotEmpty ? detailed.emblemUrl : cur.emblemUrl,
                       notice: detailed.notice.isNotEmpty ? detailed.notice : cur.notice,
                       memberCount: detailed.memberCount > 0 ? detailed.memberCount : cur.memberCount,
                       maxMemberCount: detailed.maxMemberCount,
                       totalMonthlyPoints: detailed.totalMonthlyPoints > 0 ? detailed.totalMonthlyPoints : cur.totalMonthlyPoints,
-                      isMainClub: cur.isMainClub || detailed.isMainClub || (i == 0),
+                      isMainClub: isThisMain,
                       onlineMemberCount: detailed.onlineMemberCount > 0 ? detailed.onlineMemberCount : cur.onlineMemberCount,
                       leaderFighterId: detailed.leaderFighterId.isNotEmpty ? detailed.leaderFighterId : cur.leaderFighterId,
                       leaderShortId: detailed.leaderShortId.isNotEmpty ? detailed.leaderShortId : cur.leaderShortId,
@@ -741,7 +747,7 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
                 AppLogger.instance.warn('SyncEngine', '拉取战队详情 /club/${cur.clubId} 异常: $e');
               }
             }
-            detailedClubs.add(cur.copyWith(isMainClub: cur.isMainClub || (i == 0)));
+            detailedClubs.add(cur.copyWith(isMainClub: isThisMain));
           }
 
           rawClubMembers = detailedClubs.map((c) => c.toJson()).toList();
@@ -1240,7 +1246,7 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('🎉 成功同步玩家：$finalName (LP: $finalLp, 平台: ${selectedPlatform.displayName}' + (circleName.isNotEmpty ? ', 战队: [$circleName])' : ')')),
+                            content: Text('成功同步玩家：$finalName (LP: $finalLp, 平台: ${selectedPlatform.displayName}' + (circleName.isNotEmpty ? ', 战队: [$circleName])' : ')')),
                             backgroundColor: AppColors.winGreen,
                           ),
                         );
@@ -1543,11 +1549,11 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
                       children: [
                         _buildDiagnosticFilterChip('全部 (${AppLogger.instance.logs.length})', 'ALL', selectedFilter, setModalState),
                         const SizedBox(width: 6),
-                        _buildDiagnosticFilterChip('⚠️ 异常/警告 ($errorWarnCount)', 'ISSUES', selectedFilter, setModalState, alertColor: AppColors.loseRed),
+                        _buildDiagnosticFilterChip('异常/警告 ($errorWarnCount)', 'ISSUES', selectedFilter, setModalState, alertColor: AppColors.loseRed),
                         const SizedBox(width: 6),
-                        _buildDiagnosticFilterChip('🔄 同步流水 ($syncCount)', 'SYNC', selectedFilter, setModalState, alertColor: AppColors.winGreen),
+                        _buildDiagnosticFilterChip('同步流水 ($syncCount)', 'SYNC', selectedFilter, setModalState, alertColor: AppColors.winGreen),
                         const SizedBox(width: 6),
-                        _buildDiagnosticFilterChip('🌐 网络抓包 ($netCount)', 'NET', selectedFilter, setModalState, alertColor: AppColors.accentNeonCyan),
+                        _buildDiagnosticFilterChip('网络抓包 ($netCount)', 'NET', selectedFilter, setModalState, alertColor: AppColors.accentNeonCyan),
                       ],
                     ),
                   ),
@@ -1657,7 +1663,7 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
                         flex: 3,
                         child: ElevatedButton.icon(
                           icon: const Icon(Icons.content_paste_go, color: Colors.black, size: 16),
-                          label: const Text('📋 复制精简诊断报告 (发给开发)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12.5)),
+                          label: const Text('复制精简诊断报告 (发给开发)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12.5)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.accentNeonYellow,
                             padding: const EdgeInsets.symmetric(vertical: 11),

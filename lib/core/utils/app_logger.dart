@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LogEntry {
   final DateTime timestamp;
@@ -25,9 +27,31 @@ class AppLogger {
   AppLogger._();
   static final AppLogger instance = AppLogger._();
 
-  static const String currentAppVersion = 'v1.2.3';
+  static const String currentAppVersion = 'v1.2.3a';
   final List<LogEntry> _logs = [];
   static const int _maxLogs = 600;
+  static const String _crashLogPrefKey = 'sf6_persisted_crash_logs';
+
+  /// Initialize logger and restore any crashes that were persisted prior to app restarts
+  Future<void> init() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedJson = prefs.getString(_crashLogPrefKey);
+      if (savedJson != null && savedJson.isNotEmpty) {
+        final list = jsonDecode(savedJson) as List;
+        for (final item in list) {
+          if (item is Map) {
+            _logs.add(LogEntry(
+              timestamp: DateTime.tryParse(item['timestamp']?.toString() ?? '') ?? DateTime.now(),
+              level: item['level']?.toString() ?? 'ERROR',
+              tag: item['tag']?.toString() ?? 'PersistedCrash',
+              message: item['message']?.toString() ?? '',
+            ));
+          }
+        }
+      }
+    } catch (_) {}
+  }
 
   void info(String tag, String message) => _add('INFO', tag, message);
   void net(String tag, String message) => _add('NET', tag, message);
@@ -44,6 +68,26 @@ class AppLogger {
       cleanMsg = '$cleanMsg\n  Stack: $lines';
     }
     _add('ERROR', tag, cleanMsg);
+    _persistCrashLog(tag, cleanMsg);
+  }
+
+  void _persistCrashLog(String tag, String message) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final existing = prefs.getString(_crashLogPrefKey);
+      List<dynamic> list = [];
+      if (existing != null && existing.isNotEmpty) {
+        try { list = jsonDecode(existing); } catch (_) {}
+      }
+      list.add({
+        'timestamp': DateTime.now().toIso8601String(),
+        'level': 'ERROR',
+        'tag': tag,
+        'message': message,
+      });
+      if (list.length > 30) list.removeAt(0);
+      await prefs.setString(_crashLogPrefKey, jsonEncode(list));
+    } catch (_) {}
   }
 
   static String sanitizeMessage(String message) {
@@ -90,9 +134,9 @@ class AppLogger {
   }
 
   String exportFormattedLogs({String? filterLevel, int maxEntries = 200}) {
-    if (_logs.isEmpty) return '【暂无流水日志】';
+    if (_logs.isEmpty) return '[暂无流水日志]';
     final target = getLogsByLevel(filterLevel);
-    if (target.isEmpty) return '【该分类暂无日志记录】';
+    if (target.isEmpty) return '[该分类暂无日志记录]';
     final takeList = target.length > maxEntries ? target.sublist(target.length - maxEntries) : target;
     return takeList.map((e) => e.toString()).join('\n');
   }
@@ -111,21 +155,21 @@ class AppLogger {
   }) {
     final nowStr = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
     final sb = StringBuffer();
-    sb.writeln('📋 【街霸6战绩助手 - 运行诊断摘要】 ($nowStr)');
-    sb.writeln('• 版本: $appVersion  •  环境: Android Release');
-    sb.writeln('• 账号: $activeAccountName (Short ID: $activeShortId, 平台: $activePlatformName)');
-    sb.writeln('• 段位: $activeLp LP  •  $activeMr MR' + (clubName.isNotEmpty ? '  •  战队: [$clubName]' : ''));
-    sb.writeln('• 本地 SQLite 对局库: 已缓存 $dbBattleRecordsCount 场历史战绩');
+    sb.writeln('【街霸6助手 - 运行诊断摘要】 ($nowStr)');
+    sb.writeln('版本: $appVersion | 环境: Android Release');
+    sb.writeln('账号: $activeAccountName (Short ID: $activeShortId, 平台: $activePlatformName)');
+    sb.writeln('段位: $activeLp LP | $activeMr MR' + (clubName.isNotEmpty ? ' | 战队: [$clubName]' : ''));
+    sb.writeln('本地 SQLite 对局库: 已缓存 $dbBattleRecordsCount 场历史战绩');
     if (currentUrl != null && currentUrl.isNotEmpty) {
-      sb.writeln('• 网页定位: $currentUrl');
+      sb.writeln('网页定位: $currentUrl');
     }
-    sb.writeln('• 日志状态: 异常 $errorCount 次 | 警告 $warnCount 次 | 同步流水 $syncCount 条');
+    sb.writeln('日志状态: 异常 $errorCount 次 | 警告 $warnCount 次 | 同步流水 $syncCount 条');
 
     final recentIssues = _logs.where((e) => e.level == 'ERROR' || e.level == 'WARN').toList();
     if (recentIssues.isEmpty) {
-      sb.writeln('• 健康状态: ✅ 运行稳定，未检测到关键报错');
+      sb.writeln('健康状态: 运行稳定，未检测到关键报错');
     } else {
-      sb.writeln('• 核心异常简报 (最新 ${recentIssues.length > 4 ? 4 : recentIssues.length} 项):');
+      sb.writeln('核心异常简报 (最新 ${recentIssues.length > 4 ? 4 : recentIssues.length} 项):');
       for (final issue in recentIssues.reversed.take(4)) {
         final timeStr = DateFormat('HH:mm:ss').format(issue.timestamp);
         sb.writeln('  [$timeStr] [${issue.level}] ${issue.tag}: ${issue.message}');
@@ -163,19 +207,23 @@ class AppLogger {
     sb.writeln('');
 
     if (webviewDiagnosticJson != null && webviewDiagnosticJson.isNotEmpty) {
-      sb.writeln('------------------ 🌐 网页抓包与 Next.js 数据 ------------------');
+      sb.writeln('------------------ 网页抓包与 Next.js 数据 ------------------');
       sb.writeln(webviewDiagnosticJson);
       sb.writeln('');
     }
 
-    sb.writeln('------------------ ⚡ 全量运行流水 (最新 ${_logs.length} 条) ------------------');
+    sb.writeln('------------------ 全量运行流水 (最新 ${_logs.length} 条) ------------------');
     sb.writeln(exportFormattedLogs(maxEntries: 150));
     sb.writeln('========================================================================');
 
     return sb.toString();
   }
 
-  void clear() {
+  void clear() async {
     _logs.clear();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_crashLogPrefKey);
+    } catch (_) {}
   }
 }

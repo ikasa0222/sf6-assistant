@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:sf6_tracker/models/frame_data_model.dart';
-import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/data/frame_data_database.dart';
 
 class FrameDataService extends ChangeNotifier {

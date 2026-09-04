@@ -3,25 +3,37 @@ import 'package:sf6_tracker/core/constants/ranks.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
 
 class RankBadge extends StatelessWidget {
-  final int lp;
+  final int? lp;
   final int? mr;
   final int? rankPosition;
   final bool showPoints;
   final double scale;
+  final Sf6Rank? rank;
+  final bool showIconOnly;
 
   const RankBadge({
     super.key,
-    required this.lp,
+    this.lp,
     this.mr,
     this.rankPosition,
     this.showPoints = true,
     this.scale = 1.0,
+    this.rank,
+    this.showIconOnly = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final rank = Sf6Rank.fromLpOrMr(lp, mr: mr, rankPosition: rankPosition);
-    final isMasterOrLegend = rank.tier == RankTier.master || rank.tier == RankTier.legend;
+    final effectiveRank = rank ?? Sf6Rank.fromLpOrMr(lp ?? 0, mr: mr, rankPosition: rankPosition);
+    final isMasterOrLegend = effectiveRank.tier == RankTier.master || effectiveRank.tier == RankTier.legend;
+
+    if (showIconOnly) {
+      return Icon(
+        isMasterOrLegend ? Icons.military_tech : Icons.shield,
+        color: effectiveRank.color,
+        size: 16 * scale,
+      );
+    }
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -29,10 +41,10 @@ class RankBadge extends StatelessWidget {
         vertical: 4 * scale,
       ),
       decoration: BoxDecoration(
-        color: rank.color.withOpacity(0.15),
+        color: effectiveRank.color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(6 * scale),
         border: Border.all(
-          color: rank.color.withOpacity(0.7),
+          color: effectiveRank.color.withOpacity(0.7),
           width: 1.2 * scale,
         ),
       ),
@@ -41,25 +53,25 @@ class RankBadge extends StatelessWidget {
         children: [
           Icon(
             isMasterOrLegend ? Icons.military_tech : Icons.shield,
-            color: rank.color,
+            color: effectiveRank.color,
             size: 16 * scale,
           ),
           SizedBox(width: 4 * scale),
           Text(
-            rank.nameEn.toUpperCase(),
+            effectiveRank.nameEn.toUpperCase(),
             style: TextStyle(
-              color: rank.color,
+              color: effectiveRank.color,
               fontSize: 12 * scale,
               fontWeight: FontWeight.w900,
               letterSpacing: 0.8,
             ),
           ),
-          if (showPoints) ...[
+          if (showPoints && lp != null) ...[
             SizedBox(width: 6 * scale),
             Container(
               width: 1,
               height: 12 * scale,
-              color: rank.color.withOpacity(0.4),
+              color: effectiveRank.color.withOpacity(0.4),
             ),
             SizedBox(width: 6 * scale),
             Text(

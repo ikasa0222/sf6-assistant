@@ -135,9 +135,9 @@ class NextDataParser {
 
         bool isP1User = true;
         if (userShortId.isNotEmpty) {
-          if (p1Sid == userShortId || p1Sid.contains(userShortId)) {
+          if (p1Sid == userShortId || p1Sid.contains(userShortId) || (p1Fid.isNotEmpty && p1Fid.toLowerCase() == userShortId.toLowerCase())) {
             isP1User = true;
-          } else if (p2Sid == userShortId || p2Sid.contains(userShortId)) {
+          } else if (p2Sid == userShortId || p2Sid.contains(userShortId) || (p2Fid.isNotEmpty && p2Fid.toLowerCase() == userShortId.toLowerCase())) {
             isP1User = false;
           }
         }
@@ -336,10 +336,10 @@ class NextDataParser {
         final mr = rawMr > 0 ? rawMr : 0;
 
         // Accurate Capcom online_status_info parsing
-        final statusInfo = (banner['online_status_info'] is Map
+        final statusInfo = banner['online_status_info'] is Map
             ? banner['online_status_info'] as Map
-            : (item['online_status_info'] is Map ? item['online_status_info'] as Map : {})) as Map;
-        final statusData = (statusInfo['online_status_data'] is Map ? statusInfo['online_status_data'] as Map : {}) as Map;
+            : (item['online_status_info'] is Map ? item['online_status_info'] as Map : const {});
+        final statusData = statusInfo['online_status_data'] is Map ? statusInfo['online_status_data'] as Map : const {};
         final rawStatusName = (statusData['online_status_name'] ?? statusInfo['online_status_name'] ?? '').toString().trim();
         final statusCode = _toInt(statusInfo['online_status'] ?? item['online_status'], 1);
 
@@ -394,7 +394,8 @@ class NextDataParser {
 
       final rawClubId = (infoMap['circle_id'] ?? infoMap['club_id'] ?? setting['circle_id'] ?? query['clubid'] ?? query['sid'] ?? infoMap['id'] ?? '').toString();
       final clubName = (infoMap['name'] ?? infoMap['circle_name'] ?? infoMap['club_name'] ?? setting['circle_name'] ?? '战队俱乐部').toString();
-      final tag = (infoMap['circle_tag'] ?? infoMap['tag'] ?? setting['circle_tag'] ?? (clubName.length > 4 ? clubName.substring(0, 4) : clubName)).toString().toUpperCase();
+      final rawTag = (infoMap['circle_tag'] ?? infoMap['tag'] ?? setting['circle_tag'] ?? (clubName.length > 4 ? clubName.substring(0, 4) : clubName)).toString();
+      final tag = rawTag.replaceAll('#', '').trim().toUpperCase();
       
       String cleanNotice = '';
       for (final candidate in [
@@ -440,11 +441,12 @@ class NextDataParser {
           final tName = tObj['tag_name'].toString();
           final opt = (tObj['tag_option_name'] ?? '').toString();
           final formatted = tName.replaceAll('{{message1}}', opt).trim();
-          if (formatted.isNotEmpty) tags.add(formatted);
+          final cleanTag = formatted.replaceFirst(RegExp(r'^#+\s*'), '').trim();
+          if (cleanTag.isNotEmpty) tags.add(cleanTag);
         }
       }
 
-      final isMain = pageProps['main_circle_id'] == rawClubId || pageProps['main_circle_flg'] == true || infoMap['main_circle_flg'] == true;
+      final isMain = pageProps['main_circle_id'] == rawClubId || pageProps['main_circle_flg'] == true || infoMap['main_circle_flg'] == true || infoMap['is_main_circle'] == true || pageProps['is_main_circle'] == true;
 
       return ClubModel(
         clubId: rawClubId,
@@ -485,7 +487,8 @@ class NextDataParser {
 
           final clubId = (base['circle_id'] ?? base['club_id'] ?? setting['circle_id'] ?? item['circle_id'] ?? item['club_id'] ?? item['id'] ?? query['clubid'] ?? '').toString();
           final clubName = (base['name'] ?? base['circle_name'] ?? setting['circle_name'] ?? setting['name'] ?? item['circle_name'] ?? item['name'] ?? '战队俱乐部').toString();
-          final tag = (base['circle_tag'] ?? base['tag'] ?? setting['circle_tag'] ?? setting['tag'] ?? item['circle_tag'] ?? (clubName.length > 4 ? clubName.substring(0, 4) : clubName)).toString().toUpperCase();
+          final rawTag = (base['circle_tag'] ?? base['tag'] ?? setting['circle_tag'] ?? setting['tag'] ?? item['circle_tag'] ?? (clubName.length > 4 ? clubName.substring(0, 4) : clubName)).toString();
+          final tag = rawTag.replaceAll('#', '').trim().toUpperCase();
           
           String cleanNotice = '';
           final candidates = [
@@ -514,9 +517,9 @@ class NextDataParser {
           final memberCount = _toInt(base['total_member_count'] ?? base['member_count'] ?? setting['member_count'] ?? item['member_count'], 1);
           final maxCount = _toInt(setting['max_circle_member_number'] ?? base['max_member_count'] ?? item['max_members'], 100);
           final points = _toInt(base['recently_point'] ?? base['total_point'] ?? base['total_points'] ?? setting['total_points'] ?? item['total_points'], 0);
-          final emblem = _extractEmblemUrl(base, setting);
+          final emblem = _extractEmblemUrl(item, setting).isNotEmpty ? _extractEmblemUrl(item, setting) : _extractEmblemUrl(base, setting);
           final onlineCount = _toInt(item['online_member_count'] ?? base['online_member_count'], 0);
-          final isMain = item['main_circle_flg'] == true || (mainCircleId.isNotEmpty && clubId == mainCircleId);
+          final isMain = item['main_circle_flg'] == true || item['is_main_circle'] == true || base['main_circle_flg'] == true || base['is_main_circle'] == true || (mainCircleId.isNotEmpty && clubId == mainCircleId);
 
           // Extract tags
           final tags = <String>[];
@@ -526,7 +529,8 @@ class NextDataParser {
               final tName = tObj['tag_name'].toString();
               final opt = (tObj['tag_option_name'] ?? '').toString();
               final formatted = tName.replaceAll('{{message1}}', opt).trim();
-              if (formatted.isNotEmpty) tags.add(formatted);
+              final cleanTag = formatted.replaceFirst(RegExp(r'^#+\s*'), '').trim();
+              if (cleanTag.isNotEmpty) tags.add(cleanTag);
             }
           }
 
@@ -546,7 +550,6 @@ class NextDataParser {
           var members = parseClubMembers(rawMembers, leaderShortId: leaderShortId);
 
           if (members.isEmpty && leaderObj is Map) {
-            final lPersonal = leaderObj['personal_info'] is Map ? leaderObj['personal_info'] as Map : leaderObj;
             final lBanner = leaderObj['fighter_banner_info'] is Map ? leaderObj['fighter_banner_info'] as Map : leaderObj;
             final lLeague = leaderObj['favorite_character_league_info'] is Map ? leaderObj['favorite_character_league_info'] as Map : leaderObj;
             final lRawChar = lBanner['favorite_character_id'] ?? leaderObj['favorite_character_id'] ?? 1;
@@ -638,10 +641,10 @@ class NextDataParser {
         final mr = rawMr > 0 ? rawMr : 0;
         
         // Accurate Capcom online_status_info parsing
-        final statusInfo = (banner['online_status_info'] is Map
+        final statusInfo = banner['online_status_info'] is Map
             ? banner['online_status_info'] as Map
-            : (m['online_status_info'] is Map ? m['online_status_info'] as Map : {})) as Map;
-        final statusData = (statusInfo['online_status_data'] is Map ? statusInfo['online_status_data'] as Map : {}) as Map;
+            : (m['online_status_info'] is Map ? m['online_status_info'] as Map : const {});
+        final statusData = statusInfo['online_status_data'] is Map ? statusInfo['online_status_data'] as Map : const {};
         final rawStatusName = (statusData['online_status_name'] ?? statusInfo['online_status_name'] ?? '').toString().trim();
         final statusCode = _toInt(statusInfo['online_status'] ?? m['online_status'], 1);
 

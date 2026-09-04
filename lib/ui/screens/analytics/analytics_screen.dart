@@ -607,13 +607,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         children: [
           _buildTypeFilterChip('全部模式', null, currentType == null, platform),
           const SizedBox(width: 8),
-          _buildTypeFilterChip('🏆 排位赛', BattleType.ranked, currentType == BattleType.ranked, platform),
+          _buildTypeFilterChip('排位赛', BattleType.ranked, currentType == BattleType.ranked, platform),
           const SizedBox(width: 8),
-          _buildTypeFilterChip('⚔️ 休闲匹配', BattleType.casual, currentType == BattleType.casual, platform),
+          _buildTypeFilterChip('休闲匹配', BattleType.casual, currentType == BattleType.casual, platform),
           const SizedBox(width: 8),
-          _buildTypeFilterChip('🏠 自定义房间', BattleType.customRoom, currentType == BattleType.customRoom, platform),
+          _buildTypeFilterChip('自定义房间', BattleType.customRoom, currentType == BattleType.customRoom, platform),
           const SizedBox(width: 8),
-          _buildTypeFilterChip('🕹️ 格斗中心', BattleType.battleHub, currentType == BattleType.battleHub, platform),
+          _buildTypeFilterChip('格斗中心', BattleType.battleHub, currentType == BattleType.battleHub, platform),
         ],
       ),
     );

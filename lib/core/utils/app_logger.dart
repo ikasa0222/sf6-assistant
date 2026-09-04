@@ -27,7 +27,7 @@ class AppLogger {
   AppLogger._();
   static final AppLogger instance = AppLogger._();
 
-  static const String currentAppVersion = 'v1.2.3d';
+  static const String currentAppVersion = 'v1.2.4';
   final List<LogEntry> _logs = [];
   static const int _maxLogs = 600;
   static const String _crashLogPrefKey = 'sf6_persisted_crash_logs';

@@ -22,6 +22,7 @@ class ToolsScreen extends StatefulWidget {
 
 class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _isFrameCharGridExpanded = false;
 
   @override
   void initState() {
@@ -74,67 +75,152 @@ class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStat
 
         return Column(
           children: [
-            // Character Picker List
+            // Character Picker Control Header
             Container(
-              height: 94,
-              padding: const EdgeInsets.symmetric(vertical: 6),
               color: AppColors.bgSecondary,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                itemCount: Sf6Characters.all.length,
-                itemBuilder: (context, index) {
-                  final char = Sf6Characters.all[index];
-                  final isSelected = char.id == selectedCharId;
-                  return GestureDetector(
-                    onTap: () {
-                      widget.frameDataService.selectCharacter(char.id);
-                    },
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Row(
+                children: [
+                  const Icon(Icons.sports_kabaddi, size: 16, color: AppColors.accentNeonCyan),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '当前角色: ${Sf6Characters.getById(selectedCharId).nameZh}',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => setState(() => _isFrameCharGridExpanded = !_isFrameCharGridExpanded),
                     child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 5),
-                      child: Column(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: _isFrameCharGridExpanded ? AppColors.accentNeonCyan.withOpacity(0.2) : AppColors.bgCard,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: _isFrameCharGridExpanded ? AppColors.accentNeonCyan : AppColors.borderSubtle),
+                      ),
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isSelected ? AppColors.accentNeonCyan : Colors.transparent,
-                                width: 2.5,
-                              ),
-                              boxShadow: isSelected
-                                  ? [
-                                      BoxShadow(
-                                        color: AppColors.accentNeonCyan.withOpacity(0.5),
-                                        blurRadius: 8,
-                                        spreadRadius: 1,
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: CharacterAvatar(
-                              characterId: char.id,
-                              size: 42,
-                              showBorder: false,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
+                          Icon(_isFrameCharGridExpanded ? Icons.view_carousel : Icons.grid_view, size: 12, color: AppColors.accentNeonCyan),
+                          const SizedBox(width: 4),
                           Text(
-                            char.nameZh,
-                            style: TextStyle(
-                              color: isSelected ? AppColors.accentNeonCyan : AppColors.textSecondary,
-                              fontSize: 10,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            ),
+                            _isFrameCharGridExpanded ? '收起' : '展开全角色',
+                            style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 10, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
             ),
+
+            // Character Picker (Grid Wrap or Horizontal List)
+            if (_isFrameCharGridExpanded)
+              Container(
+                constraints: const BoxConstraints(maxHeight: 220),
+                color: AppColors.bgSecondary,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: Sf6Characters.all.map((char) {
+                      final isSelected = char.id == selectedCharId;
+                      return InkWell(
+                        onTap: () {
+                          widget.frameDataService.selectCharacter(char.id);
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.accentNeonCyan.withOpacity(0.2) : AppColors.bgCard,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: isSelected ? AppColors.accentNeonCyan : AppColors.borderSubtle),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CharacterAvatar(characterId: char.id, size: 24, showBorder: false),
+                              const SizedBox(width: 6),
+                              Text(
+                                char.nameZh,
+                                style: TextStyle(
+                                  color: isSelected ? AppColors.accentNeonCyan : AppColors.textPrimary,
+                                  fontSize: 11,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              )
+            else
+              Container(
+                height: 94,
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                color: AppColors.bgSecondary,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemCount: Sf6Characters.all.length,
+                  itemBuilder: (context, index) {
+                    final char = Sf6Characters.all[index];
+                    final isSelected = char.id == selectedCharId;
+                    return GestureDetector(
+                      onTap: () {
+                        widget.frameDataService.selectCharacter(char.id);
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 5),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected ? AppColors.accentNeonCyan : Colors.transparent,
+                                  width: 2.5,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: AppColors.accentNeonCyan.withOpacity(0.5),
+                                          blurRadius: 8,
+                                          spreadRadius: 1,
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: CharacterAvatar(
+                                characterId: char.id,
+                                size: 42,
+                                showBorder: false,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              char.nameZh,
+                              style: TextStyle(
+                                color: isSelected ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                                fontSize: 10,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
 
             // Search Bar
             Padding(

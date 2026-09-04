@@ -293,4 +293,16 @@ class StorageService {
     await saveFollowedShortIds(list);
     return nowFollowed;
   }
+
+  static const String _keyLastAnnouncementVersion = 'sf6_last_announcement_version';
+
+  Future<String?> getLastSeenAnnouncementVersion() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyLastAnnouncementVersion);
+  }
+
+  Future<void> setLastSeenAnnouncementVersion(String version) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyLastAnnouncementVersion, version);
+  }
 }

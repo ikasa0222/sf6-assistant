@@ -9,6 +9,7 @@ import 'package:sf6_tracker/core/network/next_data_parser.dart';
 import 'package:sf6_tracker/core/storage/database_helper.dart';
 import 'package:sf6_tracker/core/storage/secure_storage.dart';
 import 'package:sf6_tracker/models/battle_record.dart';
+import 'package:sf6_tracker/models/account_profile.dart';
 import 'package:sf6_tracker/models/friend_model.dart';
 import 'package:sf6_tracker/models/user_profile.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
@@ -370,7 +371,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                             border: Border.all(color: AppColors.borderSubtle),
                           ),
                           child: Text(
-                            widget.platform.toUpperCase(),
+                            PlatformType.formatPlatformBadge(widget.platform),
                             style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 10, fontWeight: FontWeight.bold),
                           ),
                         ),

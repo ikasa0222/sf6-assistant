@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:sf6_tracker/models/battle_record.dart';
+import 'package:sf6_tracker/models/account_profile.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
@@ -56,13 +57,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
   }
 
   String _formatPlatform(String raw) {
-    final lower = raw.toLowerCase();
-    if (lower.contains('steam') || lower.contains('pc')) return 'Steam';
-    if (lower.contains('ps5') || lower.contains('playstation_5')) return 'PS5';
-    if (lower.contains('ps4') || lower.contains('playstation_4')) return 'PS4';
-    if (lower.contains('xbox')) return 'Xbox';
-    if (lower.contains('switch')) return 'NS2';
-    return '跨平台';
+    return PlatformType.formatPlatformBadge(raw);
   }
 
   @override

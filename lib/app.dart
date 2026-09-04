@@ -18,6 +18,8 @@ import 'package:sf6_tracker/ui/screens/social/social_screen.dart';
 import 'package:sf6_tracker/ui/screens/tools/tools_screen.dart';
 import 'package:sf6_tracker/ui/screens/settings/settings_screen.dart';
 import 'package:sf6_tracker/services/update_service.dart';
+import 'package:sf6_tracker/core/utils/app_logger.dart';
+import 'package:sf6_tracker/ui/widgets/announcement_dialog.dart';
 
 class Sf6App extends StatefulWidget {
   const Sf6App({super.key});
@@ -59,6 +61,7 @@ class _Sf6AppState extends State<Sf6App> {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAnnouncement();
       _checkDailyUpdate();
       Future.delayed(const Duration(seconds: 4), () {
         _triggerSilentBackgroundSync();
@@ -69,6 +72,17 @@ class _Sf6AppState extends State<Sf6App> {
     });
   }
 
+  Future<void> _checkAnnouncement() async {
+    try {
+      final lastSeen = await StorageService.instance.getLastSeenAnnouncementVersion();
+      final currentVer = AppLogger.currentAppVersion;
+      if (lastSeen != currentVer && mounted) {
+        await AnnouncementDialog.show(context);
+        await StorageService.instance.setLastSeenAnnouncementVersion(currentVer);
+      }
+    } catch (_) {}
+  }
+
   Future<void> _checkDailyUpdate() async {
     try {
       final now = DateTime.now();
@@ -76,8 +90,10 @@ class _Sf6AppState extends State<Sf6App> {
       final lastCheck = await StorageService.instance.getLastUpdateCheckDate();
       if (lastCheck == todayStr) return;
 
-      await StorageService.instance.setLastUpdateCheckDate(todayStr);
       final release = await UpdateService.instance.checkForUpdates(isManual: false);
+      if (UpdateService.instance.errorMessage.isEmpty) {
+        await StorageService.instance.setLastUpdateCheckDate(todayStr);
+      }
       if (release != null && UpdateService.instance.hasNewVersion && mounted) {
         UpdateService.instance.showUpdateDialog(context, release);
       }
@@ -170,6 +186,8 @@ class _Sf6AppState extends State<Sf6App> {
           authService: _authService,
           battleLogService: _battleLogService,
           notesService: _notesService,
+          statsService: _statsService,
+          socialService: _socialService,
         ),
       ),
       if (_settings.showMatchupAnalytics)
@@ -179,6 +197,8 @@ class _Sf6AppState extends State<Sf6App> {
           screen: AnalyticsScreen(
             authService: _authService,
             statsService: _statsService,
+            battleLogService: _battleLogService,
+            socialService: _socialService,
           ),
         ),
       if (_settings.showFriendsClub)

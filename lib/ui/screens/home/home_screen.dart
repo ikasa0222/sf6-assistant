@@ -13,6 +13,7 @@ import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
 import 'package:sf6_tracker/ui/widgets/rank_badge.dart';
 import 'package:sf6_tracker/ui/widgets/win_rate_bar.dart';
 import 'package:sf6_tracker/core/utils/app_logger.dart';
+import 'package:sf6_tracker/core/network/capcom_sync_engine.dart';
 import 'package:sf6_tracker/ui/widgets/quick_sync_dialog.dart';
 import 'package:sf6_tracker/ui/screens/auth/login_webview_screen.dart';
 
@@ -200,27 +201,22 @@ class HomeScreen extends StatelessWidget {
           }
           if (activePlatform != null) {
             try {
-              await battleLogService.loadRecords(
-                shortId: activePlatform.shortId,
-                platform: activePlatform.platformType.code,
-                fighterId: activePlatform.fighterId,
-                lp: activePlatform.currentLp,
-                mr: activePlatform.currentMr,
-                mainCharId: activePlatform.mainCharId,
-                clubName: activePlatform.clubName,
-                characterUsages: activePlatform.characterUsages.isNotEmpty ? activePlatform.characterUsages : battleLogService.userProfile?.characterUsages,
-                forceSync: false,
+              final res = await CapcomSyncEngine.performFullSync(
+                authService: authService,
+                battleLogService: battleLogService,
+                statsService: statsService,
+                socialService: socialService,
               );
-              if (statsService != null) {
-                await statsService!.loadStats(
-                  shortId: activePlatform.shortId,
-                  platform: activePlatform.platformType.code,
+              if (res.needLogin) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('官方会话已过期，请重新登录'), backgroundColor: AppColors.loseRed),
                 );
-              }
-              if (socialService != null) {
-                await socialService!.loadSocialData(
-                  shortId: activePlatform.shortId,
-                  clubName: activePlatform.clubName,
+              } else if (res.success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(res.recordsUpdated > 0 ? '同步完成，已更新 ${res.recordsUpdated} 局最新对战' : '同步完成，已是最新数据'),
+                    backgroundColor: AppColors.winGreen,
+                  ),
                 );
               }
             } catch (e) {

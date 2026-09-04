@@ -131,6 +131,39 @@ class UpdateService extends ChangeNotifier {
   /// Returns > 0 if v1 > v2, < 0 if v1 < v2, 0 if equal
   int _compareVersions(String v1, String v2) {
     try {
+      final s1 = v1.toLowerCase().replaceFirst(RegExp(r'^v'), '').trim();
+      final s2 = v2.toLowerCase().replaceFirst(RegExp(r'^v'), '').trim();
+
+      final regex = RegExp(r'^(\d+)\.(\d+)\.(\d+)([-a-z0-9.]*)');
+      final m1 = regex.firstMatch(s1);
+      final m2 = regex.firstMatch(s2);
+
+      if (m1 != null && m2 != null) {
+        final maj1 = int.parse(m1.group(1)!);
+        final min1 = int.parse(m1.group(2)!);
+        final pat1 = int.parse(m1.group(3)!);
+        final extra1 = m1.group(4) ?? '';
+
+        final maj2 = int.parse(m2.group(1)!);
+        final min2 = int.parse(m2.group(2)!);
+        final pat2 = int.parse(m2.group(3)!);
+        final extra2 = m2.group(4) ?? '';
+
+        if (maj1 != maj2) return maj1.compareTo(maj2);
+        if (min1 != min2) return min1.compareTo(min2);
+        if (pat1 != pat2) return pat1.compareTo(pat2);
+
+        // If extra parts exist (e.g. 'c' vs 'b', '-c' vs '-b')
+        final cleanExtra1 = extra1.replaceAll(RegExp(r'[^a-z0-9]'), '');
+        final cleanExtra2 = extra2.replaceAll(RegExp(r'[^a-z0-9]'), '');
+        if (cleanExtra1.isNotEmpty || cleanExtra2.isNotEmpty) {
+          if (cleanExtra1.isEmpty) return 1; // Release without suffix > alpha/beta
+          if (cleanExtra2.isEmpty) return -1;
+          return cleanExtra1.compareTo(cleanExtra2);
+        }
+        return 0;
+      }
+
       final cleanV1 = v1.replaceAll(RegExp(r'[^0-9.]'), '');
       final cleanV2 = v2.replaceAll(RegExp(r'[^0-9.]'), '');
       final parts1 = cleanV1.split('.').map((e) => int.tryParse(e) ?? 0).toList();

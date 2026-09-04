@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sf6_tracker/core/network/next_data_parser.dart';
 import 'package:sf6_tracker/models/club_model.dart';
 import 'package:sf6_tracker/models/battle_record.dart';
+import 'package:sf6_tracker/models/account_profile.dart';
 
 void main() {
   group('Social Features & Club Model Tests', () {
@@ -174,6 +175,19 @@ void main() {
       expect(usages[2].mr, equals(0));
       expect(usages[2].lp, equals(12000));
       expect(usages[2].characterId, equals('luke'));
+    });
+
+    test('PlatformType.formatPlatformBadge unifies Nintendo platform to NS2', () {
+      expect(PlatformType.formatPlatformBadge('nsw2'), equals('NS2'));
+      expect(PlatformType.formatPlatformBadge('NSW2'), equals('NS2'));
+      expect(PlatformType.formatPlatformBadge('switch'), equals('NS2'));
+      expect(PlatformType.formatPlatformBadge('Switch'), equals('NS2'));
+      expect(PlatformType.formatPlatformBadge('switch2'), equals('NS2'));
+      expect(PlatformType.formatPlatformBadge('ns'), equals('NS2'));
+      expect(PlatformType.formatPlatformBadge('steam'), equals('Steam'));
+      expect(PlatformType.formatPlatformBadge('ps5'), equals('PS5'));
+      expect(PlatformType.formatPlatformBadge('ps4'), equals('PS4'));
+      expect(PlatformType.formatPlatformBadge('xbox'), equals('Xbox'));
     });
   });
 }

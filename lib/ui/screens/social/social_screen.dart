@@ -4,6 +4,7 @@ import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/core/storage/secure_storage.dart';
 import 'package:sf6_tracker/models/friend_model.dart';
 import 'package:sf6_tracker/models/club_model.dart';
+import 'package:sf6_tracker/models/account_profile.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
 import 'package:sf6_tracker/services/battle_log_service.dart';
 import 'package:sf6_tracker/services/social_service.dart';
@@ -845,13 +846,6 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
   }
 
   String _formatPlatform(String p) {
-    final lower = p.toLowerCase();
-    if (lower.contains('switch')) return 'Switch';
-    if (lower.contains('steam')) return 'Steam';
-    if (lower.contains('ps5') || lower.contains('playstation_5')) return 'PS5';
-    if (lower.contains('ps4') || lower.contains('playstation_4')) return 'PS4';
-    if (lower.contains('xbox')) return 'Xbox';
-    if (lower.contains('cross')) return '跨平台';
-    return lower.length > 5 ? lower.substring(0, 5).toUpperCase() : lower.toUpperCase();
+    return PlatformType.formatPlatformBadge(p);
   }
 }

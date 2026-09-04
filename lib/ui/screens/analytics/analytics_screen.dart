@@ -3,7 +3,10 @@ import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/models/battle_record.dart';
 import 'package:sf6_tracker/models/matchup_stat.dart';
+import 'package:sf6_tracker/core/network/capcom_sync_engine.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
+import 'package:sf6_tracker/services/battle_log_service.dart';
+import 'package:sf6_tracker/services/social_service.dart';
 import 'package:sf6_tracker/services/stats_service.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
 import 'package:sf6_tracker/ui/widgets/mr_trend_chart.dart';
@@ -12,11 +15,15 @@ import 'package:sf6_tracker/ui/widgets/win_rate_bar.dart';
 class AnalyticsScreen extends StatefulWidget {
   final AuthService authService;
   final StatsService statsService;
+  final BattleLogService? battleLogService;
+  final SocialService? socialService;
 
   const AnalyticsScreen({
     super.key,
     required this.authService,
     required this.statsService,
+    this.battleLogService,
+    this.socialService,
   });
 
   @override
@@ -24,6 +31,8 @@ class AnalyticsScreen extends StatefulWidget {
 }
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
+  bool _isSyncing = false;
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +49,60 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
   }
 
+  Future<void> _handleRefresh() async {
+    if (_isSyncing) return;
+    final platform = widget.authService.activePlatform;
+    if (platform == null) {
+      _loadInitialStats();
+      return;
+    }
+
+    if (widget.battleLogService != null) {
+      setState(() => _isSyncing = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('正在从卡普空官方同步最新对战数据...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      final res = await CapcomSyncEngine.performFullSync(
+        authService: widget.authService,
+        battleLogService: widget.battleLogService!,
+        statsService: widget.statsService,
+        socialService: widget.socialService,
+      );
+
+      if (!mounted) return;
+      setState(() => _isSyncing = false);
+
+      if (res.needLogin) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('卡普空官方登录会话已过期，请重新登录'),
+            backgroundColor: AppColors.loseRed,
+          ),
+        );
+      } else if (res.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res.recordsUpdated > 0 ? '同步完成，已更新 ${res.recordsUpdated} 局战绩并重新分析' : '同步完成，当前已是最新战绩分析'),
+            backgroundColor: AppColors.winGreen,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res.message.isNotEmpty ? res.message : '网络同步未完成，已加载本地分析数据'),
+            backgroundColor: AppColors.accentNeonYellow,
+          ),
+        );
+      }
+    } else {
+      _loadInitialStats();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -48,7 +111,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         final platform = widget.authService.activePlatform;
         final stats = widget.statsService.matchupStats;
         final ratingHistory = widget.statsService.ratingHistory;
-        final isLoading = widget.statsService.isLoading;
+        final isLoading = widget.statsService.isLoading || _isSyncing;
         final selectedMyChar = widget.statsService.selectedMyCharacterId;
 
         final mrPoints = ratingHistory
@@ -61,8 +124,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             title: const Text('深度数据与克制分析', style: TextStyle(fontWeight: FontWeight.bold)),
             actions: [
               IconButton(
-                icon: const Icon(Icons.refresh, color: AppColors.accentNeonCyan),
-                onPressed: _loadInitialStats,
+                icon: _isSyncing
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accentNeonCyan),
+                      )
+                    : const Icon(Icons.refresh, color: AppColors.accentNeonCyan),
+                onPressed: _handleRefresh,
+                tooltip: '从官方拉取最新对局并重新分析',
               ),
             ],
           ),

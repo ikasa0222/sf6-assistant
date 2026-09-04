@@ -40,6 +40,9 @@ enum PlatformType {
       case 'switch':
       case 'switch2':
       case 'ns':
+      case 'ns2':
+      case 'nsw':
+      case 'nsw2':
       case 'nintendo':
         return PlatformType.nintendoSwitch2;
       case 'psn':
@@ -53,6 +56,19 @@ enum PlatformType {
       default:
         return PlatformType.steam;
     }
+  }
+
+  static String formatPlatformBadge(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return '未知';
+    final lower = raw.toLowerCase().trim();
+    if (lower.contains('switch') || lower.contains('nsw') || lower.contains('ns')) return 'NS2';
+    if (lower.contains('steam') || lower.contains('pc')) return 'Steam';
+    if (lower.contains('ps5') || lower.contains('playstation_5')) return 'PS5';
+    if (lower.contains('ps4') || lower.contains('playstation_4')) return 'PS4';
+    if (lower.contains('psn') || lower.contains('playstation')) return 'PlayStation';
+    if (lower.contains('xbox') || lower.contains('xbs')) return 'Xbox';
+    if (lower.contains('cross')) return '跨平台';
+    return lower.length > 5 ? lower.substring(0, 5).toUpperCase() : lower.toUpperCase();
   }
 }
 

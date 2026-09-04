@@ -115,5 +115,65 @@ void main() {
       expect(h2h.first.isWin, isTrue);
       expect(h2h.first.opponentFighterId, equals('RivalX'));
     });
+
+    test('NextDataParser.parseCharacterUsagesFromPlay parses LP/MR and win rates and sorts by rank', () {
+      final mockPlayData = {
+        'props': {
+          'pageProps': {
+            'play': {
+              'character_league_infos': [
+                {
+                  'character_id': 2, // Luke
+                  'league_info': {'league_point': 12000, 'master_rating': 0},
+                  'play_count': 50,
+                  'win_count': 30,
+                  'win_rate': 60.0,
+                },
+                {
+                  'character_id': 21, // Jamie
+                  'league_info': {'league_point': 25000, 'master_rating': 1650},
+                  'play_count': 120,
+                  'win_count': 75,
+                  'win_rate': 62.5,
+                },
+                {
+                  'character_id': 5, // Manon
+                  'league_info': {'league_point': 18000, 'master_rating': 0},
+                  'play_count': 80,
+                  'win_count': 44,
+                  'win_rate': 55.0,
+                },
+              ],
+              'character_win_rates': [
+                {
+                  'character_id': 21,
+                  'play_count': 120,
+                  'win_count': 75,
+                  'win_rate': 62.5,
+                },
+              ],
+            }
+          }
+        }
+      };
+
+      final usages = NextDataParser.parseCharacterUsagesFromPlay(mockPlayData);
+      expect(usages.length, equals(3));
+      // First should be Master Rating (Jamie MR 1650)
+      expect(usages[0].mr, equals(1650));
+      expect(usages[0].characterId, equals('jamie'));
+      expect(usages[0].matches, equals(120));
+      expect(usages[0].winRate, equals(62.5));
+
+      // Second should be higher LP (Manon LP 18000)
+      expect(usages[1].mr, equals(0));
+      expect(usages[1].lp, equals(18000));
+      expect(usages[1].characterId, equals('manon'));
+
+      // Third should be Luke LP 12000
+      expect(usages[2].mr, equals(0));
+      expect(usages[2].lp, equals(12000));
+      expect(usages[2].characterId, equals('luke'));
+    });
   });
 }

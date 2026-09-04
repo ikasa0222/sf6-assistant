@@ -809,6 +809,89 @@ class NextDataParser {
     return result;
   }
 
+  static List<CharacterUsage> parseCharacterUsagesFromPlay(Map<String, dynamic> nextData) {
+    final Map<String, CharacterUsage> usageMap = {};
+    try {
+      final pageProps = nextData['props']?['pageProps'] as Map<String, dynamic>? ?? nextData;
+      final playObj = (pageProps['play'] is Map ? pageProps['play'] : pageProps) as Map<String, dynamic>? ?? {};
+
+      final cList = playObj['character_league_infos'] ?? playObj['character_league_list'] ?? [];
+      if (cList is List) {
+        for (final c in cList) {
+          if (c is! Map) continue;
+          final rawCid = c['character_id'] ?? c['character_tool_name'] ?? c['character_name'];
+          if (rawCid == null) continue;
+          final cChar = Sf6Characters.fromCapcomId(rawCid);
+          final rawLpNum = c['league_info']?['league_point'] ?? c['league_point'] ?? c['lp'] ?? 0;
+          final rawMrNum = c['league_info']?['master_rating'] ?? c['master_rating'] ?? c['mr'] ?? 0;
+          final rawLp = _toInt(rawLpNum);
+          final rawMr = _toInt(rawMrNum);
+
+          if (rawLp <= 0 && rawMr <= 0) continue;
+
+          final validLp = rawLp > 0 ? rawLp : 0;
+          final validMr = rawMr > 0 ? rawMr : 0;
+          final matches = _toInt(c['play_count'] ?? c['total_matches'] ?? c['playing_count'] ?? c['matches'] ?? c['battle_count']);
+          final wins = _toInt(c['win_count'] ?? c['wins']);
+          final winRate = _toDouble(c['win_rate'], matches > 0 ? (wins / matches) * 100.0 : 0.0);
+
+          usageMap[cChar.id] = CharacterUsage(
+            characterId: cChar.id,
+            matches: matches,
+            wins: wins,
+            winRate: winRate,
+            lp: validLp,
+            mr: validMr,
+          );
+        }
+      }
+
+      final winList = playObj['character_win_rates'] ?? playObj['character_win_rate_list'] ?? playObj['character_list'] ?? playObj['character_play_stats'] ?? [];
+      if (winList is List) {
+        for (final c in winList) {
+          if (c is! Map) continue;
+          final rawCid = c['character_id'] ?? c['character_tool_name'] ?? c['character_name'];
+          if (rawCid == null) continue;
+          final cChar = Sf6Characters.fromCapcomId(rawCid);
+          final matches = _toInt(c['play_count'] ?? c['total_matches'] ?? c['playing_count'] ?? c['matches'] ?? c['battle_count']);
+          final wins = _toInt(c['win_count'] ?? c['wins']);
+          final winRate = _toDouble(c['win_rate'], matches > 0 ? (wins / matches) * 100.0 : 0.0);
+
+          if (usageMap.containsKey(cChar.id)) {
+            final cur = usageMap[cChar.id]!;
+            usageMap[cChar.id] = CharacterUsage(
+              characterId: cur.characterId,
+              matches: matches > 0 ? matches : cur.matches,
+              wins: wins > 0 ? wins : cur.wins,
+              winRate: winRate > 0 ? winRate : cur.winRate,
+              lp: cur.lp,
+              mr: cur.mr,
+            );
+          } else if (matches > 0 || wins > 0) {
+            usageMap[cChar.id] = CharacterUsage(
+              characterId: cChar.id,
+              matches: matches,
+              wins: wins,
+              winRate: winRate,
+              lp: 0,
+              mr: 0,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      print('Error parsing character usages from play: $e');
+    }
+
+    final list = usageMap.values.toList();
+    list.sort((a, b) {
+      if (b.mr != a.mr) return b.mr.compareTo(a.mr);
+      if (b.lp != a.lp) return b.lp.compareTo(a.lp);
+      return b.matches.compareTo(a.matches);
+    });
+    return list;
+  }
+
   static String _extractEmblemUrl(dynamic infoMap, dynamic setting) {
     final info = infoMap is Map ? infoMap : const {};
     final sett = setting is Map ? setting : const {};

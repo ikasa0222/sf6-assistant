@@ -36,6 +36,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
   late TabController _tabController;
   bool _filterOnlyOnlineFriends = false;
   List<String> _followedIds = [];
+  List<FriendModel> _followedPlayers = [];
 
   @override
   void initState() {
@@ -45,10 +46,25 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
   }
 
   Future<void> _loadFollowed() async {
-    final list = await StorageService.instance.getFollowedShortIds();
+    final ids = await StorageService.instance.getFollowedShortIds();
+    final players = await StorageService.instance.getFollowedPlayers();
     if (mounted) {
-      setState(() => _followedIds = list);
+      setState(() {
+        _followedIds = ids;
+        _followedPlayers = players;
+      });
     }
+  }
+
+  bool _isPlayerFollowed(FriendModel f) {
+    final sId = f.shortId.trim();
+    final fId = f.fighterId.trim().toLowerCase();
+    if (sId.isNotEmpty && _followedIds.contains(sId)) return true;
+    for (final p in _followedPlayers) {
+      if (sId.isNotEmpty && p.shortId.trim() == sId) return true;
+      if (fId.isNotEmpty && p.fighterId.trim().toLowerCase() == fId) return true;
+    }
+    return false;
   }
 
   @override
@@ -135,7 +151,21 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
   }
 
   Widget _buildFriendsTab(List<FriendModel> friends) {
-    if (friends.isEmpty) {
+    // 1. Merge official friends with locally followed players (e.g. from clubs)
+    final Map<String, FriendModel> mergedMap = {};
+    for (final f in friends) {
+      final key = f.shortId.isNotEmpty ? f.shortId : f.fighterId.toLowerCase();
+      mergedMap[key] = f;
+    }
+    for (final fp in _followedPlayers) {
+      final key = fp.shortId.isNotEmpty ? fp.shortId : fp.fighterId.toLowerCase();
+      if (!mergedMap.containsKey(key)) {
+        mergedMap[key] = fp;
+      }
+    }
+    final allFriends = mergedMap.values.toList();
+
+    if (allFriends.isEmpty) {
       return RefreshIndicator(
         color: AppColors.accentNeonCyan,
         backgroundColor: AppColors.bgCard,
@@ -152,12 +182,12 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                 Icon(Icons.people_outline, size: 56, color: AppColors.textTertiary),
                 SizedBox(height: 12),
                 Text(
-                  '暂无已同步的好友',
+                  '暂无已同步或关注的好友',
                   style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 15),
                 ),
                 SizedBox(height: 6),
                 Text(
-                  '在卡普空官方关注好友后，下拉刷新或一键同步即可在此直接查看好友在线状态与段位',
+                  '在卡普空官方关注好友、或在战队俱乐部中星标关注成员，即可在此直接查看与置顶显示',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                 ),
@@ -168,10 +198,10 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
       );
     }
 
-    final sortedFriends = List<FriendModel>.from(friends);
+    final sortedFriends = List<FriendModel>.from(allFriends);
     sortedFriends.sort((a, b) {
-      final aFollowed = _followedIds.contains(a.shortId);
-      final bFollowed = _followedIds.contains(b.shortId);
+      final aFollowed = _isPlayerFollowed(a);
+      final bFollowed = _isPlayerFollowed(b);
       if (aFollowed && !bFollowed) return -1;
       if (!aFollowed && bFollowed) return 1;
       if (a.isOnline && !b.isOnline) return -1;
@@ -267,7 +297,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
           ),
           const SizedBox(height: 8),
           ...displayedFriends.map((friend) {
-            final isFollowed = _followedIds.contains(friend.shortId);
+            final isFollowed = _isPlayerFollowed(friend);
             final statusColor = friend.isOnline
                 ? (friend.statusText.contains('排位')
                     ? AppColors.winGreen
@@ -427,6 +457,33 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                             ],
                           ),
                         ),
+                        IconButton(
+                          icon: Icon(
+                            isFollowed ? Icons.star : Icons.star_border,
+                            color: isFollowed ? AppColors.accentNeonYellow : AppColors.textTertiary,
+                            size: 20,
+                          ),
+                          tooltip: isFollowed ? '取消特别关注' : '特别关注 (置顶显示)',
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          onPressed: () async {
+                            final nowFollowed = await StorageService.instance.toggleFollowPlayer(friend);
+                            await _loadFollowed();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(nowFollowed
+                                      ? '已将 ${friend.fighterId} 添加为特别关注并置顶'
+                                      : '已取消特别关注 ${friend.fighterId}'),
+                                  backgroundColor: nowFollowed ? AppColors.winGreen : AppColors.bgSecondary,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 2),
                         const Icon(Icons.chevron_right, size: 18, color: AppColors.textTertiary),
                       ],
                     ),

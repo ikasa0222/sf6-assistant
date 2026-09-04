@@ -9,6 +9,8 @@ import 'package:sf6_tracker/core/network/next_data_parser.dart';
 import 'package:sf6_tracker/core/storage/database_helper.dart';
 import 'package:sf6_tracker/core/storage/secure_storage.dart';
 import 'package:sf6_tracker/models/battle_record.dart';
+import 'package:sf6_tracker/models/friend_model.dart';
+import 'package:sf6_tracker/models/user_profile.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
 import 'package:sf6_tracker/ui/widgets/rank_badge.dart';
@@ -56,24 +58,43 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
   int _selectedTab = 0; // 0: 与我交手, 1: 近期全网对局
   bool _isLoadingPublicReplays = false;
   bool _publicReplaysLoaded = false;
-  List<dynamic> _publicReplays = [];
+  List<BattleRecord> _publicReplays = [];
   String _publicReplaysError = '';
+
+  // Character Rankings
+  List<CharacterUsage> _characterUsages = [];
+  bool _isLoadingCharacterUsages = false;
+  bool _characterUsagesLoaded = false;
+  String _characterUsagesError = '';
+  bool _showAllCharacterUsages = false;
 
   @override
   void initState() {
     super.initState();
     _checkFollowStatus();
     _loadHeadToHeadRecords();
+    _fetchCharacterRankings();
   }
 
   Future<void> _checkFollowStatus() async {
-    final followed = await StorageService.instance.isFollowing(widget.shortId);
+    final followed = await StorageService.instance.isFollowing(widget.shortId, widget.fighterId);
     if (mounted) setState(() => _isFollowed = followed);
   }
 
   Future<void> _toggleFollow() async {
     HapticFeedback.lightImpact();
-    final nowFollowed = await StorageService.instance.toggleFollow(widget.shortId);
+    final friend = FriendModel(
+      shortId: widget.shortId,
+      fighterId: widget.fighterId,
+      platform: widget.platform,
+      isOnline: widget.isOnline,
+      statusText: widget.statusText,
+      mainCharacterId: widget.mainCharacterId,
+      lp: widget.lp,
+      mr: widget.mr,
+      lastSeen: DateTime.now(),
+    );
+    final nowFollowed = await StorageService.instance.toggleFollowPlayer(friend);
     if (!mounted) return;
     setState(() => _isFollowed = nowFollowed);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -109,8 +130,9 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     }
   }
 
-  Future<void> _fetchPublicReplays() async {
-    if (_isLoadingPublicReplays || _publicReplaysLoaded) return;
+  Future<void> _fetchPublicReplays({bool force = false}) async {
+    if (_isLoadingPublicReplays) return;
+    if (_publicReplaysLoaded && !force) return;
     setState(() {
       _isLoadingPublicReplays = true;
       _publicReplaysError = '';
@@ -131,23 +153,21 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
       ));
 
       final res = await dio.get('https://www.streetfighter.com/6/buckler/zh-hans/profile/${widget.shortId}/battlelog?page=1');
-      final m = RegExp(r'<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)</script>').firstMatch(res.data.toString());
-      if (m != null) {
-        final data = NextDataParser.extractNextData(res.data.toString());
-        if (data != null) {
-          final parsed = NextDataParser.parseBattleLog(
-            data,
-            userShortId: widget.shortId,
-            platform: widget.platform,
-          );
-          if (mounted) {
-            setState(() {
-              _publicReplays = parsed;
-              _publicReplaysLoaded = true;
-              _isLoadingPublicReplays = false;
-            });
-            return;
-          }
+      final data = NextDataParser.extractNextData(res.data.toString());
+      if (data != null) {
+        final parsed = NextDataParser.parseBattleLog(
+          data,
+          userShortId: widget.shortId,
+          platform: widget.platform,
+        );
+        if (mounted) {
+          setState(() {
+            _publicReplays = parsed;
+            _publicReplaysLoaded = true;
+            _isLoadingPublicReplays = false;
+            _publicReplaysError = '';
+          });
+          return;
         }
       }
       if (mounted) {
@@ -159,9 +179,62 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _publicReplaysError = '该玩家未公开全网对局或网络连接受限';
+          _publicReplaysError = '获取对局战绩失败，请检查网络或点击重新加载';
           _isLoadingPublicReplays = false;
-          _publicReplaysLoaded = true;
+          _publicReplaysLoaded = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchCharacterRankings({bool force = false}) async {
+    if (_isLoadingCharacterUsages) return;
+    if (_characterUsagesLoaded && !force) return;
+    setState(() {
+      _isLoadingCharacterUsages = true;
+      _characterUsagesError = '';
+    });
+
+    try {
+      final cookieManager = CookieManager.instance();
+      final cookies = await cookieManager.getCookies(url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/'));
+      final cookieHeader = cookies.map((c) => '${c.name}=${c.value}').join('; ');
+
+      final dio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 8),
+        receiveTimeout: const Duration(seconds: 8),
+        headers: {
+          if (cookieHeader.isNotEmpty) 'Cookie': cookieHeader,
+          'User-Agent': 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+        },
+      ));
+
+      final res = await dio.get('https://www.streetfighter.com/6/buckler/zh-hans/profile/${widget.shortId}/play');
+      final data = NextDataParser.extractNextData(res.data.toString());
+      if (data != null) {
+        final parsed = NextDataParser.parseCharacterUsagesFromPlay(data);
+        if (mounted) {
+          setState(() {
+            _characterUsages = parsed;
+            _characterUsagesLoaded = true;
+            _isLoadingCharacterUsages = false;
+            _characterUsagesError = '';
+          });
+          return;
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _characterUsagesLoaded = true;
+          _isLoadingCharacterUsages = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _characterUsagesError = '获取全角色排位数据失败，该玩家可能未公开或网络受限';
+          _isLoadingCharacterUsages = false;
+          _characterUsagesLoaded = false;
         });
       }
     }
@@ -196,11 +269,15 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
             _buildHeroCard(rank, char),
             const SizedBox(height: 14),
 
-            // 2. Head-to-Head & Match History Module with Segmented Switcher
+            // 2. Character Rankings Card (角色排位积分榜)
+            _buildCharacterRankingsCard(),
+            const SizedBox(height: 14),
+
+            // 3. Head-to-Head & Match History Module with Segmented Switcher
             _buildMatchHistorySection(),
             const SizedBox(height: 16),
 
-            // 3. Quick Action Buttons
+            // 4. Quick Action Buttons
             _buildQuickActionButtons(),
             const SizedBox(height: 24),
           ],
@@ -360,6 +437,188 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCharacterRankingsCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSubtle),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.leaderboard_outlined, size: 18, color: AppColors.accentNeonCyan),
+                  const SizedBox(width: 8),
+                  const Text(
+                    '角色排位积分榜',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  if (_characterUsages.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.accentNeonCyan.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '${_characterUsages.length} 名角色',
+                        style: const TextStyle(
+                          color: AppColors.accentNeonCyan,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              if (!_isLoadingCharacterUsages)
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 16, color: AppColors.textSecondary),
+                  tooltip: '重新拉取角色积分榜',
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () => _fetchCharacterRankings(force: true),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_isLoadingCharacterUsages)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Column(
+                  children: [
+                    SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                    SizedBox(height: 8),
+                    Text('正在拉取该玩家全角色段位积分...', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                  ],
+                ),
+              ),
+            )
+          else if (_characterUsagesError.isNotEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Column(
+                  children: [
+                    Text(_characterUsagesError, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        side: const BorderSide(color: AppColors.borderSubtle),
+                      ),
+                      icon: const Icon(Icons.refresh, size: 14, color: AppColors.accentNeonCyan),
+                      label: const Text('重新获取', style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 11)),
+                      onPressed: () => _fetchCharacterRankings(force: true),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (_characterUsages.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 14),
+                child: Text('暂无角色排位积分记录', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+              ),
+            )
+          else ...[
+            ...(_showAllCharacterUsages ? _characterUsages : _characterUsages.take(4)).map((u) {
+              final c = Sf6Characters.getById(u.characterId);
+              final r = Sf6Rank.fromLpOrMr(u.lp, mr: u.mr);
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.bgSecondary,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    CharacterAvatar(characterId: u.characterId, size: 34),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            c.nameZh,
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            u.matches > 0
+                                ? '${u.matches} 场  •  胜率 ${u.winRate.toStringAsFixed(1)}%'
+                                : '暂无对局场次记录',
+                            style: const TextStyle(
+                              color: AppColors.textTertiary,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        RankBadge(rank: r, showIconOnly: false),
+                        const SizedBox(height: 2),
+                        Text(
+                          u.mr > 0 ? '${u.mr} MR' : '${u.lp} LP',
+                          style: const TextStyle(
+                            color: AppColors.accentNeonCyan,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }),
+            if (_characterUsages.length > 4)
+              Center(
+                child: TextButton.icon(
+                  icon: Icon(
+                    _showAllCharacterUsages ? Icons.expand_less : Icons.expand_more,
+                    size: 16,
+                    color: AppColors.accentNeonCyan,
+                  ),
+                  label: Text(
+                    _showAllCharacterUsages
+                        ? '收起'
+                        : '展开全部角色 (${_characterUsages.length})',
+                    style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 11),
+                  ),
+                  onPressed: () => setState(() => _showAllCharacterUsages = !_showAllCharacterUsages),
+                ),
+              ),
+          ],
         ],
       ),
     );
@@ -602,9 +861,20 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Column(
             children: [
-              const Icon(Icons.lock_outline, color: AppColors.textTertiary, size: 36),
-              SizedBox(height: 8),
+              const Icon(Icons.info_outline, color: AppColors.textTertiary, size: 36),
+              const SizedBox(height: 8),
               Text(_publicReplaysError, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accentNeonCyan,
+                  foregroundColor: Colors.black,
+                  visualDensity: VisualDensity.compact,
+                ),
+                icon: const Icon(Icons.refresh, size: 16),
+                label: const Text('重新加载', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                onPressed: () => _fetchPublicReplays(force: true),
+              ),
             ],
           ),
         ),
@@ -612,10 +882,24 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     }
 
     if (_publicReplays.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 20),
-          child: Text('暂无官方公开战绩', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            children: [
+              const Text('暂无官方公开战绩', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  side: const BorderSide(color: AppColors.borderSubtle),
+                ),
+                icon: const Icon(Icons.refresh, size: 14, color: AppColors.accentNeonCyan),
+                label: const Text('刷新重试', style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 11)),
+                onPressed: () => _fetchPublicReplays(force: true),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -623,13 +907,13 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _publicReplays.take(10).length,
+      itemCount: _publicReplays.take(15).length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, idx) {
-        final item = _publicReplays[idx];
-        final bool isWin = item['is_win'] == true || item['win'] == true;
-        final oppName = item['opponent_name'] ?? item['opp_name'] ?? '格斗家';
-        final oppCharName = item['opponent_character_name'] ?? item['opp_character'] ?? '';
+        final rec = _publicReplays[idx];
+        final bool isWin = rec.isWin;
+        final oppName = rec.opponentFighterId.isNotEmpty ? rec.opponentFighterId : '格斗家';
+        final oppChar = Sf6Characters.getById(rec.opponentCharacterId);
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -647,16 +931,43 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                 ),
                 child: Text(
                   isWin ? '获胜' : '战败',
-                  style: TextStyle(color: isWin ? AppColors.winGreen : AppColors.loseRed, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: isWin ? AppColors.winGreen : AppColors.loseRed,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
+              CharacterAvatar(characterId: rec.playerCharacterId, size: 24),
+              const SizedBox(width: 4),
+              const Text('vs', style: TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+              const SizedBox(width: 4),
+              CharacterAvatar(characterId: rec.opponentCharacterId, size: 24),
+              const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  '对阵 $oppName ${oppCharName.isNotEmpty ? "($oppCharName)" : ""}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '对阵 $oppName (${oppChar.nameZh})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '${rec.battleType.displayName}  •  ${rec.playedAt.month.toString().padLeft(2, '0')}-${rec.playedAt.day.toString().padLeft(2, '0')} ${rec.playedAt.hour.toString().padLeft(2, '0')}:${rec.playedAt.minute.toString().padLeft(2, '0')}',
+                      style: const TextStyle(color: AppColors.textTertiary, fontSize: 9.5),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '${rec.playerScore} - ${rec.opponentScore}',
+                style: TextStyle(
+                  color: isWin ? AppColors.winGreen : AppColors.loseRed,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ],

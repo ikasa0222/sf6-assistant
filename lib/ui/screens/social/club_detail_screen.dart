@@ -4,6 +4,7 @@ import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/core/constants/ranks.dart';
 import 'package:sf6_tracker/core/storage/secure_storage.dart';
 import 'package:sf6_tracker/models/club_model.dart';
+import 'package:sf6_tracker/models/friend_model.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
 import 'package:sf6_tracker/services/battle_log_service.dart';
 import 'package:sf6_tracker/ui/screens/social/player_profile_screen.dart';
@@ -31,6 +32,7 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
   String _searchQuery = '';
   bool _onlyOnline = false;
   List<String> _followedIds = [];
+  List<FriendModel> _followedPlayers = [];
 
   @override
   void initState() {
@@ -39,8 +41,25 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
   }
 
   Future<void> _loadFollowed() async {
-    final list = await StorageService.instance.getFollowedShortIds();
-    if (mounted) setState(() => _followedIds = list);
+    final ids = await StorageService.instance.getFollowedShortIds();
+    final players = await StorageService.instance.getFollowedPlayers();
+    if (mounted) {
+      setState(() {
+        _followedIds = ids;
+        _followedPlayers = players;
+      });
+    }
+  }
+
+  bool _isMemberFollowed(ClubMember m) {
+    final sId = m.shortId.trim();
+    final fId = m.fighterId.trim().toLowerCase();
+    if (sId.isNotEmpty && _followedIds.contains(sId)) return true;
+    for (final p in _followedPlayers) {
+      if (sId.isNotEmpty && p.shortId.trim() == sId) return true;
+      if (fId.isNotEmpty && p.fighterId.trim().toLowerCase() == fId) return true;
+    }
+    return false;
   }
 
   @override
@@ -65,10 +84,10 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
       return true;
     }).toList();
 
-    // Sort: Followed first, then online, then points/name
+    // Sort: Followed strictly first, then online, then points/name
     members.sort((a, b) {
-      final aFollow = _followedIds.contains(a.shortId);
-      final bFollow = _followedIds.contains(b.shortId);
+      final aFollow = _isMemberFollowed(a);
+      final bFollow = _isMemberFollowed(b);
       if (aFollow && !bFollow) return -1;
       if (!aFollow && bFollow) return 1;
 
@@ -209,7 +228,7 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                       final char = Sf6Characters.getById(m.mainCharacterId);
                       final rank = Sf6Rank.fromLpOrMr(m.lp, mr: m.mr);
                       final isLeader = m.role.contains('会') || m.shortId == club.leaderShortId;
-                      final isFollowed = _followedIds.contains(m.shortId);
+                      final isFollowed = _isMemberFollowed(m);
 
                       return InkWell(
                         onTap: () async {
@@ -333,7 +352,45 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 6),
+                              IconButton(
+                                icon: Icon(
+                                  isFollowed ? Icons.star : Icons.star_border,
+                                  color: isFollowed ? AppColors.accentNeonYellow : AppColors.textTertiary,
+                                  size: 20,
+                                ),
+                                tooltip: isFollowed ? '取消特别关注' : '特别关注 (置顶并在好友列表中显示)',
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                                onPressed: () async {
+                                  final friend = FriendModel(
+                                    shortId: m.shortId,
+                                    fighterId: m.fighterId,
+                                    avatarUrl: m.avatarUrl,
+                                    platform: m.platform,
+                                    isOnline: m.isOnline,
+                                    statusText: m.statusText,
+                                    mainCharacterId: m.mainCharacterId,
+                                    lp: m.lp,
+                                    mr: m.mr,
+                                    lastSeen: DateTime.now(),
+                                  );
+                                  final nowFollowed = await StorageService.instance.toggleFollowPlayer(friend);
+                                  await _loadFollowed();
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(nowFollowed
+                                            ? '已关注 ${m.fighterId.isNotEmpty ? m.fighterId : "成员"}，将在俱乐部与好友列表置顶展示'
+                                            : '已取消关注 ${m.fighterId.isNotEmpty ? m.fighterId : "成员"}'),
+                                        backgroundColor: nowFollowed ? AppColors.winGreen : AppColors.bgSecondary,
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
                               const Icon(Icons.chevron_right, size: 16, color: AppColors.textTertiary),
                             ],
                           ),

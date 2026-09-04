@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sf6_tracker/models/account_profile.dart';
 import 'package:sf6_tracker/models/app_settings.dart';
+import 'package:sf6_tracker/models/friend_model.dart';
 
 class StorageService {
   static final StorageService instance = StorageService._init();
@@ -190,6 +191,29 @@ class StorageService {
   }
 
   static const String _followedPlayersPrefKey = 'sf6_followed_short_ids';
+  static const String _followedPlayersDataKey = 'sf6_followed_players_data';
+
+  Future<List<FriendModel>> getFollowedPlayers() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final str = prefs.getString(_followedPlayersDataKey);
+      if (str == null || str.isEmpty) return [];
+      final list = jsonDecode(str) as List;
+      return list.map((e) => FriendModel.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> saveFollowedPlayers(List<FriendModel> players) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonList = players.map((p) => p.toJson()).toList();
+      await prefs.setString(_followedPlayersDataKey, jsonEncode(jsonList));
+      final ids = players.map((p) => p.shortId.trim()).where((id) => id.isNotEmpty).toList();
+      await prefs.setString(_followedPlayersPrefKey, jsonEncode(ids));
+    } catch (_) {}
+  }
 
   Future<List<String>> getFollowedShortIds() async {
     try {
@@ -210,15 +234,53 @@ class StorageService {
     } catch (_) {}
   }
 
-  Future<bool> isFollowing(String shortId) async {
-    if (shortId.trim().isEmpty) return false;
-    final list = await getFollowedShortIds();
-    return list.contains(shortId.trim());
+  Future<bool> isFollowing(String shortId, [String? fighterId]) async {
+    final sId = shortId.trim();
+    final fId = (fighterId ?? '').trim().toLowerCase();
+    if (sId.isEmpty && fId.isEmpty) return false;
+
+    final players = await getFollowedPlayers();
+    for (final p in players) {
+      if (sId.isNotEmpty && p.shortId.trim() == sId) return true;
+      if (fId.isNotEmpty && p.fighterId.trim().toLowerCase() == fId) return true;
+    }
+
+    if (sId.isNotEmpty) {
+      final list = await getFollowedShortIds();
+      if (list.contains(sId)) return true;
+    }
+    return false;
   }
 
-  Future<bool> toggleFollow(String shortId) async {
+  Future<bool> toggleFollowPlayer(FriendModel player) async {
+    final sId = player.shortId.trim();
+    final fId = player.fighterId.trim().toLowerCase();
+    final players = await getFollowedPlayers();
+
+    final existingIdx = players.indexWhere((p) {
+      if (sId.isNotEmpty && p.shortId.trim() == sId) return true;
+      if (fId.isNotEmpty && p.fighterId.trim().toLowerCase() == fId) return true;
+      return false;
+    });
+
+    bool nowFollowed;
+    if (existingIdx != -1) {
+      players.removeAt(existingIdx);
+      nowFollowed = false;
+    } else {
+      players.insert(0, player);
+      nowFollowed = true;
+    }
+    await saveFollowedPlayers(players);
+    return nowFollowed;
+  }
+
+  Future<bool> toggleFollow(String shortId, [FriendModel? fallbackPlayer]) async {
     final sId = shortId.trim();
-    if (sId.isEmpty) return false;
+    if (sId.isEmpty && fallbackPlayer == null) return false;
+    if (fallbackPlayer != null) {
+      return await toggleFollowPlayer(fallbackPlayer);
+    }
     final list = await getFollowedShortIds();
     bool nowFollowed;
     if (list.contains(sId)) {

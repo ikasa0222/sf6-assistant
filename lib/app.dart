@@ -36,6 +36,7 @@ class _Sf6AppState extends State<Sf6App> {
   final FrameDataService _frameDataService = FrameDataService();
   final NotesService _notesService = NotesService();
 
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   AppSettings _settings = const AppSettings();
   int _currentIndex = 0;
   bool _isInitialized = false;
@@ -61,8 +62,12 @@ class _Sf6AppState extends State<Sf6App> {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkAnnouncement();
-      _checkDailyUpdate();
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted) {
+          _checkAnnouncement();
+          _checkDailyUpdate();
+        }
+      });
       Future.delayed(const Duration(seconds: 4), () {
         _triggerSilentBackgroundSync();
       });
@@ -74,13 +79,20 @@ class _Sf6AppState extends State<Sf6App> {
 
   Future<void> _checkAnnouncement() async {
     try {
+      final navContext = _navigatorKey.currentContext;
+      if (navContext == null || !mounted) return;
       final lastSeen = await StorageService.instance.getLastSeenAnnouncementVersion();
       final currentVer = AppLogger.currentAppVersion;
       if (lastSeen != currentVer && mounted) {
-        await AnnouncementDialog.show(context);
-        await StorageService.instance.setLastSeenAnnouncementVersion(currentVer);
+        final activeContext = _navigatorKey.currentContext;
+        if (activeContext != null && mounted) {
+          await AnnouncementDialog.show(activeContext);
+          await StorageService.instance.setLastSeenAnnouncementVersion(currentVer);
+        }
       }
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.instance.warn('App', '检查公告异常: $e');
+    }
   }
 
   Future<void> _checkDailyUpdate() async {
@@ -94,10 +106,13 @@ class _Sf6AppState extends State<Sf6App> {
       if (UpdateService.instance.errorMessage.isEmpty) {
         await StorageService.instance.setLastUpdateCheckDate(todayStr);
       }
-      if (release != null && UpdateService.instance.hasNewVersion && mounted) {
-        UpdateService.instance.showUpdateDialog(context, release);
+      final activeContext = _navigatorKey.currentContext;
+      if (release != null && UpdateService.instance.hasNewVersion && mounted && activeContext != null) {
+        UpdateService.instance.showUpdateDialog(activeContext, release);
       }
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.instance.warn('App', '检查每日更新异常: $e');
+    }
   }
 
   Future<void> _loadAllData(PlatformProfile? activePlatform) async {
@@ -123,6 +138,10 @@ class _Sf6AppState extends State<Sf6App> {
   }
 
   void _onAuthChanged() async {
+    if (_battleLogService.isBackgroundSyncing) {
+      if (mounted) setState(() {});
+      return;
+    }
     await _loadAllData(_authService.activePlatform);
     if (mounted) setState(() {});
   }
@@ -238,6 +257,7 @@ class _Sf6AppState extends State<Sf6App> {
     final clampedIndex = _currentIndex.clamp(0, navItems.length - 1);
 
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: '街霸6助手',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.getTheme(_settings.themeMode),

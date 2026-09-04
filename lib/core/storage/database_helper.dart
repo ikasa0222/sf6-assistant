@@ -201,6 +201,14 @@ class DatabaseHelper {
     return maps.map((m) => BattleRecord.fromMap(m)).toList();
   }
 
+  Future<List<BattleRecord>> getAllBattleRecords({String? shortId}) async {
+    final db = await database;
+    final maps = shortId != null && shortId.isNotEmpty
+        ? await db.query('battle_records', where: 'shortId = ?', whereArgs: [shortId], orderBy: 'playedAt DESC')
+        : await db.query('battle_records', orderBy: 'playedAt DESC');
+    return maps.map((m) => BattleRecord.fromMap(m)).toList();
+  }
+
   Future<List<MatchupStat>> getMatchupStats({
     required String shortId,
     required String platform,

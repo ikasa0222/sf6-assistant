@@ -1,0 +1,40 @@
+name: 🐛 Bug 报告 (Bug Report)
+description: 提交应用崩溃、数据显示异常或网络同步错误
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您反馈问题！请尽量详细填写以下信息以便定位。
+  - type: input
+    id: version
+    attributes:
+      label: 软件版本 (App Version)
+      description: 例如 v1.2.0
+      placeholder: v1.2.0
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 游戏平台 (Platform)
+      options:
+        - Steam (PC)
+        - PlayStation 5 / PlayStation 4
+        - Xbox Series X|S
+        - Nintendo Switch
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 现象描述 (Description)
+      description: 发生了什么？
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 黑匣子流水日志 (Diagnostics Log)
+      description: 在【设置 -> 全局抓包与流水诊断控制台】中点击一键复制粘贴至此

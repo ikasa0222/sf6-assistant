@@ -78,7 +78,7 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
     } else if (res.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res.recordsUpdated > 0 ? '同步完成，已更新  局最新对战' : '同步完成，当前已是最新战绩'),
+          content: Text(res.recordsUpdated > 0 ? '同步完成，已更新 ${res.recordsUpdated} 局最新对战' : '同步完成，当前已是最新战绩'),
           backgroundColor: AppColors.winGreen,
         ),
       );
@@ -105,16 +105,20 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
             ? records
             : records.where((r) => r.battleType == _selectedFilter).toList();
 
-        // Count matches per character in current mode filter
+        // Count matches per character in current mode filter using normalized character ID
         final charCounts = <String, int>{};
         for (final r in modeFiltered) {
-          charCounts[r.playerCharacterId] = (charCounts[r.playerCharacterId] ?? 0) + 1;
+          final stdId = Sf6Characters.getById(r.playerCharacterId).id;
+          charCounts[stdId] = (charCounts[stdId] ?? 0) + 1;
         }
 
-        // 2. Character Filter
+        // 2. Character Filter using normalized character ID
         final filteredRecords = _selectedCharacterId == 'all'
             ? modeFiltered
-            : modeFiltered.where((r) => r.playerCharacterId == _selectedCharacterId).toList();
+            : modeFiltered.where((r) {
+                final stdId = Sf6Characters.getById(r.playerCharacterId).id;
+                return stdId == _selectedCharacterId;
+              }).toList();
 
         return Scaffold(
           appBar: AppBar(
@@ -170,11 +174,11 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '已归档  局对战',
+                      '已归档 ${filteredRecords.length} 局对战',
                       style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      '胜率: %',
+                      '胜率: ${_calculateWinRate(filteredRecords)}%',
                       style: const TextStyle(color: AppColors.winGreen, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -346,7 +350,7 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                     return ChoiceChip(
                       avatar: CharacterAvatar(characterId: c.id, size: 20, showBorder: false),
                       label: Text(
-                        c.nameZh + (matchCount > 0 ? ' ()' : ''),
+                        c.nameZh + (matchCount > 0 ? ' ($matchCount)' : ''),
                         style: TextStyle(
                           color: isSelected ? AppColors.accentNeonCyan : (matchCount > 0 ? AppColors.textPrimary : AppColors.textTertiary),
                           fontWeight: isSelected || matchCount > 0 ? FontWeight.bold : FontWeight.normal,
@@ -390,7 +394,7 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                       child: ChoiceChip(
                         avatar: CharacterAvatar(characterId: c.id, size: 20, showBorder: false),
                         label: Text(
-                          c.nameZh + (matchCount > 0 ? ' ()' : ''),
+                          c.nameZh + (matchCount > 0 ? ' ($matchCount)' : ''),
                           style: TextStyle(
                             color: isSelected ? AppColors.accentNeonCyan : (matchCount > 0 ? AppColors.textPrimary : AppColors.textTertiary),
                             fontWeight: isSelected || matchCount > 0 ? FontWeight.bold : FontWeight.normal,

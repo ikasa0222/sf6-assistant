@@ -358,7 +358,6 @@ class CapcomSyncEngine {
           platform: activePlat?.platformType.code ?? 'switch2',
         );
         if (records.isNotEmpty) {
-          await DatabaseHelper.instance.deleteBattleRecordsByShortId(shortId);
           await DatabaseHelper.instance.batchInsertBattleRecords(records);
         }
       }

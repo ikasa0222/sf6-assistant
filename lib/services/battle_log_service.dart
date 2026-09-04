@@ -67,7 +67,7 @@ class BattleLogService extends ChangeNotifier {
       shortId: shortId,
       platform: platform,
       battleType: filterType,
-      limit: 100,
+      limit: 5000,
     );
 
     final savedRadar = await StorageService.instance.getRadarStatsJson(shortId);

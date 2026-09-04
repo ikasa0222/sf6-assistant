@@ -65,25 +65,16 @@ class WinRateBar extends StatelessWidget {
         ],
         ClipRRect(
           borderRadius: BorderRadius.circular(height / 2),
-          child: SizedBox(
+          child: Container(
             height: height,
-            child: Row(
-              children: [
-                if (rate > 0)
-                  Expanded(
-                    flex: (rate * 100).round(),
-                    child: Container(
-                      color: AppColors.winGreen,
-                    ),
-                  ),
-                if (rate < 1.0)
-                  Expanded(
-                    flex: ((1.0 - rate) * 100).round(),
-                    child: Container(
-                      color: AppColors.loseRed,
-                    ),
-                  ),
-              ],
+            width: double.infinity,
+            color: total > 0 ? AppColors.loseRed : AppColors.bgSecondary,
+            alignment: Alignment.centerLeft,
+            child: FractionallySizedBox(
+              widthFactor: rate,
+              child: Container(
+                color: AppColors.winGreen,
+              ),
             ),
           ),
         ),

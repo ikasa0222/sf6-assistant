@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/core/storage/database_helper.dart';
@@ -8,6 +10,7 @@ import 'package:sf6_tracker/core/utils/app_logger.dart';
 import 'package:sf6_tracker/models/app_settings.dart';
 import 'package:sf6_tracker/models/account_profile.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
+import 'package:sf6_tracker/services/backup_service.dart';
 import 'package:sf6_tracker/services/battle_log_service.dart';
 import 'package:sf6_tracker/services/stats_service.dart';
 import 'package:sf6_tracker/services/social_service.dart';
@@ -266,13 +269,17 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.download, color: AppColors.accentNeonCyan),
-                  title: const Text('导出历史战绩与笔记 (JSON)', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('已将本地战绩与对策笔记导出至本地备份目录！')),
-                    );
-                  },
+                  leading: const Icon(Icons.file_download, color: AppColors.accentNeonCyan),
+                  title: const Text('导出战绩与数据备份 (JSON)', style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold)),
+                  subtitle: const Text('将突破官方上限的全部对局、心得笔记与关注列表导出并分享归档', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                  onTap: () => _exportDataBackup(context),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.restore_page, color: AppColors.accentNeonYellow),
+                  title: const Text('从本地备份恢复数据 (JSON)', style: TextStyle(color: AppColors.accentNeonYellow, fontSize: 14, fontWeight: FontWeight.bold)),
+                  subtitle: const Text('一键读取本地备份文件或粘贴数据增量合并恢复，换机重装不丢数据', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                  onTap: () => _showImportDataModal(context),
                 ),
                 const Divider(height: 1),
                 ListTile(
@@ -956,6 +963,281 @@ class SettingsScreen extends StatelessWidget {
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         fontSize: 11.5,
       ),
+    );
+  }
+
+  Future<void> _exportDataBackup(BuildContext context) async {
+    final activePlat = authService.activePlatform;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: Card(
+          color: AppColors.bgCard,
+          child: Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: AppColors.accentNeonCyan),
+                SizedBox(height: 16),
+                Text('正在导出全量战绩与笔记备份...', style: TextStyle(color: AppColors.textPrimary)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final res = await BackupService.instance.exportBackup(shortId: activePlat?.shortId);
+    if (!context.mounted) return;
+    Navigator.of(context, rootNavigator: true).pop(); // dismiss loading dialog
+
+    if (res.success) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.bgCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: AppColors.winGreen),
+              SizedBox(width: 8),
+              Text('本地备份导出成功', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('已成功备份归档 ${res.recordCount} 局历史对战 (含突破官方限制的无限记录) 及 ${res.noteCount} 条心得笔记。',
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, height: 1.4)),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.bgSecondary,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.borderSubtle),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('文件保存位置：', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                    const SizedBox(height: 4),
+                    SelectableText(
+                      res.filePath,
+                      style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 11, fontFamily: 'monospace'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text('文件已保存至手机存储，并已调起系统分享。你可将备份文件通过微信、QQ、网盘或邮件长期归档。',
+                  style: TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.3)),
+            ],
+          ),
+          actions: [
+            TextButton.icon(
+              icon: const Icon(Icons.share, size: 16, color: AppColors.accentNeonCyan),
+              label: const Text('再次分享 / 另存为', style: TextStyle(color: AppColors.accentNeonCyan)),
+              onPressed: () {
+                Share.shareXFiles([XFile(res.filePath)], text: '街霸6助手战绩备份');
+              },
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('确定', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('导出失败: ${res.errorMessage}'), backgroundColor: AppColors.loseRed),
+      );
+    }
+  }
+
+  Future<void> _showImportDataModal(BuildContext context) async {
+    final files = await BackupService.instance.listLocalBackups();
+    final pasteController = TextEditingController();
+
+    if (!context.mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Container(
+              height: MediaQuery.of(ctx).size.height * 0.75,
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: AppColors.bgCard,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.restore, color: AppColors.accentNeonCyan),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          '从本地备份恢复战绩与数据',
+                          style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: AppColors.textTertiary),
+                        onPressed: () => Navigator.pop(modalCtx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '支持选择本地 SF6_Assistant_Backups 目录中的备份文件一键恢复，或直接粘贴 JSON 文本。导入采用增量合并，不会丢失现有对战。',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text('已发现的本地备份文件：', style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  if (files.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.bgSecondary,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text('暂未检测到历史导出备份，可在上方点击“导出战绩与数据备份”先建立备份。', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                    )
+                  else
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 180),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: files.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (c, idx) {
+                          final f = files[idx];
+                          final fileName = f.path.split(Platform.pathSeparator).last;
+                          final sizeKb = (f.lengthSync() / 1024).toStringAsFixed(1);
+                          return ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.description, color: AppColors.accentNeonYellow, size: 20),
+                            title: Text(fileName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
+                            subtitle: Text('$sizeKb KB • 点击立即恢复', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+                            trailing: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.accentNeonCyan,
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                minimumSize: Size.zero,
+                              ),
+                              child: const Text('导入', style: TextStyle(color: Colors.black, fontSize: 11, fontWeight: FontWeight.bold)),
+                              onPressed: () async {
+                                final res = await BackupService.instance.importBackupFromFile(f);
+                                if (!modalCtx.mounted) return;
+                                Navigator.pop(modalCtx);
+                                if (res.success) {
+                                  final activePlat = authService.activePlatform;
+                                  if (activePlat != null && battleLogService != null) {
+                                    await battleLogService!.loadRecords(
+                                      shortId: activePlat.shortId,
+                                      platform: activePlat.platformType.code,
+                                    );
+                                  }
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(res.message), backgroundColor: AppColors.winGreen),
+                                    );
+                                  }
+                                } else {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(res.message), backgroundColor: AppColors.loseRed),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  const SizedBox(height: 14),
+                  const Text('或直接粘贴备份 JSON 文本：', style: TextStyle(color: AppColors.accentNeonYellow, fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: pasteController,
+                    maxLines: 3,
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontFamily: 'monospace'),
+                    decoration: InputDecoration(
+                      hintText: '在此粘贴导出的 JSON 数据文本...',
+                      hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                      filled: true,
+                      fillColor: AppColors.bgSecondary,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.borderSubtle)),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.winGreen,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.file_upload, size: 18),
+                      label: const Text('解析并合并导入粘贴的数据', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      onPressed: () async {
+                        final text = pasteController.text.trim();
+                        if (text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('请先粘贴备份 JSON 内容')),
+                          );
+                          return;
+                        }
+                        final res = await BackupService.instance.importBackupJson(text);
+                        if (!modalCtx.mounted) return;
+                        Navigator.pop(modalCtx);
+                        if (res.success) {
+                          final activePlat = authService.activePlatform;
+                          if (activePlat != null && battleLogService != null) {
+                            await battleLogService!.loadRecords(
+                              shortId: activePlat.shortId,
+                              platform: activePlat.platformType.code,
+                            );
+                          }
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(res.message), backgroundColor: AppColors.winGreen),
+                            );
+                          }
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(res.message), backgroundColor: AppColors.loseRed),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -12,6 +12,7 @@ import 'package:sf6_tracker/models/battle_record.dart';
 import 'package:sf6_tracker/models/account_profile.dart';
 import 'package:sf6_tracker/models/friend_model.dart';
 import 'package:sf6_tracker/models/user_profile.dart';
+import 'package:sf6_tracker/models/play_time_model.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
 import 'package:sf6_tracker/ui/widgets/rank_badge.dart';
@@ -64,6 +65,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
 
   // Character Rankings
   List<CharacterUsage> _characterUsages = [];
+  PlayTimeModel? _playTime;
   bool _isLoadingCharacterUsages = false;
   bool _characterUsagesLoaded = false;
   String _characterUsagesError = '';
@@ -197,9 +199,18 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     });
 
     try {
-      final cookieManager = CookieManager.instance();
-      final cookies = await cookieManager.getCookies(url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/'));
-      final cookieHeader = cookies.map((c) => '${c.name}=${c.value}').join('; ');
+      String cookieHeader = '';
+      try {
+        final cookieManager = CookieManager.instance();
+        final cookies = await cookieManager
+            .getCookies(url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/'))
+            .timeout(const Duration(seconds: 3));
+        cookieHeader = cookies.map((c) => '${c.name}=${c.value}').join('; ');
+      } catch (_) {}
+
+      if (cookieHeader.isEmpty && widget.authService?.activeAccount?.cookieSession.isNotEmpty == true) {
+        cookieHeader = widget.authService!.activeAccount!.cookieSession;
+      }
 
       final dio = Dio(BaseOptions(
         connectTimeout: const Duration(seconds: 8),
@@ -214,9 +225,11 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
       final data = NextDataParser.extractNextData(res.data.toString());
       if (data != null) {
         final parsed = NextDataParser.parseCharacterUsagesFromPlay(data);
+        final parsedPlayTime = NextDataParser.parsePlayTime(data);
         if (mounted) {
           setState(() {
             _characterUsages = parsed;
+            _playTime = parsedPlayTime;
             _characterUsagesLoaded = true;
             _isLoadingCharacterUsages = false;
             _characterUsagesError = '';
@@ -269,6 +282,12 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
             // 1. Hero Card
             _buildHeroCard(rank, char),
             const SizedBox(height: 14),
+
+            // 1.5 Mode Play Times Card
+            if (_playTime != null && _playTime!.hasData) ...[
+              _buildPlayTimeCard(_playTime!),
+              const SizedBox(height: 14),
+            ],
 
             // 2. Character Rankings Card (角色排位积分榜)
             _buildCharacterRankingsCard(),
@@ -437,6 +456,237 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                 style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 13, fontWeight: FontWeight.w900),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlayTimeCard(PlayTimeModel pt) {
+    final hasItems = pt.items.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSubtle),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.pie_chart_outline, color: AppColors.accentNeonCyan, size: 18),
+                  SizedBox(width: 8),
+                  Text(
+                    '最爱内容 / 游玩时长',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              if (pt.formattedTotalDuration != '--')
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentNeonYellow.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: AppColors.accentNeonYellow.withOpacity(0.5)),
+                  ),
+                  child: Text(
+                    '总时长: ',
+                    style: const TextStyle(
+                      color: AppColors.accentNeonYellow,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (hasItems && pt.totalSeconds > 0) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: SizedBox(
+                height: 8,
+                child: Row(
+                  children: pt.items.map((item) {
+                    final flex = item.seconds > 0 ? item.seconds : 1;
+                    return Expanded(
+                      flex: flex,
+                      child: Container(color: item.color),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Column(
+              children: pt.topModes.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final item = entry.value;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 18,
+                        height: 18,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: item.color.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: item.color, width: 1.5),
+                        ),
+                        child: Text(
+                          '',
+                          style: TextStyle(
+                            color: item.color,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          item.name,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        item.formattedDuration,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: AppColors.bgSecondary,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Text(
+                          '\%',
+                          style: const TextStyle(
+                            color: AppColors.textTertiary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ] else ...[
+            const SizedBox(height: 12),
+            GridView.count(
+              crossAxisCount: 3,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              childAspectRatio: 2.1,
+              children: [
+                _buildPlayTimeTile('排位赛', pt.ranked, AppColors.accentNeonCyan),
+                _buildPlayTimeTile('比赛间对战', pt.customRoom, AppColors.accentNeonPink),
+                _buildPlayTimeTile('休闲赛', pt.casual, AppColors.winGreen),
+                _buildPlayTimeTile('格斗中心', pt.battleHub, AppColors.accentNeonYellow),
+                _buildPlayTimeTile('练习模式', pt.training, AppColors.textSecondary),
+                _buildPlayTimeTile('环球游历', pt.worldTour, AppColors.textTertiary),
+              ],
+            ),
+          ],
+          if (pt.rankedMatches > 0 || pt.customRoomMatches > 0 || pt.casualMatches > 0 || pt.battleHubMatches > 0) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.bgSecondary.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.borderSubtle.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  _buildMatchCountItem('排位', pt.rankedMatches, AppColors.accentNeonCyan),
+                  _buildMatchCountItem('比赛间', pt.customRoomMatches, AppColors.accentNeonPink),
+                  _buildMatchCountItem('休闲', pt.casualMatches, AppColors.winGreen),
+                  _buildMatchCountItem('中心', pt.battleHubMatches, AppColors.accentNeonYellow),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMatchCountItem(String title, int count, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '',
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlayTimeTile(String title, String duration, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.bgSecondary.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.borderSubtle.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            duration,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ],
       ),

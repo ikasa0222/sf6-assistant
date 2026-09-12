@@ -76,7 +76,7 @@ class StatsService extends ChangeNotifier {
       battleType: _selectedBattleType,
     );
 
-    if (_useOfficialStats && _officialMatchupStats.isNotEmpty) {
+    if (_useOfficialStats && _officialMatchupStats.isNotEmpty && _selectedBattleType == null) {
       _matchupStats = _officialMatchupStats;
     } else {
       _matchupStats = _localMatchupStats;
@@ -95,12 +95,10 @@ class StatsService extends ChangeNotifier {
 
   Future<void> setStatsSource(bool useOfficial, {required String shortId, required String platform}) async {
     _useOfficialStats = useOfficial;
-    if (_useOfficialStats && _officialMatchupStats.isNotEmpty) {
-      _matchupStats = _officialMatchupStats;
-    } else {
-      _matchupStats = _localMatchupStats;
+    if (_useOfficialStats) {
+      _selectedBattleType = null;
     }
-    notifyListeners();
+    await loadStats(shortId: shortId, platform: platform, myCharacterId: _selectedMyCharacterId, battleType: _selectedBattleType);
   }
 
   Future<void> selectMyCharacter(String charId, {required String shortId, required String platform}) async {
@@ -110,6 +108,9 @@ class StatsService extends ChangeNotifier {
 
   Future<void> selectBattleType(BattleType? type, {required String shortId, required String platform}) async {
     _selectedBattleType = type;
+    if (type != null) {
+      _useOfficialStats = false;
+    }
     await loadStats(shortId: shortId, platform: platform, myCharacterId: _selectedMyCharacterId, battleType: type);
   }
 }

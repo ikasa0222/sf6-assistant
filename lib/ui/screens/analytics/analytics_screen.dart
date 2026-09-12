@@ -145,16 +145,25 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     children: [
                       // 1. My Character Selector Banner
                       _buildMyCharacterSelector(platform, selectedMyChar),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
 
-                      // 1.1 Data Source Switcher (Official Career Stats vs Local Replays)
-                      _buildDataSourceSelector(platform),
-                      const SizedBox(height: 8),
+                      // 1.1 Battle Mode Filter Bar (Always visible right under character selector!)
+                      _buildBattleTypeFilterBar(platform),
+                      const SizedBox(height: 6),
 
-                      // 1.2 Battle Type Filter Bar (shown only in local replays mode)
-                      if (!widget.statsService.useOfficialStats) ...[
-                        _buildBattleTypeFilterBar(platform),
-                        const SizedBox(height: 12),
+                      // 1.2 Data Source Switcher (Shown when in 全部模式 to toggle between official career and recent matches)
+                      if (widget.statsService.selectedBattleType == null) ...[
+                        _buildDataSourceSelector(platform),
+                        const SizedBox(height: 8),
+                      ] else ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                          child: Text(
+                            '当前模式分析来源于本地实战记录 (${stats.length} 个角色对策)',
+                            style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                       ],
 
                       // 2. Summary stats for selected character
@@ -679,11 +688,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           const SizedBox(width: 8),
           _buildTypeFilterChip('排位赛', BattleType.ranked, currentType == BattleType.ranked, platform),
           const SizedBox(width: 8),
-          _buildTypeFilterChip('休闲匹配', BattleType.casual, currentType == BattleType.casual, platform),
+          _buildTypeFilterChip('休闲赛', BattleType.casual, currentType == BattleType.casual, platform),
           const SizedBox(width: 8),
-          _buildTypeFilterChip('自定义房间', BattleType.customRoom, currentType == BattleType.customRoom, platform),
+          _buildTypeFilterChip('比赛间对战', BattleType.customRoom, currentType == BattleType.customRoom, platform),
           const SizedBox(width: 8),
-          _buildTypeFilterChip('格斗中心', BattleType.battleHub, currentType == BattleType.battleHub, platform),
+          _buildTypeFilterChip('格斗中心对战', BattleType.battleHub, currentType == BattleType.battleHub, platform),
         ],
       ),
     );
@@ -713,7 +722,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Widget _buildDataSourceSelector(dynamic platform) {
-    if (!widget.statsService.hasOfficialStats) return const SizedBox.shrink();
     final useOfficial = widget.statsService.useOfficialStats;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -744,17 +752,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.public, size: 14, color: useOfficial ? AppColors.accentNeonCyan : AppColors.textTertiary),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        '官网全生涯对策',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: useOfficial ? AppColors.accentNeonCyan : AppColors.textTertiary,
-                          fontWeight: useOfficial ? FontWeight.bold : FontWeight.normal,
-                          fontSize: 11,
-                        ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '全部对局 (全生涯)',
+                      style: TextStyle(
+                        color: useOfficial ? AppColors.accentNeonCyan : AppColors.textTertiary,
+                        fontWeight: useOfficial ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -782,17 +786,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.history, size: 14, color: !useOfficial ? AppColors.accentNeonYellow : AppColors.textTertiary),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        '本地实战 (近100场)',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: !useOfficial ? AppColors.accentNeonYellow : AppColors.textTertiary,
-                          fontWeight: !useOfficial ? FontWeight.bold : FontWeight.normal,
-                          fontSize: 11,
-                        ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '近100场对局',
+                      style: TextStyle(
+                        color: !useOfficial ? AppColors.accentNeonYellow : AppColors.textTertiary,
+                        fontWeight: !useOfficial ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 12,
                       ),
                     ),
                   ],

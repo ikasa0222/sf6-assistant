@@ -174,6 +174,22 @@ class StorageService {
     }
   }
 
+  Future<void> savePlayTimeJson(String shortId, Map<String, dynamic> playTime) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('sf6_playtime_$shortId', jsonEncode(playTime));
+  }
+
+  Future<Map<String, dynamic>?> getPlayTimeJson(String shortId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final str = prefs.getString('sf6_playtime_$shortId');
+      if (str == null || str.isEmpty) return null;
+      return Map<String, dynamic>.from(jsonDecode(str) as Map);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<String?> getLastUpdateCheckDate() async {
     try {
       final prefs = await SharedPreferences.getInstance();

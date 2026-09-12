@@ -315,12 +315,16 @@ class Sf6Characters {
   static Sf6Character fromCapcomId(dynamic id) {
     if (id == null) return all.first;
     final s = id.toString().trim().toLowerCase();
-    if (s == '0' || s == 'cha' || s == 'random' || s == '253' || s == '254' || s == '255') {
+    if (s == '0' || s == 'cha' || s == 'all' || s == 'total') {
+      return all.first;
+    }
+    if (s == 'random' || s == 'rand' || s == '254' || s == '255') {
       return getById('random');
     }
     if (id is int || (id is String && int.tryParse(id) != null)) {
       final num = id is int ? id : int.parse(id as String);
-      if (num == 0 || num >= 250) return getById('random');
+      if (num == 0) return all.first;
+      if (num >= 250) return getById('random');
       const capcomMap = {
         1: 'ryu',
         2: 'luke',

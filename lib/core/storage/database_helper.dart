@@ -209,6 +209,26 @@ class DatabaseHelper {
     return maps.map((m) => BattleRecord.fromMap(m)).toList();
   }
 
+  Future<Set<String>> getExistingReplayCodes({required String shortId}) async {
+    final db = await database;
+    final maps = await db.query(
+      'battle_records',
+      columns: ['replayCode', 'id'],
+      where: 'shortId = ?',
+      whereArgs: [shortId],
+    );
+    final codes = <String>{};
+    for (final m in maps) {
+      if (m['replayCode'] != null && (m['replayCode'] as String).isNotEmpty) {
+        codes.add((m['replayCode'] as String).trim().toLowerCase());
+      }
+      if (m['id'] != null && (m['id'] as String).isNotEmpty) {
+        codes.add((m['id'] as String).trim().toLowerCase());
+      }
+    }
+    return codes;
+  }
+
   Future<List<MatchupStat>> getMatchupStats({
     required String shortId,
     required String platform,

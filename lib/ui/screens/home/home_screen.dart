@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sf6_tracker/models/user_profile.dart';
 import 'package:sf6_tracker/models/account_profile.dart';
+import 'package:sf6_tracker/models/battle_record.dart';
+import 'package:sf6_tracker/models/play_time_model.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/core/constants/ranks.dart';
+import 'package:sf6_tracker/core/storage/secure_storage.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
 import 'package:sf6_tracker/services/battle_log_service.dart';
 import 'package:sf6_tracker/services/stats_service.dart';
@@ -17,7 +20,7 @@ import 'package:sf6_tracker/core/network/capcom_sync_engine.dart';
 import 'package:sf6_tracker/ui/widgets/quick_sync_dialog.dart';
 import 'package:sf6_tracker/ui/screens/auth/login_webview_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final AuthService authService;
   final BattleLogService battleLogService;
   final StatsService? statsService;
@@ -36,6 +39,78 @@ class HomeScreen extends StatelessWidget {
   });
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _isLadderExpanded = false;
+  bool _isPlayTimeExpanded = false;
+  PlayTimeModel? _playTime;
+  String? _loadedShortId;
+
+  AuthService get authService => widget.authService;
+  BattleLogService get battleLogService => widget.battleLogService;
+  StatsService? get statsService => widget.statsService;
+  SocialService? get socialService => widget.socialService;
+  VoidCallback get onNavigateToBattleLog => widget.onNavigateToBattleLog;
+  VoidCallback get onNavigateToAnalytics => widget.onNavigateToAnalytics;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPlayTime();
+  }
+
+  void _fetchPlayTime() async {
+    final sid = authService.activePlatform?.shortId ?? battleLogService.userProfile?.shortId;
+    if (sid != null && sid.isNotEmpty) {
+      final json = await StorageService.instance.getPlayTimeJson(sid);
+      if (mounted) {
+        setState(() {
+          _playTime = json != null ? PlayTimeModel.fromJson(json) : null;
+          _loadedShortId = sid;
+        });
+      }
+    }
+  }
+
+  PlayTimeModel _resolveEffectivePlayTime(UserProfile? profile) {
+    if (_playTime != null && _playTime!.hasData) {
+      return _playTime!;
+    }
+    return const PlayTimeModel();
+  }
+
+  Widget _safeBuildCard(String cardName, Widget Function() builder) {
+    try {
+      return builder();
+    } catch (e) {
+      AppLogger.instance.warn('HomeScreen', '卡片渲染异常 [$cardName]: $e');
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.bgCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderSubtle),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline, size: 16, color: AppColors.textTertiary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '$cardName 加载异常，请下拉刷新重试',
+                style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: Listenable.merge([authService, battleLogService]),
@@ -43,6 +118,12 @@ class HomeScreen extends StatelessWidget {
         final activeAccount = authService.activeAccount;
         final activePlatform = authService.activePlatform;
         final profile = battleLogService.userProfile;
+        final currentSid = activePlatform?.shortId ?? profile?.shortId;
+        if (currentSid != null && currentSid.isNotEmpty && currentSid != _loadedShortId) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _fetchPlayTime();
+          });
+        }
         final mainChar = profile != null ? Sf6Characters.getById(profile.mainCharacterId) : null;
 
         if (activeAccount == null) {
@@ -201,44 +282,50 @@ class HomeScreen extends StatelessWidget {
           }
           if (activePlatform != null) {
             try {
+              AppLogger.instance.info('HomeScreen', '[HOME_REFRESH_INIT] 用户下拉刷新主页数据');
               final res = await CapcomSyncEngine.performFullSync(
                 authService: authService,
                 battleLogService: battleLogService,
                 statsService: statsService,
                 socialService: socialService,
               );
-              if (res.needLogin) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('官方会话已过期，请重新登录'), backgroundColor: AppColors.loseRed),
-                );
-              } else if (res.success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(res.recordsUpdated > 0 ? '同步完成，已更新 ${res.recordsUpdated} 局最新对战' : '同步完成，已是最新数据'),
-                    backgroundColor: AppColors.winGreen,
-                  ),
-                );
+              if (mounted) {
+                _fetchPlayTime();
+                if (res.needLogin) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('官方会话已过期，请重新登录'), backgroundColor: AppColors.loseRed),
+                  );
+                } else if (res.success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(res.recordsUpdated > 0 ? '同步完成，已更新 ${res.recordsUpdated} 局最新对战' : '同步完成，已是最新数据'),
+                      backgroundColor: AppColors.winGreen,
+                    ),
+                  );
+                }
               }
             } catch (e) {
               AppLogger.instance.warn('HomeScreen', '下拉刷新异常: $e');
             }
           }
         },
+        color: AppColors.accentNeonCyan,
+        backgroundColor: AppColors.bgCard,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildFighterHeroCard(context, profile, activePlatform, mainChar),
+              _safeBuildCard('玩家资料卡片', () => _buildFighterHeroCard(context, profile, activePlatform, mainChar)),
               const SizedBox(height: 12),
-              _buildMultiCharacterLadder(context, profile),
+              _safeBuildCard('角色天梯榜', () => _buildMultiCharacterLadder(context, profile)),
               const SizedBox(height: 12),
-              _buildRecentFormCard(),
+              _safeBuildCard('近期状态', () => _buildRecentFormCard()),
               const SizedBox(height: 12),
-              _buildQuickStatsGrid(profile),
+              _safeBuildCard('快速统计', () => _buildQuickStatsGrid(profile)),
               const SizedBox(height: 12),
-              if (profile != null) _buildRadarCard(profile.radarStats),
+              if (profile != null) _safeBuildCard('能力雷达', () => _buildRadarCard(profile.radarStats)),
               const SizedBox(height: 16),
             ],
           ),
@@ -1032,6 +1119,25 @@ class HomeScreen extends StatelessWidget {
     final usages = rawUsages.where((u) => u.lp > 0 || u.mr > 0).toList();
     if (usages.isEmpty) return const SizedBox.shrink();
 
+    final currentMainCharId = (authService.activePlatform?.mainCharId.isNotEmpty == true
+            ? authService.activePlatform!.mainCharId
+            : (profile?.mainCharacterId ?? ''))
+        .toLowerCase();
+
+    // Sort: Pinned main character first, then MR desc, LP desc, matches desc
+    final sortedUsages = List<CharacterUsage>.from(usages);
+    sortedUsages.sort((a, b) {
+      final aIsMain = a.characterId.toLowerCase() == currentMainCharId;
+      final bIsMain = b.characterId.toLowerCase() == currentMainCharId;
+      if (aIsMain && !bIsMain) return -1;
+      if (!aIsMain && bIsMain) return 1;
+      if (b.mr != a.mr) return b.mr.compareTo(a.mr);
+      if (b.lp != a.lp) return b.lp.compareTo(a.lp);
+      return b.matches.compareTo(a.matches);
+    });
+
+    final displayUsages = _isLadderExpanded ? sortedUsages : sortedUsages.take(3).toList();
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
@@ -1067,9 +1173,9 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ...usages.map((u) {
+          ...displayUsages.map((u) {
             final char = Sf6Characters.getById(u.characterId);
-            final isCurrent = char.id == (profile?.mainCharacterId ?? '');
+            final isCurrent = char.id.toLowerCase() == currentMainCharId;
             final activePlat = authService.activePlatform;
 
             // Fallback match stats from battle records if matches == 0
@@ -1208,6 +1314,368 @@ class HomeScreen extends StatelessWidget {
               ),
             );
           }).toList(),
+          if (sortedUsages.length > 3) ...[
+            const SizedBox(height: 6),
+            InkWell(
+              onTap: () {
+                setState(() {
+                  _isLadderExpanded = !_isLadderExpanded;
+                });
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.bgSecondary.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.borderSubtle.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _isLadderExpanded ? '收起角色榜单' : '展开查看其余 ${sortedUsages.length - 3} 位角色',
+                      style: const TextStyle(
+                        color: AppColors.accentNeonCyan,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      _isLadderExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      size: 16,
+                      color: AppColors.accentNeonCyan,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlayTimeCard(PlayTimeModel pt) {
+    final displayItems = _isPlayTimeExpanded ? pt.items : pt.topModes;
+    final hasItems = pt.items.isNotEmpty;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSubtle),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.pie_chart_outline, color: AppColors.accentNeonCyan, size: 18),
+                  SizedBox(width: 8),
+                  Text(
+                    '最爱内容 / 游玩时长',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              if (pt.totalSeconds > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentNeonYellow.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: AppColors.accentNeonYellow.withOpacity(0.5)),
+                  ),
+                  child: Text(
+                    '总时长: ',
+                    style: const TextStyle(
+                      color: AppColors.accentNeonYellow,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+              else if (pt.total != '--' && pt.total.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentNeonYellow.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: AppColors.accentNeonYellow.withOpacity(0.5)),
+                  ),
+                  child: Text(
+                    '总时长: ',
+                    style: const TextStyle(
+                      color: AppColors.accentNeonYellow,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgSecondary,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: AppColors.borderSubtle),
+                  ),
+                  child: const Text(
+                    '下拉刷新同步官方时长',
+                    style: TextStyle(
+                      color: AppColors.textTertiary,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (!pt.hasData) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.bgSecondary.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                '暂无官方游玩时长记录，下拉即可同步 Buckler 档案',
+                style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
+              ),
+            ),
+          ] else ...[
+            // Proportional progress bar like Capcom Buckler web
+            if (hasItems && pt.totalSeconds > 0) ...[
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: SizedBox(
+                  height: 8,
+                  child: Row(
+                    children: pt.items.map((item) {
+                      final flex = item.seconds > 0 ? item.seconds : 1;
+                      return Expanded(
+                        flex: flex,
+                        child: Container(color: item.color),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Top modes list
+              Column(
+                children: displayItems.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final item = entry.value;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 18,
+                          height: 18,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: item.color.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: item.color, width: 1.5),
+                          ),
+                          child: Text(
+                            '',
+                            style: TextStyle(
+                              color: item.color,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            item.name,
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          item.formattedDuration,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: AppColors.bgSecondary,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Text(
+                            '\%',
+                            style: const TextStyle(
+                              color: AppColors.textTertiary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+              if (pt.items.length > 3)
+                InkWell(
+                  onTap: () => setState(() => _isPlayTimeExpanded = !_isPlayTimeExpanded),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _isPlayTimeExpanded ? '收起更多模式' : '查看全部 \ 个模式',
+                          style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 11),
+                        ),
+                        Icon(
+                          _isPlayTimeExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                          size: 14,
+                          color: AppColors.accentNeonCyan,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ] else ...[
+              const SizedBox(height: 12),
+              GridView.count(
+                crossAxisCount: 3,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                childAspectRatio: 2.1,
+                children: [
+                  _buildPlayTimeTile('排位赛', pt.ranked, AppColors.accentNeonCyan),
+                  _buildPlayTimeTile('比赛间对战', pt.customRoom, AppColors.accentNeonPink),
+                  _buildPlayTimeTile('休闲赛', pt.casual, AppColors.winGreen),
+                  _buildPlayTimeTile('格斗中心', pt.battleHub, AppColors.accentNeonYellow),
+                  _buildPlayTimeTile('练习模式', pt.training, AppColors.textSecondary),
+                  _buildPlayTimeTile('环球游历', pt.worldTour, AppColors.textTertiary),
+                ],
+              ),
+            ],
+
+            // Official match counts from battle_stats if available
+            if (pt.rankedMatches > 0 || pt.customRoomMatches > 0 || pt.casualMatches > 0 || pt.battleHubMatches > 0) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.bgSecondary.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.borderSubtle.withOpacity(0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '官方各模式生涯对局数',
+                      style: TextStyle(
+                        color: AppColors.textTertiary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _buildMatchCountItem('排位赛', pt.rankedMatches, AppColors.accentNeonCyan),
+                        _buildMatchCountItem('比赛间', pt.customRoomMatches, AppColors.accentNeonPink),
+                        _buildMatchCountItem('休闲赛', pt.casualMatches, AppColors.winGreen),
+                        _buildMatchCountItem('格斗中心', pt.battleHubMatches, AppColors.accentNeonYellow),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMatchCountItem(String title, int count, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '',
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlayTimeTile(String title, String duration, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.bgSecondary.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.borderSubtle.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            duration,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
         ],
       ),
     );

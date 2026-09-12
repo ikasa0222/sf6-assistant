@@ -43,6 +43,8 @@ class _Sf6AppState extends State<Sf6App> {
   DateTime? _lastBackPressTime;
   Timer? _backgroundSyncTimer;
 
+  String? _lastActivePlatformKey;
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +55,7 @@ class _Sf6AppState extends State<Sf6App> {
     _settings = await StorageService.instance.getSettings();
     await _authService.initialize();
 
+    _lastActivePlatformKey = '${_authService.activeAccount?.id}_${_authService.activePlatform?.shortId}';
     await _loadAllData(_authService.activePlatform);
 
     _authService.addListener(_onAuthChanged);
@@ -138,8 +141,14 @@ class _Sf6AppState extends State<Sf6App> {
   }
 
   void _onAuthChanged() async {
+    final currentKey = '${_authService.activeAccount?.id}_${_authService.activePlatform?.shortId}';
+    if (currentKey == _lastActivePlatformKey) {
+      // Identity unchanged (data update during sync/refresh).
+      // Child screens handle their own reactive updates without tearing down the root tree.
+      return;
+    }
+    _lastActivePlatformKey = currentKey;
     if (_battleLogService.isBackgroundSyncing) {
-      if (mounted) setState(() {});
       return;
     }
     await _loadAllData(_authService.activePlatform);
@@ -174,6 +183,8 @@ class _Sf6AppState extends State<Sf6App> {
   Widget build(BuildContext context) {
     if (!_isInitialized) {
       return MaterialApp(
+        navigatorKey: _navigatorKey,
+        title: '街霸6助手',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.getTheme(_settings.themeMode),
         home: const Scaffold(

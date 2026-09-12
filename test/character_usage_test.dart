@@ -54,11 +54,12 @@ void main() {
       expect(filteredUsages.any((u) => u.characterId == 'luke'), isTrue);
       expect(filteredUsages.firstWhere((u) => u.characterId == 'elena').lp, equals(11869));
     });
-    test('fromCapcomId resolves random character IDs to random', () {
-      expect(Sf6Characters.fromCapcomId(0).id, equals('random'));
-      expect(Sf6Characters.fromCapcomId('cha').id, equals('random'));
-      expect(Sf6Characters.fromCapcomId('0').id, equals('random'));
+    test('fromCapcomId resolves random character IDs to random and summary rows are not random', () {
+      expect(Sf6Characters.fromCapcomId(0).id, isNot(equals('random')));
+      expect(Sf6Characters.fromCapcomId('cha').id, isNot(equals('random')));
+      expect(Sf6Characters.fromCapcomId('0').id, isNot(equals('random')));
       expect(Sf6Characters.fromCapcomId(254).id, equals('random'));
+      expect(Sf6Characters.fromCapcomId('random').id, equals('random'));
       expect(Sf6Characters.getById('random').shortCode, equals('?'));
     });
 

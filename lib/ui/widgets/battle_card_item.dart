@@ -7,17 +7,21 @@ import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
 import 'package:sf6_tracker/ui/widgets/share_battle_card.dart';
+import 'package:sf6_tracker/services/auth_service.dart';
+import 'package:sf6_tracker/ui/screens/social/player_profile_screen.dart';
 
 class BattleCardItem extends StatefulWidget {
   final BattleRecord record;
   final VoidCallback? onShare;
   final VoidCallback? onAddNote;
+  final AuthService? authService;
 
   const BattleCardItem({
     super.key,
     required this.record,
     this.onShare,
     this.onAddNote,
+    this.authService,
   });
 
   @override
@@ -64,7 +68,6 @@ class _BattleCardItemState extends State<BattleCardItem> {
   Widget build(BuildContext context) {
     final r = widget.record;
     final isWin = r.isWin;
-    final timeStr = DateFormat('MM-dd HH:mm').format(r.playedAt);
     final oppChar = Sf6Characters.getById(r.opponentCharacterId);
 
     return Container(
@@ -171,39 +174,14 @@ class _BattleCardItemState extends State<BattleCardItem> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        InkWell(
-                          onTap: () {
-                            if (r.opponentShortId.isNotEmpty) {
-                              Clipboard.setData(ClipboardData(text: r.opponentShortId));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('已复制对手 Short ID: ${r.opponentShortId} (可在游戏内搜索)'),
-                                  backgroundColor: AppColors.winGreen,
-                                  duration: const Duration(seconds: 2),
-                                ),
-                              );
-                            }
-                          },
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  r.opponentFighterId,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              if (r.opponentShortId.isNotEmpty) ...[
-                                const SizedBox(width: 4),
-                                const Icon(Icons.copy, size: 11, color: AppColors.textTertiary),
-                              ],
-                            ],
+                        Text(
+                          r.opponentFighterId.isNotEmpty ? r.opponentFighterId : '未知对手',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -231,36 +209,54 @@ class _BattleCardItemState extends State<BattleCardItem> {
                       ],
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      if (r.playerMrChange != 0)
-                        Text(
-                          '${r.playerMrChange > 0 ? '+' : ''}${r.playerMrChange} MR',
-                          style: TextStyle(
-                            color: r.playerMrChange > 0 ? AppColors.winGreen : AppColors.loseRed,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
+                  Container(
+                    constraints: const BoxConstraints(minWidth: 54),
+                    alignment: Alignment.center,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (r.playerMrChange != 0)
+                          Text(
+                            '${r.playerMrChange > 0 ? '+' : ''}${r.playerMrChange} MR',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: r.playerMrChange > 0 ? AppColors.winGreen : AppColors.loseRed,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        else if (r.playerLpChange != 0)
+                          Text(
+                            '${r.playerLpChange > 0 ? '+' : ''}${r.playerLpChange} LP',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: r.playerLpChange > 0 ? AppColors.winGreen : AppColors.loseRed,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        )
-                      else if (r.playerLpChange != 0)
+                        const SizedBox(height: 2),
                         Text(
-                          '${r.playerLpChange > 0 ? '+' : ''}${r.playerLpChange} LP',
-                          style: TextStyle(
-                            color: r.playerLpChange > 0 ? AppColors.winGreen : AppColors.loseRed,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
+                          DateFormat('MM-dd').format(r.playedAt),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.textTertiary,
+                            fontSize: 10,
+                            height: 1.1,
                           ),
                         ),
-                      const SizedBox(height: 2),
-                      Text(
-                        timeStr,
-                        style: const TextStyle(
-                          color: AppColors.textTertiary,
-                          fontSize: 11,
+                        Text(
+                          DateFormat('HH:mm').format(r.playedAt),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.textTertiary,
+                            fontSize: 10,
+                            height: 1.1,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -300,6 +296,88 @@ class _BattleCardItemState extends State<BattleCardItem> {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  if (r.opponentShortId.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.bgSecondary.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.borderSubtle.withOpacity(0.5)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                Clipboard.setData(ClipboardData(text: r.opponentShortId));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('已复制对手 Short ID: ${r.opponentShortId}'),
+                                    backgroundColor: AppColors.winGreen,
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.tag, size: 14, color: AppColors.accentNeonYellow),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Short ID: ${r.opponentShortId}',
+                                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.copy, size: 12, color: AppColors.textTertiary),
+                                ],
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => PlayerProfileScreen(
+                                    shortId: r.opponentShortId,
+                                    fighterId: r.opponentFighterId,
+                                    mainCharacterId: r.opponentCharacterId,
+                                    lp: r.opponentLp ?? 0,
+                                    mr: r.opponentMr ?? 0,
+                                    platform: r.opponentPlatform,
+                                    authService: widget.authService,
+                                  ),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.accentNeonCyan.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppColors.accentNeonCyan.withOpacity(0.6)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.person_search, size: 13, color: AppColors.accentNeonCyan),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    '查看对方资料',
+                                    style: TextStyle(
+                                      color: AppColors.accentNeonCyan,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   if (r.rounds.isNotEmpty) ...[
                     const Text(
                       '回合详情 (Round Breakdown)',

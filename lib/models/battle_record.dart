@@ -20,32 +20,31 @@ enum BattleType {
   String get displayName {
     switch (this) {
       case BattleType.ranked:
-        return '排位赛 (Ranked)';
+        return '排位赛';
       case BattleType.casual:
-        return '休闲赛 (Casual)';
+        return '休闲赛';
       case BattleType.customRoom:
-        return '自定义房间 (Custom)';
+        return '比赛间对战';
       case BattleType.battleHub:
-        return '格斗中心 (Battle Hub)';
+        return '格斗中心对战';
     }
   }
 
   static BattleType fromString(String type) {
-    switch (type.toLowerCase()) {
-      case 'ranked':
-      case 'rank':
-        return BattleType.ranked;
-      case 'casual':
-        return BattleType.casual;
-      case 'custom':
-      case 'room':
-        return BattleType.customRoom;
-      case 'hub':
-      case 'battlehub':
-        return BattleType.battleHub;
-      default:
-        return BattleType.ranked;
+    final lower = type.toLowerCase().replaceAll(RegExp(r'[\s_-]'), '');
+    if (lower == 'ranked' || lower == 'rank' || lower == '1' || lower.contains('排位')) {
+      return BattleType.ranked;
     }
+    if (lower == 'casual' || lower == '2' || lower.contains('休闲')) {
+      return BattleType.casual;
+    }
+    if (lower == 'customroom' || lower == 'room' || lower == 'custom' || lower == '3' || lower.contains('比赛间') || lower.contains('自定义')) {
+      return BattleType.customRoom;
+    }
+    if (lower == 'battlehub' || lower == 'hub' || lower == '4' || lower.contains('格斗中心')) {
+      return BattleType.battleHub;
+    }
+    return BattleType.ranked;
   }
 }
 

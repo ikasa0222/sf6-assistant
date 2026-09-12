@@ -57,17 +57,28 @@ class CapcomSyncEngine {
       final activePlat = authService.activePlatform;
       String shortId = activePlat?.shortId ?? '';
 
+      AppLogger.instance.sync('SyncEngine', '[REFRESH_INIT] 开始全量数据同步, shortId: $shortId, platform: ${activePlat?.platformType.displayName}');
       onProgress?.call(0.15, '正在获取官方登录会话与 Cookie...');
 
-      final cookieManager = CookieManager.instance();
-      final cookies = await cookieManager.getCookies(url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/'));
-      String cookieHeader = cookies.map((c) => '${c.name}=${c.value}').join('; ');
-
-      if (cookieHeader.isEmpty && authService.activeAccount?.cookieSession.isNotEmpty == true) {
-        cookieHeader = authService.activeAccount!.cookieSession;
+      String cookieHeader = authService.activeAccount?.cookieSession ?? '';
+      try {
+        final cookieManager = CookieManager.instance();
+        final cookies = await cookieManager.getCookies(
+          url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/'),
+        ).timeout(const Duration(seconds: 3));
+        final nativeHeader = cookies.map((c) => '${c.name}=${c.value}').join('; ');
+        if (nativeHeader.isNotEmpty) {
+          cookieHeader = nativeHeader;
+          AppLogger.instance.sync('SyncEngine', '[REFRESH_COOKIE] 原生 CookieManager 抓取成功');
+        } else {
+          AppLogger.instance.sync('SyncEngine', '[REFRESH_COOKIE] 原生 Cookie 为空，使用已持久化会话');
+        }
+      } catch (e) {
+        AppLogger.instance.warn('SyncEngine', '[REFRESH_COOKIE] 原生 Cookie 获取超时或异常: $e, 降级使用本地会话');
       }
 
       if (cookieHeader.isEmpty) {
+        AppLogger.instance.warn('SyncEngine', '[REFRESH_COOKIE] 未检测到任何有效 Cookie，提示重新登录');
         return const SyncResult(
           success: false,
           needLogin: true,
@@ -137,6 +148,14 @@ class CapcomSyncEngine {
       final mr = rawBannerMr is num ? rawBannerMr.toInt() : (int.tryParse(rawBannerMr.toString()) ?? 0);
       final circleName = (circleInfo['circle_name'] ?? activePlat?.clubName ?? '').toString();
 
+      // Parse & persist play times from main profile overview if available
+      try {
+        final ptProfile = NextDataParser.parsePlayTime(nextData);
+        if (ptProfile.hasData && shortId.isNotEmpty) {
+          StorageService.instance.savePlayTimeJson(shortId, ptProfile.toJson());
+        }
+      } catch (_) {}
+
       onProgress?.call(0.45, '正在并发拉取历史对局、全角色积分、好友与战队...');
 
       List<dynamic> rawReplays = [];
@@ -145,7 +164,7 @@ class CapcomSyncEngine {
       List<CharacterUsage> characterUsages = [];
 
       // 1. Fetch /play
-      final playFuture = dio.get('https://www.streetfighter.com/6/buckler/zh-hans/profile/$shortId/play').then((res) {
+      final playFuture = dio.get('https://www.streetfighter.com/6/buckler/zh-hans/profile/$shortId/play').then((res) async {
         final pm = RegExp(r'<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)</script>').firstMatch(res.data.toString());
         if (pm == null) return;
         final playData = jsonDecode(pm.group(1)!);
@@ -158,6 +177,10 @@ class CapcomSyncEngine {
           for (final c in cList) {
             if (c is! Map) continue;
             final rawCid = c['character_id'] ?? c['character_tool_name'] ?? c['character_name'];
+            if (rawCid == null) continue;
+            final cidStr = rawCid.toString().trim().toLowerCase();
+            if (cidStr == '0' || cidStr == 'cha' || cidStr == 'all' || cidStr == 'total') continue;
+
             final cChar = Sf6Characters.fromCapcomId(rawCid);
             final rawLpNum = c['league_info']?['league_point'] ?? c['league_point'] ?? c['lp'] ?? 0;
             final rawMrNum = c['league_info']?['master_rating'] ?? c['master_rating'] ?? c['mr'] ?? 0;
@@ -191,6 +214,10 @@ class CapcomSyncEngine {
           for (final c in winList) {
             if (c is! Map) continue;
             final rawCid = c['character_id'] ?? c['character_tool_name'] ?? c['character_name'];
+            if (rawCid == null) continue;
+            final cidStr = rawCid.toString().trim().toLowerCase();
+            if (cidStr == '0' || cidStr == 'cha' || cidStr == 'all' || cidStr == 'total') continue;
+
             final cChar = Sf6Characters.fromCapcomId(rawCid);
             final rawMatches = c['play_count'] ?? c['total_matches'] ?? c['playing_count'] ?? c['matches'] ?? c['battle_count'] ?? 0;
             final matches = rawMatches is num ? rawMatches.toInt() : (int.tryParse(rawMatches.toString()) ?? 0);
@@ -219,6 +246,21 @@ class CapcomSyncEngine {
           if (b.lp != a.lp) return b.lp.compareTo(a.lp);
           return b.matches.compareTo(a.matches);
         });
+
+        // Parse & persist official career rival matchups
+        try {
+          final officialMatchups = NextDataParser.parseOfficialRivalMatchups(playData);
+          if (officialMatchups.isNotEmpty && activePlat != null) {
+            await DatabaseHelper.instance.insertOfficialMatchupStats(
+              shortId: shortId,
+              platform: activePlat.platformType.code,
+              statsMap: officialMatchups,
+            );
+            AppLogger.instance.sql('SyncEngine', '同步官方全生涯对手克制表: ${officialMatchups.length} 个角色对策');
+          }
+        } catch (e) {
+          AppLogger.instance.warn('SyncEngine', '解析官方对手克制表异常: $e');
+        }
       }).catchError((e) {
         AppLogger.instance.warn('SyncEngine', '同步 /play 异常: $e');
       });
@@ -318,37 +360,89 @@ class CapcomSyncEngine {
         AppLogger.instance.warn('SyncEngine', '同步战队模块异常: $e');
       });
 
-      // 4. Fetch 10 pages of battlelog (up to 100 replays)
-      final battlelogFutures = List.generate(10, (idx) {
-        final p = idx + 1;
-        final url = 'https://www.streetfighter.com/6/buckler/zh-hans/profile/$shortId/battlelog${p > 1 ? "?page=$p" : ""}';
-        return dio.get(url).then((res) {
+      // 4. Batch & incremental fetch of battlelog (up to 10 pages, 100 replays)
+      final existingCodes = await DatabaseHelper.instance.getExistingReplayCodes(shortId: shortId);
+      bool shouldStopEarly = false;
+
+      Future<List<dynamic>> fetchBattlelogPage(int p) async {
+        try {
+          final url = 'https://www.streetfighter.com/6/buckler/zh-hans/profile/$shortId/battlelog${p > 1 ? "?page=$p" : ""}';
+          final res = await dio.get(url);
           final bm = RegExp(r'<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)</script>').firstMatch(res.data.toString());
           if (bm != null) {
             final bData = jsonDecode(bm.group(1)!);
             final bProps = bData['props']?['pageProps'];
             final rList = bProps?['replay_list'] ?? bProps?['battle_list'] ?? bProps?['battlelog'] ?? bProps?['replays'] ?? bProps?['play']?['replay_list'];
             if (rList is List) {
-              for (final item in rList) {
-                final rId = item['replay_id'] ?? item['id'] ?? '${item["uploaded_at"]}_${item["player1_info"]?["short_id"]}';
-                final exists = rawReplays.any((ex) {
-                  final exId = ex['replay_id'] ?? ex['id'] ?? '${ex["uploaded_at"]}_${ex["player1_info"]?["short_id"]}';
-                  return exId == rId;
-                });
-                if (!exists) {
-                  rawReplays.add(item);
-                }
+              return rList;
+            }
+          }
+        } catch (e) {
+          AppLogger.instance.warn('SyncEngine', '同步 battlelog 第 $p 页异常: $e');
+        }
+        return [];
+      }
+
+      // Step 4a: Fetch page 1 first
+      final page1List = await fetchBattlelogPage(1);
+      int page1NewCount = 0;
+      for (final item in page1List) {
+        final rId = (item['replay_id'] ?? item['id'] ?? '${item["uploaded_at"]}_${item["player1_info"]?["short_id"]}').toString();
+        if (!existingCodes.contains(rId.toLowerCase())) {
+          page1NewCount++;
+        }
+        final exists = rawReplays.any((ex) {
+          final exId = ex['replay_id'] ?? ex['id'] ?? '${ex["uploaded_at"]}_${ex["player1_info"]?["short_id"]}';
+          return exId.toString() == rId;
+        });
+        if (!exists) {
+          rawReplays.add(item);
+        }
+      }
+
+      // If local DB already has records and page 1 has zero new replays, skip older pages
+      if (existingCodes.isNotEmpty && page1NewCount == 0) {
+        shouldStopEarly = true;
+        AppLogger.instance.sync('SyncEngine', '[REFRESH_SHORT_CIRCUIT] 第 1 页无新对局，命中文档缓存，跳过后续页拉取');
+      }
+
+      // Step 4b: If not stopped early, fetch in small batches of 2
+      if (!shouldStopEarly) {
+        for (int batchStart = 2; batchStart <= 10; batchStart += 2) {
+          final pagesToFetch = [batchStart, if (batchStart + 1 <= 10) batchStart + 1];
+          final batchResults = await Future.wait(pagesToFetch.map(fetchBattlelogPage));
+
+          bool allBatchExisted = true;
+          for (final rList in batchResults) {
+            if (rList.isEmpty) continue;
+            for (final item in rList) {
+              final rId = (item['replay_id'] ?? item['id'] ?? '${item["uploaded_at"]}_${item["player1_info"]?["short_id"]}').toString();
+              final isNew = !existingCodes.contains(rId.toLowerCase());
+              if (isNew) {
+                allBatchExisted = false;
+              }
+              final exists = rawReplays.any((ex) {
+                final exId = ex['replay_id'] ?? ex['id'] ?? '${ex["uploaded_at"]}_${ex["player1_info"]?["short_id"]}';
+                return exId.toString() == rId;
+              });
+              if (!exists) {
+                rawReplays.add(item);
               }
             }
           }
-        }).catchError((e) {
-          AppLogger.instance.warn('SyncEngine', '同步 battlelog 第 $p 页异常: $e');
-        });
-      });
 
-      await Future.wait([playFuture, friendFuture, clubFuture, ...battlelogFutures]);
+          if (existingCodes.isNotEmpty && allBatchExisted) {
+            AppLogger.instance.sync('SyncEngine', '[REFRESH_BATCH_STOP] 批次 [$pagesToFetch] 全部为已存历史对局，停止向下翻页');
+            break;
+          }
+        }
+      }
+
+      await Future.wait([playFuture, friendFuture, clubFuture]);
+      AppLogger.instance.sync('SyncEngine', '[REFRESH_NET_DISPATCH] 所有并发网络请求完成, replays=${rawReplays.length}, usages=${characterUsages.length}, friends=${rawFriends.length}, clubs=${rawClubMembers.length}');
 
       onProgress?.call(0.85, '正在写入 SQLite 本地数据库并刷新所有页面...');
+      AppLogger.instance.sync('SyncEngine', '[REFRESH_DB_STAGE] 开始写入 SQLite 与本地缓存');
 
       // 1. Save replays to SQLite
       if (rawReplays.isNotEmpty) {
@@ -394,6 +488,7 @@ class CapcomSyncEngine {
       }
 
       // 4. Update AuthService
+      AppLogger.instance.sync('SyncEngine', '[REFRESH_STATE_TRANSITION] 写入更新至 AuthService & BattleLogService');
       await authService.updateActiveProfile(
         fighterId: fighterName,
         shortId: shortId,
@@ -434,7 +529,7 @@ class CapcomSyncEngine {
 
       AppLogger.instance.sync(
         'CapcomSyncEngine',
-        '全量数据同步完成: 对局 ${rawReplays.length} 局, 角色 ${characterUsages.length} 个, 好友 ${rawFriends.length} 个, 战队 ${rawClubMembers.length} 个',
+        '[REFRESH_DONE] 全量数据同步完成: 对局 ${rawReplays.length} 局, 角色 ${characterUsages.length} 个, 好友 ${rawFriends.length} 个, 战队 ${rawClubMembers.length} 个',
       );
 
       onProgress?.call(1.0, '同步成功！已更新 ${rawReplays.length} 局对战、全角色积分、${rawFriends.length} 位好友与战队。');

@@ -149,11 +149,11 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                     const SizedBox(width: 8),
                     _buildModeFilterChip('排位赛', BattleType.ranked),
                     const SizedBox(width: 8),
-                    _buildModeFilterChip('格斗中心', BattleType.battleHub),
-                    const SizedBox(width: 8),
                     _buildModeFilterChip('休闲赛', BattleType.casual),
                     const SizedBox(width: 8),
-                    _buildModeFilterChip('自定义房', BattleType.customRoom),
+                    _buildModeFilterChip('比赛间对战', BattleType.customRoom),
+                    const SizedBox(width: 8),
+                    _buildModeFilterChip('格斗中心对战', BattleType.battleHub),
                   ],
                 ),
               ),
@@ -206,6 +206,7 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                                 final record = filteredRecords[index];
                                 return BattleCardItem(
                                   record: record,
+                                  authService: widget.authService,
                                   onShare: () => _showShareDialog(context, record),
                                   onAddNote: () => _showAddNoteDialog(context, record),
                                 );

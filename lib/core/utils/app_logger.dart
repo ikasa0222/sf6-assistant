@@ -27,10 +27,12 @@ class AppLogger {
   AppLogger._();
   static final AppLogger instance = AppLogger._();
 
-  static const String currentAppVersion = 'v1.2.4';
+  static const String currentAppVersion = 'v1.2.5';
   final List<LogEntry> _logs = [];
   static const int _maxLogs = 600;
   static const String _crashLogPrefKey = 'sf6_persisted_crash_logs';
+  DateTime? _lastPersistTime;
+  String? _lastPersistMsg;
 
   /// Initialize logger and restore any crashes that were persisted prior to app restarts
   Future<void> init() async {
@@ -72,6 +74,13 @@ class AppLogger {
   }
 
   void _persistCrashLog(String tag, String message) async {
+    final now = DateTime.now();
+    if (_lastPersistMsg == message && _lastPersistTime != null && now.difference(_lastPersistTime!) < const Duration(seconds: 2)) {
+      return; // Debounce duplicate writes to disk
+    }
+    _lastPersistTime = now;
+    _lastPersistMsg = message;
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final existing = prefs.getString(_crashLogPrefKey);
@@ -80,7 +89,7 @@ class AppLogger {
         try { list = jsonDecode(existing); } catch (_) {}
       }
       list.add({
-        'timestamp': DateTime.now().toIso8601String(),
+        'timestamp': now.toIso8601String(),
         'level': 'ERROR',
         'tag': tag,
         'message': message,

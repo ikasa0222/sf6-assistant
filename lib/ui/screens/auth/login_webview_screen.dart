@@ -887,6 +887,11 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
       final rawBattleStats = (rawPlayPageProps['play']?['battle_stats'] ?? rawPlayPageProps['battle_stats'] ?? pageProps['play']?['battle_stats'] ?? pageProps['battle_stats']) as Map<String, dynamic>? ?? {};
       final radarStats = NextDataParser.parseRadarStats(rawBattleStats);
 
+      // 7. Parse play time
+      final parsedPlayTime = NextDataParser.parsePlayTime(
+        rawPlayPageProps.isNotEmpty ? rawPlayPageProps : pageProps,
+      );
+
       setState(() => _isSyncing = false);
 
       final payload = {
@@ -903,6 +908,7 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
         'friends': rawFriends,
         'club_members': rawClubMembers,
         'radar_stats': radarStats.toJson(),
+        'play_time': parsedPlayTime.toJson(),
         'detected_platform': detectedPlatform,
       };
 
@@ -1195,6 +1201,11 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
                       if (rawUsages.isNotEmpty) {
                         final usageList = rawUsages.map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
                         await StorageService.instance.saveCharacterUsagesJson(finalSid, usageList);
+                      }
+
+                      final playTimeJson = data['play_time'] as Map<String, dynamic>?;
+                      if (playTimeJson != null && playTimeJson.isNotEmpty) {
+                        await StorageService.instance.savePlayTimeJson(finalSid, playTimeJson);
                       }
 
                       List<CharacterUsage> parsedCharacterUsages = [];

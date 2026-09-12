@@ -6,6 +6,7 @@ import 'package:sf6_tracker/models/battle_record.dart';
 import 'package:sf6_tracker/models/friend_model.dart';
 import 'package:sf6_tracker/models/club_model.dart';
 import 'package:sf6_tracker/models/matchup_stat.dart';
+import 'package:sf6_tracker/models/play_time_model.dart';
 
 class NextDataParser {
   static int _toInt(dynamic v, [int fallback = 0]) {
@@ -206,13 +207,21 @@ class NextDataParser {
         // 5. Resolve battle type
         BattleType battleType = BattleType.ranked;
         final rawBt = item['replay_battle_type'] ?? item['battle_type'] ?? item['battleType'];
-        if (rawBt == 1 || rawBt == '1' || rawBt == 'ranked') {
-          battleType = BattleType.ranked;
-        } else if (rawBt == 2 || rawBt == '2' || rawBt == 'casual') {
-          battleType = BattleType.casual;
-        } else if (rawBt == 3 || rawBt == '3' || rawBt == 'custom' || rawBt == 'room') {
+        final btStr = (item['battle_type_name'] ?? item['replay_battle_type_name'] ?? item['mode_name'] ?? item['mode'] ?? '').toString().toLowerCase();
+
+        if (btStr.contains('room') || btStr.contains('比赛间') || btStr.contains('custom') || btStr.contains('lounge')) {
           battleType = BattleType.customRoom;
-        } else if (rawBt == 4 || rawBt == '4' || rawBt == 'hub' || rawBt == 'battlehub') {
+        } else if (btStr.contains('hub') || btStr.contains('格斗中心') || btStr.contains('cabinet')) {
+          battleType = BattleType.battleHub;
+        } else if (rawBt == 1 || rawBt == '1' || rawBt == 'ranked' || btStr.contains('rank') || btStr.contains('排位')) {
+          battleType = BattleType.ranked;
+        } else if (rawBt == 2 || rawBt == '2' || rawBt == 'casual' || btStr.contains('casual') || btStr.contains('休闲')) {
+          battleType = BattleType.casual;
+        } else if (rawBt == 4 || rawBt == '4' || (item['room_id'] != null && item['room_id'].toString().isNotEmpty)) {
+          // Capcom SF6: 4 is Custom Room (比赛间对战)
+          battleType = BattleType.customRoom;
+        } else if (rawBt == 3 || rawBt == '3') {
+          // Capcom SF6: 3 is Battle Hub (格斗中心对战)
           battleType = BattleType.battleHub;
         }
 
@@ -821,6 +830,9 @@ class NextDataParser {
           if (c is! Map) continue;
           final rawCid = c['character_id'] ?? c['character_tool_name'] ?? c['character_name'];
           if (rawCid == null) continue;
+          final cidStr = rawCid.toString().trim().toLowerCase();
+          if (cidStr == '0' || cidStr == 'cha' || cidStr == 'all' || cidStr == 'total') continue;
+
           final cChar = Sf6Characters.fromCapcomId(rawCid);
           final rawLpNum = c['league_info']?['league_point'] ?? c['league_point'] ?? c['lp'] ?? 0;
           final rawMrNum = c['league_info']?['master_rating'] ?? c['master_rating'] ?? c['mr'] ?? 0;
@@ -852,6 +864,9 @@ class NextDataParser {
           if (c is! Map) continue;
           final rawCid = c['character_id'] ?? c['character_tool_name'] ?? c['character_name'];
           if (rawCid == null) continue;
+          final cidStr = rawCid.toString().trim().toLowerCase();
+          if (cidStr == '0' || cidStr == 'cha' || cidStr == 'all' || cidStr == 'total') continue;
+
           final cChar = Sf6Characters.fromCapcomId(rawCid);
           final matches = _toInt(c['play_count'] ?? c['total_matches'] ?? c['playing_count'] ?? c['matches'] ?? c['battle_count']);
           final wins = _toInt(c['win_count'] ?? c['wins']);
@@ -890,6 +905,114 @@ class NextDataParser {
       return b.matches.compareTo(a.matches);
     });
     return list;
+  }
+
+  static PlayTimeModel parsePlayTime(Map<String, dynamic> nextData) {
+    try {
+      final pageProps = nextData['props']?['pageProps'] as Map<String, dynamic>? ?? nextData;
+      final playObj = (pageProps['play'] is Map ? pageProps['play'] : pageProps) as Map<String, dynamic>? ?? {};
+      final baseInfo = (playObj['base_info'] is Map ? playObj['base_info'] : pageProps['base_info']) as Map<String, dynamic>? ?? {};
+      final battleStats = (playObj['battle_stats'] is Map ? playObj['battle_stats'] : pageProps['battle_stats']) as Map<String, dynamic>? ?? {};
+
+      int toInt(dynamic val) {
+        if (val == null) return 0;
+        if (val is num) return val.toInt();
+        return int.tryParse(val.toString()) ?? 0;
+      }
+
+      final rankedMatches = toInt(battleStats['rank_match_play_count']);
+      final casualMatches = toInt(battleStats['casual_match_play_count']);
+      final customRoomMatches = toInt(battleStats['custom_room_match_play_count']);
+      final battleHubMatches = toInt(battleStats['battle_hub_match_play_count']);
+      final targetClearCount = toInt(battleStats['target_clear_count']);
+      final totalPlayPoint = toInt(battleStats['total_all_character_play_point']);
+
+      // 1. Official content_play_time_list (Primary)
+      final rawList = baseInfo['content_play_time_list'] ?? playObj['content_play_time_list'] ?? pageProps['content_play_time_list'];
+      if (rawList is List && rawList.isNotEmpty) {
+        final List<PlayTimeItem> items = [];
+        int totalSec = 0;
+        for (final item in rawList) {
+          if (item is! Map) continue;
+          final cType = toInt(item['content_type']);
+          final name = (item['content_type_name'] ?? item['name'] ?? '').toString().trim();
+          final sec = toInt(item['play_time'] ?? item['seconds']);
+          if (sec > 0 || name.isNotEmpty) {
+            totalSec += sec;
+            items.add(PlayTimeItem(
+              contentType: cType,
+              name: name.isNotEmpty ? name : '模式 ',
+              seconds: sec,
+              percentage: 0,
+            ));
+          }
+        }
+
+        // Sort descending by playtime
+        items.sort((a, b) => b.seconds.compareTo(a.seconds));
+
+        // Calculate percentage
+        final calculatedItems = items.map((it) {
+          final pct = totalSec > 0 ? ((it.seconds / totalSec) * 100).round() : 0;
+          return it.copyWith(percentage: pct);
+        }).toList();
+
+        return PlayTimeModel(
+          items: calculatedItems,
+          totalSeconds: totalSec,
+          rankedMatches: rankedMatches,
+          casualMatches: casualMatches,
+          customRoomMatches: customRoomMatches,
+          battleHubMatches: battleHubMatches,
+          targetClearCount: targetClearCount,
+          totalPlayPoint: totalPlayPoint,
+        );
+      }
+
+      // 2. Direct play_time candidate maps (Cached/Fallback)
+      final candidates = [
+        playObj['play_time'],
+        playObj['play_times'],
+        playObj['playing_time'],
+        playObj['mode_play_times'],
+        playObj['play_time_info'],
+        playObj['time_info'],
+        pageProps['play_time'],
+        pageProps['play_times'],
+        pageProps['playing_time'],
+        pageProps['play_time_info'],
+        pageProps['mode_play_times'],
+        pageProps['fighter_banner_info']?['play_time'],
+      ];
+
+      for (final rawPt in candidates) {
+        if (rawPt == null) continue;
+        if (rawPt is Map<String, dynamic>) {
+          final pt = PlayTimeModel.fromJson(rawPt);
+          if (pt.hasData) return pt;
+        } else if (rawPt is Map) {
+          final pt = PlayTimeModel.fromJson(Map<String, dynamic>.from(rawPt));
+          if (pt.hasData) return pt;
+        }
+      }
+
+      // 3. Fallback battle_stats if any match counts exist
+      if (rankedMatches > 0 || customRoomMatches > 0 || casualMatches > 0 || battleHubMatches > 0) {
+        return PlayTimeModel(
+          items: const [],
+          totalSeconds: 0,
+          rankedMatches: rankedMatches,
+          casualMatches: casualMatches,
+          customRoomMatches: customRoomMatches,
+          battleHubMatches: battleHubMatches,
+          targetClearCount: targetClearCount,
+          totalPlayPoint: totalPlayPoint,
+        );
+      }
+    } catch (e) {
+      print('Error parsing play time: ');
+    }
+    return const PlayTimeModel();
   }
 
   static String _extractEmblemUrl(dynamic infoMap, dynamic setting) {

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sf6_tracker/core/network/next_data_parser.dart';
 import 'package:sf6_tracker/core/constants/ranks.dart';
+import 'package:sf6_tracker/models/play_time_model.dart';
 
 void main() {
   group('NextDataParser Tests', () {
@@ -291,6 +292,62 @@ void main() {
       expect(club2.notice, equals('国内街霸老将切磋互助战队！'));
       expect(club2.leaderFighterId, equals('DaigoFan'));
       expect(club2.tags, contains('排位高手'));
+    });
+
+    test('PlayTimeModel parses durations correctly', () {
+      // 1. From seconds
+      final pt = PlayTimeModel.fromJson({
+        'play_time_ranked': 7200,
+        'custom_room_play_time': 1800,
+        'battle_hub_play_time': 3600,
+        'casual_play_time': 900,
+        'total_play_time': 13500,
+      });
+      expect(pt.hasData, isTrue);
+      expect(pt.ranked, equals('2小时'));
+      expect(pt.customRoom, equals('30分钟'));
+      expect(pt.battleHub, equals('1小时'));
+      expect(pt.casual, equals('15分钟'));
+      expect(pt.total, equals('3小时45分'));
+      expect(pt.isEstimated, isFalse);
+    });
+
+    test('NextDataParser.parsePlayTime extracts official Capcom Buckler playtime and stats', () {
+      final officialBucklerData = {
+        'props': {
+          'pageProps': {
+            'play': {
+              'base_info': {
+                'content_play_time_list': [
+                  {'content_type': 1, 'content_type_name': '排位赛', 'play_time': 360000},
+                  {'content_type': 5, 'content_type_name': '练习模式', 'play_time': 72000},
+                  {'content_type': 4, 'content_type_name': '格斗中心', 'play_time': 36000},
+                  {'content_type': 2, 'content_type_name': '休闲赛', 'play_time': 18000},
+                ],
+              },
+              'battle_stats': {
+                'rank_match_play_count': 1250,
+                'casual_match_play_count': 120,
+                'custom_room_match_play_count': 85,
+                'battle_hub_match_play_count': 340,
+                'total_all_character_play_point': 258000,
+              },
+            },
+          },
+        },
+      };
+      final pt = NextDataParser.parsePlayTime(officialBucklerData);
+      expect(pt.hasData, isTrue);
+      expect(pt.items.length, equals(4));
+      expect(pt.items[0].name, equals('排位赛'));
+      expect(pt.items[0].seconds, equals(360000));
+      expect(pt.items[0].percentage, equals(74));
+      expect(pt.topModes.length, equals(3));
+      expect(pt.totalSeconds, equals(486000));
+      expect(pt.rankedMatches, equals(1250));
+      expect(pt.casualMatches, equals(120));
+      expect(pt.customRoomMatches, equals(85));
+      expect(pt.battleHubMatches, equals(340));
     });
   });
 }

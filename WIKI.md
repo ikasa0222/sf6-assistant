@@ -67,7 +67,9 @@ lib/
 | **深度克制与胜率分析** | 我方角色筛选、官方比赛模式联动筛选、最优/最差对策高亮、面对各对手胜率表 | `lib/ui/screens/analytics/analytics_screen.dart`<br>`lib/services/stats_service.dart` |
 | **MR 天梯走势折线图** | 基于已归档大师对局自动绘制的 MR 评分波动曲线 | `lib/ui/widgets/mr_trend_chart.dart` |
 | **好友与俱乐部战队** | 好友在线状态、战队成员列表、特别关注置顶 | `lib/ui/screens/social/social_screen.dart`<br>`lib/ui/screens/social/club_detail_screen.dart`<br>`lib/services/social_service.dart` |
-| **官方角色帧数表** | 全角色完整帧数（发生、持续、硬直差、发生判定与打康优势） | `lib/ui/screens/tools/tools_screen.dart`<br>`lib/services/frame_data_service.dart`<br>`lib/data/frame_data_database.dart` |
+| **官方角色帧数表与多模式招式显示** | 全角色完整帧数（发生、持续、硬直差、判定与打康优势），支持顶部常驻切换：官方图形图标（红黄蓝拳脚圆底与方向箭头）、5LP 数字记法、站轻腿 中文通俗全称 | `lib/ui/screens/tools/tools_screen.dart`<br>`lib/services/frame_data_service.dart`<br>`lib/ui/widgets/sf6_command_view.dart`<br>`lib/data/frame_data_database.dart` |
+| **Supercombo 连招教学与确反卡片** | 深度集成 Supercombo GG 真实民工/确反连段库：确反康/打断康/绿冲/迸发起手徽章、指令序列图形渲染、伤害、斗气/SA槽消耗、要点解析与一键复制 | `lib/ui/screens/tools/tools_screen.dart`<br>`lib/models/combo_recipe.dart`<br>`lib/services/combo_service.dart`<br>`lib/ui/widgets/combo_recipe_card.dart`<br>`lib/data/sf6_combos_database.dart`<br>`assets/data/sf6_combos.json` |
+| **Supercombo GG 爬虫与数据提取** | 基于 Playwright + Edge 绕过 Cloudflare 智能抓取 Supercombo GG 全角色连段与帧数，生成轻量离线 JSON 数据集 | `scripts/crawler_supercombo.py` |
 | **玩家与角色对策心得笔记** | 针对特定对手或角色的实战备忘录、实战标签 CRUD | `lib/ui/screens/tools/tools_screen.dart`<br>`lib/services/notes_service.dart` |
 | **本地备份与恢复 (导出导入)** | 将本地全部战绩与对策笔记导出为独立 JSON 文件备份、防数据丢失 | `lib/services/backup_service.dart`<br>`lib/ui/screens/settings/settings_screen.dart` |
 | **软件在线更新与检查** | 接入 GitHub Releases API、代理镜像下载、版本号对比 | `lib/services/update_service.dart`<br>`lib/ui/screens/settings/settings_screen.dart` |
@@ -234,6 +236,34 @@ lib/
     - 在下拉刷新引擎 `capcom_sync_engine.dart` 中补齐了对 `character_win_rates_by_rival_character` 的持久化写入，每次刷新均同步最新全生涯对策表。
 - **产物更新**：
   - 编译并部署正式版本 `sf6_assistant_v1.2.4d.apk`。
+
+### v1.2.5c (build 2503)
+- **招式多模式显示切换 (官方图形 / 5LP 数字 / 站轻腿 中文 / 现代模式)**：
+  - 需求背景：格斗玩家在不同交流语境下习惯不同的表达体系（新手偏好中文通俗术语如「站轻腿」「升龙拳」，老玩家偏好街机数字记法如「5LP」「2MK」「236P」，而官网与攻略更倾向于直观的图形按键与箭头）。
+  - 实现落地：
+    - 新增指令渲染组件 `Sf6CommandView` (`lib/ui/widgets/sf6_command_view.dart`)，支持 4 种显示模式：
+      - `graphic`（街霸官网原生图形图标：彩色圆底红黄蓝拳脚图标 + 方向指示箭头）
+      - `numpad`（经典数字简记法，如 `5LP`, `2MK`, `236P`）
+      - `chinese`（中文通俗全称，如 `站轻脚`, `蹲中脚`, `波动拳`, `升龙拳`）
+      - `modern`（现代模式简化输入记法，如 `5L`, `2M`, `SP`）
+    - 在「格斗工具箱」顶部常驻提供单触分段切换器 (`[ 官方图形 ]` `[ 5LP 数字 ]` `[ 站轻腿 中文 ]`)，实时全局联动帧数表指令与连招卡片。
+- **Supercombo GG 数据深度融入与轻量化连招教学库**：
+  - 核心原则：坚决贯彻「好用且绝对不臃肿」，全套连招采用纯文本离线结构化存储 (`assets/data/sf6_combos.json`，总大小仅 250 KB，安装包增量 < 0.2 MB)，零网络依赖，拒绝数百兆冗余图片。
+  - 数据模型与界面呈现：
+    - 构建 `ComboRecipe` 实体与 `ComboRecipeCard` 组件，1:1 还原高颜值实战连招卡片。
+    - 包含起手徽章（确反康 Punish Counter / 打断康 Counter Hit / 斗气迸发 Drive Impact / 绿冲连段 Drive Rush / 普通命中）、位置条件（全屏 / 版边 / 版中）、伤害数值、难度评级、斗气槽与 SA 槽格数消耗、实战破绽与打拆时机要点解析，并支持一键复制连招指令至系统剪贴板。
+    - 工具箱新增「连招推荐与确反 (Combos)」独立 Tab，覆盖隆、肯、卢克、嘉米、豪鬼、特瑞、春丽、古烈、桑吉尔夫、韩蛛俐等全主流角色逾 500 套实战锦标赛连段。
+- **独立 Supercombo GG 自动化爬虫脚本**：
+  - 编写 `scripts/crawler_supercombo.py`，采用 Playwright + Edge 智能突破 Cloudflare 拦截，自动化抓取 Supercombo GG 维基全角色的最新连招与帧数表格，支持后续游戏大版本更新时一键同步。
+
+### v1.2.5b (build 2502)
+- **真实战报分享海报长图**：采用 `screenshot` 与 `share_plus` 将对战结算与精彩回合渲染为高清 PNG 战报长图，支持系统原生多渠道分享与剪贴板复制。
+- **多账号管理与无感切换面板**：支持保留多个卡普空多平台账号登录状态与本地战绩库，在首页英雄卡片与设置页可一键无感秒切当前账号。
+
+### v1.2.5a (build 2501)
+- **好友二级页面随机角色（Random）场次虚高 Bug 修复**：彻底过滤卡普空接口汇总行，还原真实的随机选人对局场次。
+- **社交页全网玩家搜索功能**：支持 10 位 Short ID 极速直达与 Fighter ID 关键字全网搜索，集成战队与本地历史对局联想。
+- **好友二级页面对局卡片视觉统一与防嵌套重叠**：平铺展现与主页一致的高清对战记录卡片。
 
 ### v1.2.4c (build 2409)
 - **卡普空官方「最爱内容 / 模式游玩时长」100% 真实结构逆向与接入**：

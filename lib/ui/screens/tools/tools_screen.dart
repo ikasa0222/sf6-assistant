@@ -4,16 +4,21 @@ import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/models/player_note.dart';
 import 'package:sf6_tracker/services/frame_data_service.dart';
 import 'package:sf6_tracker/services/notes_service.dart';
+import 'package:sf6_tracker/services/combo_service.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
+import 'package:sf6_tracker/ui/widgets/combo_recipe_card.dart';
+import 'package:sf6_tracker/ui/widgets/sf6_command_view.dart';
 
 class ToolsScreen extends StatefulWidget {
   final FrameDataService frameDataService;
   final NotesService notesService;
+  final ComboService? comboService;
 
   const ToolsScreen({
     super.key,
     required this.frameDataService,
     required this.notesService,
+    this.comboService,
   });
 
   @override
@@ -22,13 +27,21 @@ class ToolsScreen extends StatefulWidget {
 
 class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late ComboService _comboService;
   bool _isFrameCharGridExpanded = false;
+  bool _isComboCharGridExpanded = false;
+  CommandDisplayMode _displayMode = CommandDisplayMode.graphic;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    widget.frameDataService.loadFrameDataForCharacter(widget.frameDataService.selectedCharacterId);
+    _tabController = TabController(length: 3, vsync: this);
+    _comboService = widget.comboService ?? ComboService();
+    _comboService.init();
+
+    final charId = widget.frameDataService.selectedCharacterId;
+    widget.frameDataService.loadFrameDataForCharacter(charId);
+    _comboService.loadCombosForCharacter(charId);
     widget.notesService.loadNotes();
   }
 
@@ -38,28 +51,109 @@ class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStat
     super.dispose();
   }
 
+  void _onCharacterChanged(String charId) {
+    widget.frameDataService.selectCharacter(charId);
+    _comboService.selectCharacter(charId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('格斗工具箱', style: TextStyle(fontWeight: FontWeight.bold)),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppColors.accentNeonCyan,
-          labelColor: AppColors.accentNeonCyan,
-          unselectedLabelColor: AppColors.textSecondary,
-          tabs: const [
-            Tab(text: '官方帧数表 (Frame Data)'),
-            Tab(text: '对策与习惯笔记 (Notes)'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(88),
+          child: Column(
+            children: [
+              TabBar(
+                controller: _tabController,
+                indicatorColor: AppColors.accentNeonCyan,
+                labelColor: AppColors.accentNeonCyan,
+                unselectedLabelColor: AppColors.textSecondary,
+                tabs: const [
+                  Tab(text: '官方帧数表 (Frames)'),
+                  Tab(text: '连招推荐与确反 (Combos)'),
+                  Tab(text: '对策习惯笔记 (Notes)'),
+                ],
+              ),
+              _buildDisplayModeSelector(),
+            ],
+          ),
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
           _buildFrameDataTab(),
+          _buildCombosTab(),
           _buildNotesTab(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDisplayModeSelector() {
+    return Container(
+      color: AppColors.bgSecondary,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: [
+          const Icon(Icons.style, size: 14, color: AppColors.textTertiary),
+          const SizedBox(width: 6),
+          const Text(
+            '指令显示:',
+            style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              height: 28,
+              decoration: BoxDecoration(
+                color: AppColors.bgCard,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AppColors.borderSubtle, width: 0.8),
+              ),
+              child: Row(
+                children: [
+                  _buildModeBtn(CommandDisplayMode.graphic, '官方图形'),
+                  _buildModeBtn(CommandDisplayMode.numpad, '5LP 数字'),
+                  _buildModeBtn(CommandDisplayMode.chinese, '站轻腿 中文'),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeBtn(CommandDisplayMode mode, String label) {
+    final isSelected = _displayMode == mode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _displayMode = mode;
+          });
+          widget.frameDataService.setDisplayMode(mode);
+          _comboService.setDisplayMode(mode);
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.accentNeonCyan.withOpacity(0.22) : Colors.transparent,
+            borderRadius: BorderRadius.circular(5),
+            border: isSelected ? Border.all(color: AppColors.accentNeonCyan.withOpacity(0.8), width: 1) : null,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? AppColors.accentNeonCyan : AppColors.textSecondary,
+              fontSize: 10,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -75,7 +169,7 @@ class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStat
 
         return Column(
           children: [
-            // Character Picker Control Header
+            // Character Picker Header
             Container(
               color: AppColors.bgSecondary,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -128,9 +222,7 @@ class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStat
                     children: Sf6Characters.all.map((char) {
                       final isSelected = char.id == selectedCharId;
                       return InkWell(
-                        onTap: () {
-                          widget.frameDataService.selectCharacter(char.id);
-                        },
+                        onTap: () => _onCharacterChanged(char.id),
                         borderRadius: BorderRadius.circular(8),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
@@ -173,9 +265,7 @@ class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStat
                     final char = Sf6Characters.all[index];
                     final isSelected = char.id == selectedCharId;
                     return GestureDetector(
-                      onTap: () {
-                        widget.frameDataService.selectCharacter(char.id);
-                      },
+                      onTap: () => _onCharacterChanged(char.id),
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 5),
                         child: Column(
@@ -325,9 +415,12 @@ class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStat
                                       move.name,
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
                                     ),
-                                    Text(
-                                      move.command,
-                                      style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 11, fontWeight: FontWeight.w600),
+                                    const SizedBox(height: 2),
+                                    Sf6CommandView(
+                                      rawCommand: move.command,
+                                      mode: _displayMode,
+                                      iconSize: 14,
+                                      wrap: false,
                                     ),
                                   ],
                                 ),
@@ -368,16 +461,19 @@ class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStat
                                 children: [
                                   Row(
                                     children: [
-                                      _buildFrameDetailBadge('持续: ${move.active}F'),
-                                      const SizedBox(width: 8),
-                                      _buildFrameDetailBadge('硬直: ${move.recovery}F'),
-                                      const SizedBox(width: 8),
-                                      _buildFrameDetailBadge(move.isCancelable ? '可取消 (Cancelable)' : '不可取消', color: move.isCancelable ? AppColors.accentNeonCyan : AppColors.textTertiary),
+                                      Text('持续: ${move.active}F', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                                      const SizedBox(width: 16),
+                                      Text('收招: ${move.recovery}F', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                                      const SizedBox(width: 16),
+                                      Text('可取消: ${move.isCancelable ? "是" : "否"}', style: TextStyle(color: move.isCancelable ? AppColors.winGreen : AppColors.textTertiary, fontSize: 12, fontWeight: FontWeight.bold)),
                                     ],
                                   ),
                                   if (move.notes.isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    Text('实战笔记: ${move.notes}', style: const TextStyle(color: AppColors.accentNeonYellow, fontSize: 12)),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '特性要点: ${move.notes}',
+                                      style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 12),
+                                    ),
                                   ],
                                 ],
                               ),
@@ -393,15 +489,247 @@ class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildFrameDetailBadge(String text, {Color color = AppColors.textSecondary}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppColors.borderSubtle),
+  Widget _buildCombosTab() {
+    return ListenableBuilder(
+      listenable: _comboService,
+      builder: (context, _) {
+        final selectedCharId = _comboService.selectedCharacterId;
+        final combos = _comboService.filteredCombos;
+        final currentFilter = _comboService.selectedStarterFilter;
+
+        return Column(
+          children: [
+            // Character Picker Header
+            Container(
+              color: AppColors.bgSecondary,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Row(
+                children: [
+                  const Icon(Icons.flash_on, size: 16, color: AppColors.accentNeonCyan),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '连招角色: ${Sf6Characters.getById(selectedCharId).nameZh} (${combos.length} 套实用连招)',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => setState(() => _isComboCharGridExpanded = !_isComboCharGridExpanded),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: _isComboCharGridExpanded ? AppColors.accentNeonCyan.withOpacity(0.2) : AppColors.bgCard,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: _isComboCharGridExpanded ? AppColors.accentNeonCyan : AppColors.borderSubtle),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(_isComboCharGridExpanded ? Icons.view_carousel : Icons.grid_view, size: 12, color: AppColors.accentNeonCyan),
+                          const SizedBox(width: 4),
+                          Text(
+                            _isComboCharGridExpanded ? '收起' : '展开全角色',
+                            style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Character Picker
+            if (_isComboCharGridExpanded)
+              Container(
+                constraints: const BoxConstraints(maxHeight: 220),
+                color: AppColors.bgSecondary,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: Sf6Characters.all.map((char) {
+                      final isSelected = char.id == selectedCharId;
+                      return InkWell(
+                        onTap: () => _onCharacterChanged(char.id),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.accentNeonCyan.withOpacity(0.2) : AppColors.bgCard,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: isSelected ? AppColors.accentNeonCyan : AppColors.borderSubtle),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CharacterAvatar(characterId: char.id, size: 24, showBorder: false),
+                              const SizedBox(width: 6),
+                              Text(
+                                char.nameZh,
+                                style: TextStyle(
+                                  color: isSelected ? AppColors.accentNeonCyan : AppColors.textPrimary,
+                                  fontSize: 11,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              )
+            else
+              Container(
+                height: 94,
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                color: AppColors.bgSecondary,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemCount: Sf6Characters.all.length,
+                  itemBuilder: (context, index) {
+                    final char = Sf6Characters.all[index];
+                    final isSelected = char.id == selectedCharId;
+                    return GestureDetector(
+                      onTap: () => _onCharacterChanged(char.id),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 5),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected ? AppColors.accentNeonCyan : Colors.transparent,
+                                  width: 2.5,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: AppColors.accentNeonCyan.withOpacity(0.5),
+                                          blurRadius: 8,
+                                          spreadRadius: 1,
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: CharacterAvatar(
+                                characterId: char.id,
+                                size: 42,
+                                showBorder: false,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              char.nameZh,
+                              style: TextStyle(
+                                color: isSelected ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                                fontSize: 10,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      decoration: const InputDecoration(
+                        hintText: '搜索连招 / 起手 / 要点 (如 确反 / 升龙 / 2HP)...',
+                        prefixIcon: Icon(Icons.search, size: 18, color: AppColors.textTertiary),
+                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      ),
+                      onChanged: _comboService.setSearchQuery,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Starter Filter Chips
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                children: [
+                  _buildStarterChip(null, '全部起手', currentFilter == null),
+                  const SizedBox(width: 6),
+                  _buildStarterChip('确反', '确反康 (PC)', currentFilter == '确反'),
+                  const SizedBox(width: 6),
+                  _buildStarterChip('迸发', '斗气迸发 (DI)', currentFilter == '迸发'),
+                  const SizedBox(width: 6),
+                  _buildStarterChip('绿冲', '绿冲起手 (DR)', currentFilter == '绿冲'),
+                  const SizedBox(width: 6),
+                  _buildStarterChip('打断', '打断康 (CH)', currentFilter == '打断'),
+                  const SizedBox(width: 6),
+                  _buildStarterChip('普通', '普通命中', currentFilter == '普通'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            // Combo List
+            Expanded(
+              child: combos.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.playlist_remove, size: 48, color: AppColors.textTertiary),
+                          const SizedBox(height: 8),
+                          Text(
+                            '当前分类下暂无连招数据',
+                            style: TextStyle(color: AppColors.textSecondary.withOpacity(0.8)),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 24, top: 4),
+                      itemCount: combos.length,
+                      itemBuilder: (context, index) {
+                        final recipe = combos[index];
+                        return ComboRecipeCard(
+                          recipe: recipe,
+                          displayMode: _displayMode,
+                        );
+                      },
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStarterChip(String? filterValue, String label, bool isSelected) {
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: AppColors.accentNeonCyan.withOpacity(0.2),
+      checkmarkColor: AppColors.accentNeonCyan,
+      labelStyle: TextStyle(
+        color: isSelected ? AppColors.accentNeonCyan : AppColors.textSecondary,
+        fontSize: 11,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
-      child: Text(text, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
+      onSelected: (_) => _comboService.setStarterFilter(filterValue),
     );
   }
 
@@ -415,17 +743,18 @@ class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStat
           body: notes.isEmpty
               ? Center(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.note_alt_outlined, size: 48, color: AppColors.textTertiary),
+                      const Icon(Icons.note_alt_outlined, size: 54, color: AppColors.textTertiary),
                       const SizedBox(height: 12),
-                      const Text('暂无对策笔记', style: TextStyle(color: AppColors.textSecondary)),
-                      const SizedBox(height: 8),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.add, color: Colors.black),
-                        label: const Text('添加第一条角色/对手对策', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
-                        onPressed: () => _showAddNoteDialog(context),
+                      const Text(
+                        '暂无对策笔记',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '在对战后记录对手的角色习惯、凹招破绽与反制思路',
+                        style: TextStyle(fontSize: 12, color: AppColors.textTertiary.withOpacity(0.8)),
                       ),
                     ],
                   ),
@@ -435,29 +764,37 @@ class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStat
                   itemCount: notes.length,
                   itemBuilder: (context, index) {
                     final note = notes[index];
-                    final char = Sf6Characters.getById(note.targetKey);
-
                     return Card(
+                      color: AppColors.bgCard,
                       margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: AppColors.borderSubtle),
+                      ),
                       child: Padding(
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                CharacterAvatar(characterId: char.id, size: 36),
-                                const SizedBox(width: 10),
+                                if (note.isCharacterNote)
+                                  CharacterAvatar(characterId: note.targetKey, size: 28, showBorder: false)
+                                else
+                                  const Icon(Icons.person, color: AppColors.accentNeonCyan, size: 24),
+                                const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        note.title.isNotEmpty ? note.title : '对阵 ${char.nameZh} (${char.nameEn})',
+                                        note.title.isNotEmpty ? note.title : '对策笔记',
                                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
                                       ),
                                       Text(
-                                        '更新时间: ${note.updatedAt.month}月${note.updatedAt.day}日',
+                                        note.isCharacterNote
+                                            ? '角色对策: ${Sf6Characters.getById(note.targetKey).nameZh}'
+                                            : '玩家记录: ${note.targetKey}',
                                         style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
                                       ),
                                     ],
@@ -469,25 +806,18 @@ class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStat
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 10),
-                            Text(
-                              note.content,
-                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
-                            ),
+                            const SizedBox(height: 8),
+                            Text(note.content, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4)),
                             if (note.tags.isNotEmpty) ...[
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 8),
                               Wrap(
                                 spacing: 6,
-                                children: note.tags.map((tag) {
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.bgSecondary,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text('#$tag', style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 11)),
-                                  );
-                                }).toList(),
+                                children: note.tags.map((t) => Chip(
+                                  label: Text(t, style: const TextStyle(fontSize: 10, color: AppColors.accentNeonCyan)),
+                                  backgroundColor: AppColors.bgSecondary,
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                )).toList(),
                               ),
                             ],
                           ],

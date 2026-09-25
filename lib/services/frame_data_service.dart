@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:sf6_tracker/models/frame_data_model.dart';
 import 'package:sf6_tracker/data/frame_data_database.dart';
+import 'package:sf6_tracker/ui/widgets/sf6_command_view.dart';
 
 class FrameDataService extends ChangeNotifier {
   String _selectedCharacterId = 'elena';
@@ -10,6 +11,7 @@ class FrameDataService extends ChangeNotifier {
   MoveType? _selectedCategory;
   bool _filterOnlyPlusOnBlock = false;
   bool _filterOnlyPunishable = false;
+  CommandDisplayMode _displayMode = CommandDisplayMode.graphic;
 
   String get selectedCharacterId => _selectedCharacterId;
   List<FrameMove> get currentMoves => _filteredMoves();
@@ -18,6 +20,12 @@ class FrameDataService extends ChangeNotifier {
   MoveType? get selectedCategory => _selectedCategory;
   bool get filterOnlyPlusOnBlock => _filterOnlyPlusOnBlock;
   bool get filterOnlyPunishable => _filterOnlyPunishable;
+  CommandDisplayMode get displayMode => _displayMode;
+
+  void setDisplayMode(CommandDisplayMode mode) {
+    _displayMode = mode;
+    notifyListeners();
+  }
 
   void selectCharacter(String charId) {
     _selectedCharacterId = charId;

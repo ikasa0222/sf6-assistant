@@ -7,6 +7,7 @@ import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
 import 'package:sf6_tracker/ui/widgets/share_battle_card.dart';
+import 'package:sf6_tracker/ui/widgets/share_battle_dialog.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
 import 'package:sf6_tracker/ui/screens/social/player_profile_screen.dart';
 
@@ -32,32 +33,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
   bool _isExpanded = false;
 
   void _showShareDialog(BuildContext context, BattleRecord record) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ShareBattleCard(record: record),
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accentNeonCyan,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                icon: const Icon(Icons.close, size: 18),
-                label: const Text('关闭预览', style: TextStyle(fontWeight: FontWeight.bold)),
-                onPressed: () => Navigator.pop(ctx),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    ShareBattleDialog.show(context, record);
   }
 
   String _formatPlatform(String raw) {

@@ -57,10 +57,14 @@ void main() {
     test('fromCapcomId resolves random character IDs to random and summary rows are not random', () {
       expect(Sf6Characters.fromCapcomId(0).id, isNot(equals('random')));
       expect(Sf6Characters.fromCapcomId('cha').id, isNot(equals('random')));
+      expect(Sf6Characters.fromCapcomId('character').id, isNot(equals('random')));
+      expect(Sf6Characters.fromCapcomId('summary').id, isNot(equals('random')));
       expect(Sf6Characters.fromCapcomId('0').id, isNot(equals('random')));
       expect(Sf6Characters.fromCapcomId(254).id, equals('random'));
       expect(Sf6Characters.fromCapcomId('random').id, equals('random'));
       expect(Sf6Characters.getById('random').shortCode, equals('?'));
+      expect(Sf6Characters.getById('cha').id, isNot(equals('random')));
+      expect(Sf6Characters.getById('character').id, isNot(equals('random')));
     });
 
     test('Rank computation for 11864 LP accurately resolves to Gold 4', () {

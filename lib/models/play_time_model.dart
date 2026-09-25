@@ -18,9 +18,9 @@ class PlayTimeItem {
     final hours = seconds ~/ 3600;
     final minutes = (seconds % 3600) ~/ 60;
     if (hours > 0) {
-      return '';
+      return '$hours小时${minutes > 0 ? "$minutes分" : ""}';
     }
-    return '';
+    return '$minutes分钟';
   }
 
   Color get color {
@@ -145,9 +145,9 @@ class PlayTimeModel {
       final hours = totalSeconds ~/ 3600;
       final minutes = (totalSeconds % 3600) ~/ 60;
       if (hours > 0) {
-        return '';
+        return '$hours小时${minutes > 0 ? "$minutes分" : ""}';
       }
-      return '';
+      return '$minutes分钟';
     }
     if (total != '--' && total.isNotEmpty) return total;
     return '--';

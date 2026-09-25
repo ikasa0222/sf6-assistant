@@ -279,7 +279,7 @@ class Sf6Characters {
   static Sf6Character getById(String id) {
     if (id.trim().isEmpty) return all.first;
     final lower = id.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-    if (lower == 'random' || lower == 'cha' || lower == 'character' || lower == 'unknown' || lower == 'rand' || lower == 'q') {
+    if (lower == 'random' || lower == 'rand' || lower == '254' || lower == '255') {
       return all.firstWhere((c) => c.id == 'random');
     }
     if (lower == 'gouki') return getById('akuma');
@@ -315,7 +315,7 @@ class Sf6Characters {
   static Sf6Character fromCapcomId(dynamic id) {
     if (id == null) return all.first;
     final s = id.toString().trim().toLowerCase();
-    if (s == '0' || s == 'cha' || s == 'all' || s == 'total') {
+    if (s == '0' || s == 'cha' || s == 'character' || s == 'all' || s == 'total' || s == 'summary' || s == 'unknown' || s.isEmpty) {
       return all.first;
     }
     if (s == 'random' || s == 'rand' || s == '254' || s == '255') {

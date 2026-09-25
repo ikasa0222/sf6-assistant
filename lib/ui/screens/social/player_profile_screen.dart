@@ -14,6 +14,7 @@ import 'package:sf6_tracker/models/friend_model.dart';
 import 'package:sf6_tracker/models/user_profile.dart';
 import 'package:sf6_tracker/models/play_time_model.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
+import 'package:sf6_tracker/ui/widgets/battle_card_item.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
 import 'package:sf6_tracker/ui/widgets/rank_badge.dart';
 
@@ -501,7 +502,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                     border: Border.all(color: AppColors.accentNeonYellow.withOpacity(0.5)),
                   ),
                   child: Text(
-                    '总时长: ',
+                    '总时长: ${pt.formattedTotalDuration}',
                     style: const TextStyle(
                       color: AppColors.accentNeonYellow,
                       fontSize: 11,
@@ -547,7 +548,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                           border: Border.all(color: item.color, width: 1.5),
                         ),
                         child: Text(
-                          '',
+                          '${idx + 1}',
                           style: TextStyle(
                             color: item.color,
                             fontSize: 10,
@@ -582,7 +583,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                           borderRadius: BorderRadius.circular(3),
                         ),
                         child: Text(
-                          '\%',
+                          '${item.percentage}%',
                           style: const TextStyle(
                             color: AppColors.textTertiary,
                             fontSize: 11,
@@ -647,7 +648,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           ),
           const SizedBox(height: 2),
           Text(
-            '',
+            '$count 场',
             style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 12,
@@ -1023,66 +1024,9 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (context, idx) {
             final rec = _headToHeadRecords[idx];
-            final myChar = Sf6Characters.getById(rec.playerCharacterId);
-            final oppChar = Sf6Characters.getById(rec.opponentCharacterId);
-
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.bgSecondary,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: rec.isWin ? AppColors.winGreen.withOpacity(0.3) : AppColors.loseRed.withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: rec.isWin ? AppColors.winGreen : AppColors.loseRed,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Center(
-                      child: Text(
-                        rec.isWin ? '胜' : '负',
-                        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 11),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  CharacterAvatar(characterId: myChar.id, size: 28),
-                  const SizedBox(width: 6),
-                  const Text('VS', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 6),
-                  CharacterAvatar(characterId: oppChar.id, size: 28),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${myChar.nameZh} 对阵 ${oppChar.nameZh}',
-                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          rec.battleType.displayName,
-                          style: const TextStyle(color: AppColors.textTertiary, fontSize: 10),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    '${rec.playerScore} - ${rec.opponentScore}',
-                    style: TextStyle(
-                      color: rec.isWin ? AppColors.winGreen : AppColors.loseRed,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
+            return BattleCardItem(
+              record: rec,
+              authService: widget.authService,
             );
           },
         ),
@@ -1162,67 +1106,9 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, idx) {
         final rec = _publicReplays[idx];
-        final bool isWin = rec.isWin;
-        final oppName = rec.opponentFighterId.isNotEmpty ? rec.opponentFighterId : '格斗家';
-        final oppChar = Sf6Characters.getById(rec.opponentCharacterId);
-
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.bgSecondary,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: (isWin ? AppColors.winGreen : AppColors.loseRed).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  isWin ? '获胜' : '战败',
-                  style: TextStyle(
-                    color: isWin ? AppColors.winGreen : AppColors.loseRed,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              CharacterAvatar(characterId: rec.playerCharacterId, size: 24),
-              const SizedBox(width: 4),
-              const Text('vs', style: TextStyle(color: AppColors.textTertiary, fontSize: 10)),
-              const SizedBox(width: 4),
-              CharacterAvatar(characterId: rec.opponentCharacterId, size: 24),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '对阵 $oppName (${oppChar.nameZh})',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      '${rec.battleType.displayName}  •  ${rec.playedAt.month.toString().padLeft(2, '0')}-${rec.playedAt.day.toString().padLeft(2, '0')} ${rec.playedAt.hour.toString().padLeft(2, '0')}:${rec.playedAt.minute.toString().padLeft(2, '0')}',
-                      style: const TextStyle(color: AppColors.textTertiary, fontSize: 9.5),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                '${rec.playerScore} - ${rec.opponentScore}',
-                style: TextStyle(
-                  color: isWin ? AppColors.winGreen : AppColors.loseRed,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
+        return BattleCardItem(
+          record: rec,
+          authService: widget.authService,
         );
       },
     );

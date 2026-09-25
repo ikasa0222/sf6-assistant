@@ -179,7 +179,7 @@ class CapcomSyncEngine {
             final rawCid = c['character_id'] ?? c['character_tool_name'] ?? c['character_name'];
             if (rawCid == null) continue;
             final cidStr = rawCid.toString().trim().toLowerCase();
-            if (cidStr == '0' || cidStr == 'cha' || cidStr == 'all' || cidStr == 'total') continue;
+            if (cidStr == '0' || cidStr == 'cha' || cidStr == 'character' || cidStr == 'all' || cidStr == 'total' || cidStr == 'summary' || cidStr.isEmpty) continue;
 
             final cChar = Sf6Characters.fromCapcomId(rawCid);
             final rawLpNum = c['league_info']?['league_point'] ?? c['league_point'] ?? c['lp'] ?? 0;
@@ -216,7 +216,7 @@ class CapcomSyncEngine {
             final rawCid = c['character_id'] ?? c['character_tool_name'] ?? c['character_name'];
             if (rawCid == null) continue;
             final cidStr = rawCid.toString().trim().toLowerCase();
-            if (cidStr == '0' || cidStr == 'cha' || cidStr == 'all' || cidStr == 'total') continue;
+            if (cidStr == '0' || cidStr == 'cha' || cidStr == 'character' || cidStr == 'all' || cidStr == 'total' || cidStr == 'summary' || cidStr.isEmpty) continue;
 
             final cChar = Sf6Characters.fromCapcomId(rawCid);
             final rawMatches = c['play_count'] ?? c['total_matches'] ?? c['playing_count'] ?? c['matches'] ?? c['battle_count'] ?? 0;
@@ -260,6 +260,17 @@ class CapcomSyncEngine {
           }
         } catch (e) {
           AppLogger.instance.warn('SyncEngine', '解析官方对手克制表异常: $e');
+        }
+
+        // Parse & persist play times from /play page
+        try {
+          final ptPlay = NextDataParser.parsePlayTime(playData);
+          if (ptPlay.hasData && shortId.isNotEmpty) {
+            await StorageService.instance.savePlayTimeJson(shortId, ptPlay.toJson());
+            AppLogger.instance.net('SyncEngine', '成功持久化官方模式时长: ${ptPlay.items.length} 个模式, 累计 ${ptPlay.formattedTotalDuration}');
+          }
+        } catch (e) {
+          AppLogger.instance.warn('SyncEngine', '解析 /play 模式时长异常: $e');
         }
       }).catchError((e) {
         AppLogger.instance.warn('SyncEngine', '同步 /play 异常: $e');

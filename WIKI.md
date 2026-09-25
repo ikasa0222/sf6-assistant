@@ -51,18 +51,19 @@ lib/
 | :--- | :--- | :--- |
 | **应用引导与崩溃防御** | 全局 ErrorWidget 兜底、方向性安全容器、应用初始化 | `lib/main.dart` |
 | **底部导航与更新弹窗** | 主界面 Tab 切换、每日启动自动更新检测、首次启动更新公告弹出 | `lib/app.dart`<br>`lib/ui/widgets/announcement_dialog.dart` |
-| **官方登录与会话拦截** | WebView 模拟官方登录、Cookie 自动拦截持久化 | `lib/ui/screens/auth/login_webview_screen.dart`<br>`lib/services/auth_service.dart` |
-| **玩家手动绑定与切换** | 根据玩家 10 位 Short ID 绑定账号、多账号平台切换 | `lib/ui/screens/home/home_screen.dart`<br>`lib/services/auth_service.dart` |
+| **官方登录与会话拦截** | WebView 模拟官方登录、Cookie 自动拦截持久化、内置数据嗅探核验工具 | `lib/ui/screens/auth/login_webview_screen.dart`<br>`lib/services/auth_service.dart` |
+| **多账号管理与无感切换** | 完整多账号管理面板、支持保留多平台账号数据、主页英雄卡与设置页一键无感切换 | `lib/ui/screens/settings/settings_screen.dart`<br>`lib/ui/screens/home/home_screen.dart`<br>`lib/services/auth_service.dart` |
+| **社交页全网玩家搜索** | 支持 10 位 Short ID 直达、Fighter ID 全网搜索，集成战队/好友/历史对局本地即时联想 | `lib/ui/screens/social/player_search_screen.dart`<br>`lib/ui/screens/social/social_screen.dart` |
 | **卡普空全量多线程同步** | 官方战绩、全角色排位、好友战队并发抓取、Cookie 超时安全保护、全生命周期日志埋点 | `lib/core/network/capcom_sync_engine.dart`<br>`lib/ui/widgets/quick_sync_dialog.dart` |
 | **Next.js 数据逆向解析** | 从官方 Buckler 网页 script 标签解析 JSON、提取对局详情与模式代号 | `lib/core/network/next_data_parser.dart` |
-| **仪表盘玩家英雄卡片** | 当前段位徽章、LP/MR 进度条、主玩角色标签、全球大师榜排名 | `lib/ui/screens/home/home_screen.dart`<br>`lib/ui/widgets/rank_badge.dart` |
+| **仪表盘玩家英雄卡片** | 当前段位徽章、LP/MR 进度条、主玩角色标签、全球大师榜排名、快速切换账号快捷键 | `lib/ui/screens/home/home_screen.dart`<br>`lib/ui/widgets/rank_badge.dart` |
 | **多角色排位天梯榜** | 主玩角色置顶、其余按 MR/LP 排序、默认折叠显示前3位、一键切换主玩角色 | `lib/ui/screens/home/home_screen.dart` |
 | **官方最爱内容与游玩时长** | 100% 真实还原卡普空 Buckler 官方数据：解析 `content_play_time_list`（模式名、真实秒数、Top 3 排序与占比彩条）与 `battle_stats`（排位/比赛间/休闲/格斗中心总场次），彻底剔除任何虚假估算 | `lib/models/play_time_model.dart`<br>`lib/ui/screens/home/home_screen.dart`<br>`lib/ui/screens/social/player_profile_screen.dart` |
 | **近期走势与六维雷达** | 近 20 场胜率条、近 10 局 W/L 走势图、六维能力评估条形图 | `lib/ui/screens/home/home_screen.dart`<br>`lib/ui/widgets/win_rate_bar.dart` |
 | **无限战绩库列表** | 突破官方 100 局上限的本地无限存储、比赛模式与我方角色双筛选 | `lib/ui/screens/battle_log/battle_log_screen.dart`<br>`lib/services/battle_log_service.dart` |
 | **单局对战卡片排版** | 宽敞对手名展示、两行精简时间 (`MM-dd`/`HH:mm`) 与 MR/LP 变化居中平衡对齐、回合击杀方式、录像代码复制 | `lib/ui/widgets/battle_card_item.dart` |
-| **查看对手资料主页** | 从战绩卡片直接跳转对手个人主页、查看对手全角色天梯排位与交手历史 | `lib/ui/widgets/battle_card_item.dart`<br>`lib/ui/screens/social/player_profile_screen.dart` |
-| **战报分享海报长图** | 胜负卡片长图预览与社交群聊分享名片生成 | `lib/ui/widgets/share_battle_card.dart` |
+| **查看对手资料主页** | 从战绩卡片直接跳转对手个人主页、查看对手全角色天梯排位、交手历史与全网公开战绩（采用一致标准卡片） | `lib/ui/widgets/battle_card_item.dart`<br>`lib/ui/screens/social/player_profile_screen.dart` |
+| **真实战报分享海报长图** | 采用 screenshot 与 share_plus 渲染生成高清 PNG 战报海报、支持系统原生多渠道分享与剪贴板复制 | `lib/ui/widgets/share_battle_dialog.dart`<br>`lib/ui/widgets/battle_card_item.dart` |
 | **深度克制与胜率分析** | 我方角色筛选、官方比赛模式联动筛选、最优/最差对策高亮、面对各对手胜率表 | `lib/ui/screens/analytics/analytics_screen.dart`<br>`lib/services/stats_service.dart` |
 | **MR 天梯走势折线图** | 基于已归档大师对局自动绘制的 MR 评分波动曲线 | `lib/ui/widgets/mr_trend_chart.dart` |
 | **好友与俱乐部战队** | 好友在线状态、战队成员列表、特别关注置顶 | `lib/ui/screens/social/social_screen.dart`<br>`lib/ui/screens/social/club_detail_screen.dart`<br>`lib/services/social_service.dart` |
@@ -152,6 +153,34 @@ lib/
 ---
 
 ## 7. 版本演进与关键功能记录
+
+### v1.2.5a (build 2501) - 综合增强版
+- **多账号管理与无感切换 (`settings_screen.dart` & `home_screen.dart` & `auth_service.dart`)**：
+  - 根因解决：换账号登录时由于状态覆盖曾导致原账号数据丢失，无法多号并存。
+  - 改动落地：
+    - `authService.accounts` 完整维护多个绑定与登录档案，SQLite 战绩数据以玩家 Short ID 物理隔离，切换账号数据零丢失。
+    - 设置页重构「多账号管理与切换」面板：清晰展示全部已登记账号（主玩角色名、Fighter ID、Short ID、当前活跃标签），支持一键无感切换当前活跃账号、带确认防误触的移除账号、以及快捷通过 WebView 登录或 Short ID 绑定新号。
+    - 主页玩家英雄卡片右上角集成快速切换账号按钮，轻触即可唤起半屏弹窗进行极速账号切换。
+- **真实战绩分享海报与原生调起 (`share_battle_dialog.dart` & `battle_card_item.dart`)**：
+  - 根因解决：此前战绩分享按钮仅弹假提示，未实现真正的海报渲染与系统调起。
+  - 改动落地：
+    - 新增 `ShareBattleDialog` 组件，采用 `screenshot` 离屏渲染生成高保真 PNG 战报海报，涵盖对局双方 ID、主玩角色头像、段位勋章与积分变化、比分、模式、时间、对局录像码以及各小局终结方式（KO/SA/CA/Perfect）。
+    - 集成 `share_plus` 调起 Android 原生分享面板，支持一键发送到微信、QQ、保存至相册，并附带纯文本格式战报复制。
+- **最爱内容与游玩时长看板恢复与嗅探工具 (`home_screen.dart` & `login_webview_screen.dart` & `play_time_model.dart`)**：
+  - 首页重新挂载「最爱内容 / 游玩时长与构成」卡片，真实展示卡普空官方 `content_play_time_list` Top 3 模式、时长格式化（如 `120小时30分`）、模式占比彩条及四大模式（排位/比赛间/休闲/格斗中心）官方生涯真实场次。
+  - 在卡普空官方登录 InAppWebView 中内置「数据嗅探器」悬浮核验工具，支持实时抓取并检查官方网页 `play.base_info.content_play_time_list` 与 `battle_stats` 结构。
+- **好友二级页面战绩卡片对齐标准无限战绩卡片 (`player_profile_screen.dart`)**：
+  - 彻底重构玩家资料二级页面的「交手记录」与「公开战绩」列表。
+  - 废除原先简陋的单行文本排版，全量替换为与主战绩库一致的标准 `BattleCardItem`，完整呈现比分、对局时间、回合击杀类型（CA/SA/P）、MR/LP 变动、录像码复制与二级卡片展开详情。
+- **社交页全网玩家搜索功能 (`player_search_screen.dart` & `social_screen.dart`)**：
+  - 社交页顶部 AppBar 新增搜索玩家按钮，提供专门的搜索页面。
+  - 支持玩家 10 位 Short ID 精确直达，支持 Fighter ID 玩家昵称全网检索。
+  - 搜索框输入时即时毫秒级联想本地好友列表、战队成员以及无限战绩库中的历史对手；点击搜索触发卡普空官方 Buckler `fighterslist/search/result` 跨网查询，并提供外部浏览器深度检索兜底。
+- **好友二级页面随机角色（Random）场次虚高 Bug 修复 (`characters.dart` & `next_data_parser.dart` & `capcom_sync_engine.dart`)**：
+  - 根因定位：卡普空官方在部分接口中返回的汇总行（`character_id: 'cha'`、`'character'` 或 `0`）此前在部分场景下回退到了 `Sf6Character.random`，导致随机角色的对战场次累加了所有角色的总场次。
+  - 改动落地：全面从 `characters.dart` 映射字典中移除 `'cha'`, `'character'`, `'unknown'`, `'q'` 到 `random` 的降级；在 `next_data_parser.dart`、`capcom_sync_engine.dart` 与 `login_webview_screen.dart` 的角色列表提取中增加显式黑名单过滤，并在单元测试中增加防御用例。
+- **产物更新**：
+  - 编译并部署正式版本 `sf6_assistant_v1.2.5a.apk`。
 
 ### v1.2.5 (build 2500) - 正式版
 - **下拉刷新静默黑屏彻底根治与架构四重加固**：

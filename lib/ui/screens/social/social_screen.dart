@@ -11,6 +11,7 @@ import 'package:sf6_tracker/services/social_service.dart';
 import 'package:sf6_tracker/services/stats_service.dart';
 import 'package:sf6_tracker/ui/screens/social/club_detail_screen.dart';
 import 'package:sf6_tracker/ui/screens/social/player_profile_screen.dart';
+import 'package:sf6_tracker/ui/screens/social/player_search_screen.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
 import 'package:sf6_tracker/ui/widgets/quick_sync_dialog.dart';
 import 'package:sf6_tracker/ui/widgets/rank_badge.dart';
@@ -114,6 +115,21 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
           appBar: AppBar(
             title: const Text('好友与战队', style: TextStyle(fontWeight: FontWeight.bold)),
             actions: [
+              IconButton(
+                tooltip: '全网搜索玩家 (名字/用户码)',
+                icon: const Icon(Icons.search, color: AppColors.accentNeonCyan),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PlayerSearchScreen(
+                        authService: widget.authService,
+                        socialService: widget.socialService,
+                        battleLogService: widget.battleLogService,
+                      ),
+                    ),
+                  );
+                },
+              ),
               IconButton(
                 tooltip: '同步刷新社交数据',
                 icon: const Icon(Icons.sync, color: AppColors.accentNeonCyan),

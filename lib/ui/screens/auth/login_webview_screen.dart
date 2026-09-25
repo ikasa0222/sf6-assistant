@@ -15,6 +15,7 @@ import 'package:sf6_tracker/models/battle_record.dart';
 import 'package:sf6_tracker/models/club_model.dart';
 import 'package:sf6_tracker/models/matchup_stat.dart';
 import 'package:sf6_tracker/models/user_profile.dart';
+import 'package:sf6_tracker/models/play_time_model.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
 
 class LoginWebViewScreen extends StatefulWidget {
@@ -152,6 +153,11 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
                   AppLogger.instance.warn('WebView', '清除缓存异常: $e');
                 }
               },
+            ),
+            IconButton(
+              icon: const Icon(Icons.timer_outlined, color: AppColors.accentNeonCyan),
+              tooltip: '嗅探当前页面游玩时长与最爱内容',
+              onPressed: _showPlayTimeSniffModal,
             ),
             IconButton(
               icon: const Icon(Icons.bug_report, color: AppColors.accentNeonYellow),
@@ -1212,7 +1218,11 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
                       if (rawUsages.isNotEmpty) {
                         for (final e in rawUsages) {
                           if (e is! Map) continue;
-                          final cid = Sf6Characters.fromCapcomId(e['character_id']).id;
+                          final rawCid = e['character_id'] ?? e['character_tool_name'] ?? e['character_name'];
+                          if (rawCid == null) continue;
+                          final cidStr = rawCid.toString().trim().toLowerCase();
+                          if (cidStr == '0' || cidStr == 'cha' || cidStr == 'character' || cidStr == 'all' || cidStr == 'total' || cidStr == 'summary' || cidStr.isEmpty) continue;
+                          final cid = Sf6Characters.fromCapcomId(rawCid).id;
                           final uLp = _safeInt(e['league_point'] ?? e['lp']);
                           final uMr = _safeInt(e['master_rating'] ?? e['mr']);
                           final uMatches = _safeInt(e['play_count'] ?? e['matches'] ?? e['total_matches']);
@@ -1732,5 +1742,191 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
         fontSize: 11.5,
       ),
     );
+  }
+
+  Future<void> _showPlayTimeSniffModal() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final jsResult = await _webViewController?.evaluateJavascript(source: '''
+        (function() {
+          var nd = window.__NEXT_DATA__;
+          if (!nd || !nd.props || !nd.props.pageProps) {
+            return JSON.stringify({error: '未找到 __NEXT_DATA__。请确保当前页面是卡普空 Buckler 个人主页或各模式资料页且已加载完成。'});
+          }
+          var pp = nd.props.pageProps;
+          var play = pp.play || {};
+          var base_info = play.base_info || pp.base_info || {};
+          var battle_stats = play.battle_stats || pp.battle_stats || {};
+          var content_play_time_list = base_info.content_play_time_list || play.content_play_time_list || pp.content_play_time_list || [];
+          var sid = pp.sid || (pp.fighter_banner_info && pp.fighter_banner_info.personal_info ? pp.fighter_banner_info.personal_info.short_id : '');
+          var fid = pp.fighter_banner_info && pp.fighter_banner_info.personal_info ? pp.fighter_banner_info.personal_info.fighter_id : '';
+          return JSON.stringify({
+            url: window.location.href,
+            sid: sid ? String(sid) : '',
+            fighter_id: fid ? String(fid) : '',
+            content_play_time_list: content_play_time_list,
+            battle_stats: battle_stats,
+            has_play: !!pp.play,
+            favorite: pp.favorite || {}
+          });
+        })()
+      ''');
+
+      if (mounted) Navigator.of(context).pop();
+
+      if (jsResult == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('嗅探执行失败，WebView 未就绪'), backgroundColor: AppColors.loseRed),
+          );
+        }
+        return;
+      }
+
+      final Map<String, dynamic> rawMap = jsonDecode(jsResult.toString());
+      if (rawMap.containsKey('error')) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              backgroundColor: AppColors.bgCard,
+              title: const Row(
+                children: [
+                  Icon(Icons.warning_amber, color: AppColors.accentNeonYellow),
+                  SizedBox(width: 8),
+                  Text('嗅探未命中 NextData', style: TextStyle(color: AppColors.textPrimary, fontSize: 16)),
+                ],
+              ),
+              content: Text(rawMap['error'].toString(), style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('知道了')),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+
+      final pt = NextDataParser.parsePlayTime({'props': {'pageProps': rawMap}});
+      final sid = rawMap['sid']?.toString() ?? '';
+      final fid = rawMap['fighter_id']?.toString() ?? '';
+      final pageUrl = rawMap['url']?.toString() ?? '';
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.bgCard,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.timer, color: AppColors.accentNeonCyan),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    fid.isNotEmpty ? '$fid 的时长嗅探结果' : '官方时长与构成嗅探',
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('页面: $pageUrl', style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                  if (sid.isNotEmpty) Text('Short ID: $sid', style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgSecondary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('官方累计总时长: ${pt.formattedTotalDuration} (${pt.totalSeconds} 秒)',
+                            style: const TextStyle(color: AppColors.winGreen, fontWeight: FontWeight.bold, fontSize: 13)),
+                        const SizedBox(height: 6),
+                        Text('解析模式条目数: ${pt.items.length} 个', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('各模式官方真实时长：', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 6),
+                  if (pt.items.isEmpty)
+                    const Text('未检测到模式时长列表。如果当前在 /profile 主页，请尝试点击其最爱内容或进入 /profile/[sid]/play 页面后再试。',
+                        style: TextStyle(color: AppColors.textTertiary, fontSize: 12))
+                  else
+                    ...pt.items.map((item) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Row(
+                            children: [
+                              Container(width: 8, height: 8, decoration: BoxDecoration(color: item.color, shape: BoxShape.circle)),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(item.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 12))),
+                              Text(item.formattedDuration, style: const TextStyle(color: AppColors.accentNeonYellow, fontWeight: FontWeight.bold, fontSize: 12)),
+                              const SizedBox(width: 6),
+                              Text('(${item.percentage}%)', style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                            ],
+                          ),
+                        )),
+                  const SizedBox(height: 12),
+                  const Text('官方生涯对局总数看板：', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 6),
+                  Text('排位: ${pt.rankedMatches} 场  •  比赛间: ${pt.customRoomMatches} 场\n休闲: ${pt.casualMatches} 场  •  格斗中心: ${pt.battleHubMatches} 场',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.4)),
+                ],
+              ),
+            ),
+            actions: [
+              if (sid.isNotEmpty && pt.hasData)
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.winGreen, foregroundColor: Colors.black),
+                  icon: const Icon(Icons.save, size: 16),
+                  label: const Text('保存此数据至应用', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  onPressed: () async {
+                    await StorageService.instance.savePlayTimeJson(sid, pt.toJson());
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('已成功将游玩时长保存至玩家 $sid 本地缓存'), backgroundColor: AppColors.winGreen),
+                      );
+                    }
+                  },
+                ),
+              TextButton(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: const JsonEncoder.withIndent('  ').convert(rawMap)));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('已复制原始 NextData JSON 数据')),
+                  );
+                },
+                child: const Text('复制 JSON', style: TextStyle(color: AppColors.accentNeonCyan)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('关闭', style: TextStyle(color: AppColors.textSecondary)),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('嗅探异常: $e'), backgroundColor: AppColors.loseRed),
+        );
+      }
+    }
   }
 }

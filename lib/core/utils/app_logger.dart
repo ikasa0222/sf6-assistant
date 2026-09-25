@@ -27,7 +27,7 @@ class AppLogger {
   AppLogger._();
   static final AppLogger instance = AppLogger._();
 
-  static const String currentAppVersion = 'v1.2.5a';
+  static const String currentAppVersion = 'v1.2.5b';
   final List<LogEntry> _logs = [];
   static const int _maxLogs = 600;
   static const String _crashLogPrefKey = 'sf6_persisted_crash_logs';
@@ -103,6 +103,13 @@ class AppLogger {
     if (message.contains('This exception was thrown because the response has a status code of')) {
       final m = RegExp(r'status code of (\d+)').firstMatch(message);
       final code = m != null ? m.group(1) : 'HTTP 错误';
+      if (code == '503') {
+        return '[503] 卡普空服务器维护或临时访问受限，已保留本地离线数据';
+      } else if (code == '403') {
+        return '[403] 官方登录会话已过期，请重新登录授权';
+      } else if (code == '400') {
+        return '[400] 请求参数有误或目标玩家数据未公开';
+      }
       return '[$code] 接口响应异常 (请确认网络连接或稍后重试)';
     }
     if (message.length > 300 && message.contains('DioException')) {

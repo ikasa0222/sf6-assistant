@@ -245,92 +245,132 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
     });
 
     try {
-      final cookieManager = CookieManager.instance();
-      final cookies = await cookieManager.getCookies(url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/'));
-      final cookieHeader = cookies.map((c) => '${c.name}=${c.value}').join('; ');
+      String cookieHeader = widget.authService?.activeAccount?.cookieSession ?? '';
+      try {
+        final cookieManager = CookieManager.instance();
+        final cookies = await cookieManager.getCookies(
+          url: WebUri('https://www.streetfighter.com/6/buckler/zh-hans/'),
+        ).timeout(const Duration(seconds: 3));
+        final nativeHeader = cookies.map((c) => '${c.name}=${c.value}').join('; ');
+        if (nativeHeader.isNotEmpty) {
+          cookieHeader = nativeHeader;
+        }
+      } catch (_) {}
 
       final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 12),
+        receiveTimeout: const Duration(seconds: 12),
+        validateStatus: (status) => status != null && status < 500,
         headers: {
           if (cookieHeader.isNotEmpty) 'Cookie': cookieHeader,
-          'User-Agent': 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+          'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36',
+          'Referer': 'https://www.streetfighter.com/6/buckler/zh-hans/fighterslist/search',
+          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
         },
       ));
 
       final List<SearchPlayerResult> results = [];
 
-      if (_isShortIdMode || RegExp(r'^\d{8,12}$').hasMatch(query)) {
-        final sid = query.replaceAll(RegExp(r'\D'), '');
-        final res = await dio.get('https://www.streetfighter.com/6/buckler/zh-hans/profile/$sid');
-        final data = NextDataParser.extractNextData(res.data.toString());
-        if (data != null) {
-          final props = data['props']?['pageProps'];
-          final banner = props?['fighter_banner_info'] ?? props?['fighter_banner'];
-          final personal = banner?['personal_info'] ?? props?['personal_info'];
-          final fighterName = (personal?['fighter_id'] ?? props?['fighter_id'] ?? '格斗家').toString();
-          final rawFavChar = banner?['favorite_character_id'] ?? props?['favorite_character_id'] ?? 'luke';
-          final charObj = Sf6Characters.fromCapcomId(rawFavChar);
-          final leagueInfo = banner?['favorite_character_league_info'] ?? props?['league_info'];
-          final lp = int.tryParse((leagueInfo?['league_point'] ?? 0).toString()) ?? 0;
-          final mr = int.tryParse((leagueInfo?['master_rating'] ?? 0).toString()) ?? 0;
-          final platformId = (personal?['platform_id'] ?? '1').toString();
-          final circleName = (banner?['circle']?['circle_name'] ?? '').toString();
+      void parseFighterList(dynamic list) {
+        if (list is! List) return;
+        for (final item in list) {
+          if (item is! Map) continue;
+          final personal = item['personal_info'] ?? item['fighter_banner_info']?['personal_info'] ?? item;
+          final sid = (personal['short_id'] ?? item['short_id'] ?? '').toString();
+          final fName = (personal['fighter_id'] ?? item['fighter_id'] ?? '').toString();
+          if (sid.isEmpty && fName.isEmpty) continue;
+
+          final rawChar = item['favorite_character_id'] ?? item['fighter_banner_info']?['favorite_character_id'] ?? 'luke';
+          final charObj = Sf6Characters.fromCapcomId(rawChar);
+          final league = item['favorite_character_league_info'] ?? item['league_info'];
+          final lp = int.tryParse((league?['league_point'] ?? 0).toString()) ?? 0;
+          final mr = int.tryParse((league?['master_rating'] ?? 0).toString()) ?? 0;
+          final platId = (personal['platform_id'] ?? '1').toString();
+          final club = (item['circle_name'] ?? item['circle']?['circle_name'] ?? item['main_circle']?['circle_name'] ?? '').toString();
 
           results.add(SearchPlayerResult(
             shortId: sid,
-            fighterId: fighterName,
+            fighterId: fName,
             mainCharacterId: charObj.id,
             lp: lp,
             mr: mr,
-            platform: platformId,
-            clubName: circleName,
-            sourceDescription: '官方 Buckler 实时个人主页',
+            platform: platId,
+            clubName: club,
+            sourceDescription: '官方 Buckler 全网搜索匹配',
             isOfficialNetwork: true,
           ));
         }
+      }
+
+      if (_isShortIdMode || RegExp(r'^\d{8,12}$').hasMatch(query)) {
+        final sid = query.replaceAll(RegExp(r'\D'), '');
+        final searchUrl = 'https://www.streetfighter.com/6/buckler/zh-hans/fighterslist/search/result?short_id=$sid&page=1';
+        final res = await dio.get(searchUrl);
+
+        if (res.statusCode == 403) {
+          _networkErrorMessage = '官方登录会话已过期，请在设置中重新登录卡普空账号后再搜索。';
+        } else if (res.statusCode == 200) {
+          final data = NextDataParser.extractNextData(res.data.toString());
+          if (data != null) {
+            final pageProps = data['props']?['pageProps'];
+            parseFighterList(pageProps?['fighter_banner_list']);
+            parseFighterList(pageProps?['fighter_list']);
+            parseFighterList(pageProps?['search_result']);
+            parseFighterList(pageProps?['fighters']);
+          }
+        }
+
+        // Secondary fallback: if official search list is empty, try direct profile
+        if (results.isEmpty && (res.statusCode == 200 || res.statusCode == 400 || res.statusCode == 404)) {
+          try {
+            final profRes = await dio.get('https://www.streetfighter.com/6/buckler/zh-hans/profile/$sid');
+            if (profRes.statusCode == 200) {
+              final pData = NextDataParser.extractNextData(profRes.data.toString());
+              if (pData != null) {
+                final props = pData['props']?['pageProps'];
+                final banner = props?['fighter_banner_info'] ?? props?['fighter_banner'];
+                final personal = banner?['personal_info'] ?? props?['personal_info'];
+                final fName = (personal?['fighter_id'] ?? props?['fighter_id'] ?? '').toString();
+                if (fName.isNotEmpty) {
+                  final rawChar = banner?['favorite_character_id'] ?? props?['favorite_character_id'] ?? 'luke';
+                  final charObj = Sf6Characters.fromCapcomId(rawChar);
+                  final league = banner?['favorite_character_league_info'] ?? props?['league_info'];
+                  final lp = int.tryParse((league?['league_point'] ?? 0).toString()) ?? 0;
+                  final mr = int.tryParse((league?['master_rating'] ?? 0).toString()) ?? 0;
+                  final platId = (personal?['platform_id'] ?? '1').toString();
+                  final club = (banner?['circle']?['circle_name'] ?? '').toString();
+                  results.add(SearchPlayerResult(
+                    shortId: sid,
+                    fighterId: fName,
+                    mainCharacterId: charObj.id,
+                    lp: lp,
+                    mr: mr,
+                    platform: platId,
+                    clubName: club,
+                    sourceDescription: '官方 Buckler 实时个人主页',
+                    isOfficialNetwork: true,
+                  ));
+                }
+              }
+            }
+          } catch (_) {}
+        }
       } else {
         final encQuery = Uri.encodeComponent(query);
-        final searchUrl = 'https://www.streetfighter.com/6/buckler/zh-hans/fighterslist/search/result?fighter_id=$encQuery';
+        final searchUrl = 'https://www.streetfighter.com/6/buckler/zh-hans/fighterslist/search/result?fighter_id=$encQuery&page=1';
         final res = await dio.get(searchUrl);
-        final data = NextDataParser.extractNextData(res.data.toString());
 
-        if (data != null) {
-          final pageProps = data['props']?['pageProps'];
-          final list = pageProps?['fighter_list'] ??
-              pageProps?['search_result'] ??
-              pageProps?['fighters'] ??
-              pageProps?['list'] ??
-              [];
-
-          if (list is List && list.isNotEmpty) {
-            for (final item in list) {
-              if (item is! Map) continue;
-              final personal = item['personal_info'] ?? item['fighter_banner_info']?['personal_info'] ?? item;
-              final sid = (personal['short_id'] ?? item['short_id'] ?? '').toString();
-              final fName = (personal['fighter_id'] ?? item['fighter_id'] ?? '').toString();
-              if (sid.isEmpty && fName.isEmpty) continue;
-
-              final rawChar = item['favorite_character_id'] ?? item['fighter_banner_info']?['favorite_character_id'] ?? 1;
-              final charObj = Sf6Characters.fromCapcomId(rawChar);
-              final league = item['league_info'] ?? item['favorite_character_league_info'];
-              final lp = int.tryParse((league?['league_point'] ?? 0).toString()) ?? 0;
-              final mr = int.tryParse((league?['master_rating'] ?? 0).toString()) ?? 0;
-              final platId = (personal['platform_id'] ?? '1').toString();
-              final club = (item['circle_name'] ?? item['circle']?['circle_name'] ?? '').toString();
-
-              results.add(SearchPlayerResult(
-                shortId: sid,
-                fighterId: fName,
-                mainCharacterId: charObj.id,
-                lp: lp,
-                mr: mr,
-                platform: platId,
-                clubName: club,
-                sourceDescription: '官方 Buckler 全网搜索匹配',
-                isOfficialNetwork: true,
-              ));
-            }
+        if (res.statusCode == 403) {
+          _networkErrorMessage = '官方登录会话已过期，请在设置中重新登录卡普空账号后再搜索。';
+        } else if (res.statusCode == 200) {
+          final data = NextDataParser.extractNextData(res.data.toString());
+          if (data != null) {
+            final pageProps = data['props']?['pageProps'];
+            parseFighterList(pageProps?['fighter_banner_list']);
+            parseFighterList(pageProps?['fighter_list']);
+            parseFighterList(pageProps?['search_result']);
+            parseFighterList(pageProps?['fighters']);
+            parseFighterList(pageProps?['list']);
           }
         }
       }
@@ -339,16 +379,25 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
         setState(() {
           _networkResults = results;
           _isSearchingNetwork = false;
-          if (results.isEmpty) {
-            _networkErrorMessage = '卡普空全网暂未检索到完全匹配的玩家记录，请核对名称或直接尝试输入 10 位 Short ID。';
+          if (results.isEmpty && _networkErrorMessage.isEmpty) {
+            _networkErrorMessage = '卡普空全网暂未检索到匹配的玩家，请核对 10 位数字用户码或玩家名称（确保该玩家已在 Buckler 开启公开展示）。';
           }
         });
       }
     } catch (e) {
       if (mounted) {
+        final errText = e.toString();
+        String friendlyMsg = '全网搜索网络连接异常，请检查网络或稍后重试。';
+        if (errText.contains('403')) {
+          friendlyMsg = '官方登录会话已过期，请在设置中重新登录官方账号后再进行全网搜索。';
+        } else if (errText.contains('400')) {
+          friendlyMsg = '未在卡普空官方检索到匹配的玩家，请核对 10 位数字用户码是否输入正确。';
+        } else if (errText.contains('503')) {
+          friendlyMsg = '卡普空官方服务器正在临时维护中 (503)，请稍后再试。';
+        }
         setState(() {
           _isSearchingNetwork = false;
-          _networkErrorMessage = '全网搜索网络连接超时或尚未登录官方会话: $e';
+          _networkErrorMessage = friendlyMsg;
         });
       }
     }
@@ -374,8 +423,8 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
   void _openInBrowserSearch(String query) {
     final enc = Uri.encodeComponent(query);
     final targetUrl = _isShortIdMode
-        ? 'https://www.streetfighter.com/6/buckler/zh-hans/profile/$query'
-        : 'https://www.streetfighter.com/6/buckler/zh-hans/fighterslist/search/result?fighter_id=$enc';
+        ? 'https://www.streetfighter.com/6/buckler/zh-hans/fighterslist/search/result?short_id=$enc&page=1'
+        : 'https://www.streetfighter.com/6/buckler/zh-hans/fighterslist/search/result?fighter_id=$enc&page=1';
 
     Navigator.of(context).push(
       MaterialPageRoute(

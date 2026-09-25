@@ -16,6 +16,9 @@ class BattleCardItem extends StatefulWidget {
   final VoidCallback? onShare;
   final VoidCallback? onAddNote;
   final AuthService? authService;
+  final bool isEmbedded;
+  final bool showViewProfileButton;
+  final EdgeInsetsGeometry? customMargin;
 
   const BattleCardItem({
     super.key,
@@ -23,6 +26,9 @@ class BattleCardItem extends StatefulWidget {
     this.onShare,
     this.onAddNote,
     this.authService,
+    this.isEmbedded = false,
+    this.showViewProfileButton = true,
+    this.customMargin,
   });
 
   @override
@@ -46,13 +52,18 @@ class _BattleCardItemState extends State<BattleCardItem> {
     final isWin = r.isWin;
     final oppChar = Sf6Characters.getById(r.opponentCharacterId);
 
+    final defaultMargin = widget.isEmbedded
+        ? const EdgeInsets.symmetric(horizontal: 0, vertical: 4)
+        : const EdgeInsets.symmetric(horizontal: 16, vertical: 6);
+    final cardColor = widget.isEmbedded ? AppColors.bgSecondary : AppColors.bgCard;
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: widget.customMargin ?? defaultMargin,
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(12),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isWin ? AppColors.winGreen.withOpacity(0.3) : AppColors.loseRed.withOpacity(0.3),
+          color: isWin ? AppColors.winGreen.withOpacity(0.35) : AppColors.loseRed.withOpacity(0.35),
           width: 1,
         ),
       ),
@@ -308,47 +319,48 @@ class _BattleCardItemState extends State<BattleCardItem> {
                               ),
                             ),
                           ),
-                          InkWell(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => PlayerProfileScreen(
-                                    shortId: r.opponentShortId,
-                                    fighterId: r.opponentFighterId,
-                                    mainCharacterId: r.opponentCharacterId,
-                                    lp: r.opponentLp ?? 0,
-                                    mr: r.opponentMr ?? 0,
-                                    platform: r.opponentPlatform,
-                                    authService: widget.authService,
-                                  ),
-                                ),
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(6),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.accentNeonCyan.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: AppColors.accentNeonCyan.withOpacity(0.6)),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.person_search, size: 13, color: AppColors.accentNeonCyan),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    '查看对方资料',
-                                    style: TextStyle(
-                                      color: AppColors.accentNeonCyan,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
+                          if (widget.showViewProfileButton && !widget.isEmbedded && r.opponentShortId.isNotEmpty)
+                            InkWell(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => PlayerProfileScreen(
+                                      shortId: r.opponentShortId,
+                                      fighterId: r.opponentFighterId,
+                                      mainCharacterId: r.opponentCharacterId,
+                                      lp: r.opponentLp ?? 0,
+                                      mr: r.opponentMr ?? 0,
+                                      platform: r.opponentPlatform,
+                                      authService: widget.authService,
                                     ),
                                   ),
-                                ],
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.accentNeonCyan.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: AppColors.accentNeonCyan.withOpacity(0.6)),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.person_search, size: 13, color: AppColors.accentNeonCyan),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      '查看对方资料',
+                                      style: TextStyle(
+                                        color: AppColors.accentNeonCyan,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
                         ],
                       ),
                     ),

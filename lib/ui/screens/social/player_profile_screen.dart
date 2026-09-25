@@ -930,7 +930,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
 
           // Content body
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
             child: _selectedTab == 0 ? _buildHeadToHeadContent() : _buildPublicReplaysContent(),
           ),
         ],
@@ -1021,12 +1021,14 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: _headToHeadRecords.take(15).length,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          separatorBuilder: (_, __) => const SizedBox(height: 6),
           itemBuilder: (context, idx) {
             final rec = _headToHeadRecords[idx];
             return BattleCardItem(
               record: rec,
               authService: widget.authService,
+              isEmbedded: true,
+              showViewProfileButton: false,
             );
           },
         ),
@@ -1103,12 +1105,14 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _publicReplays.take(15).length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, __) => const SizedBox(height: 6),
       itemBuilder: (context, idx) {
         final rec = _publicReplays[idx];
         return BattleCardItem(
           record: rec,
           authService: widget.authService,
+          isEmbedded: true,
+          showViewProfileButton: false,
         );
       },
     );

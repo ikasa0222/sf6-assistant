@@ -554,9 +554,10 @@ class CapcomSyncEngine {
       );
     } catch (e, stack) {
       AppLogger.instance.error('CapcomSyncEngine', '同步异常: $e\n$stack');
+      final cleanMsg = AppLogger.sanitizeMessage(e.toString());
       return SyncResult(
         success: false,
-        message: '同步异常: $e',
+        message: cleanMsg,
       );
     } finally {
       _isSyncing = false;

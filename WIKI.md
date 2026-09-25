@@ -154,6 +154,25 @@ lib/
 
 ## 7. 版本演进与关键功能记录
 
+### v1.2.5b (build 2502) - 测试版b
+- **全网搜索玩家 400 报错根除与官方路由规范对齐 (`player_search_screen.dart`)**：
+  - 根因定位：通过本地 Playwright 驱动 Edge 浏览器与卡普空前端构建包 (`fighterslist/search` 与 `search/result`) 现场逆向核验，查明 Short ID 搜索的官方正式路由为 `/fighterslist/search/result?short_id=xxx&page=1`，此前直接请求 `/profile/$sid` 会因档案未公开或不存在导致卡普空返回 HTTP 400 (`400 == e.common.statusCode`)。
+  - 改动落地：
+    - 将 Short ID 搜索地址对齐为官方标准 `/fighterslist/search/result?short_id=$sid&page=1`，解析 `fighter_banner_list`，保留向后探测 `/profile` 兜底。
+    - 强化 Cookie 传递链路：优先提取持久化的 `authService.activeAccount?.cookieSession` 兜底，携带完整 Referer 与移动端请求头。
+    - 配置 Dio `validateStatus: (s) => s != null && s < 500`，对 400/404/403 异常进行友好中文清洗，清晰提示“未在卡普空官方检索到匹配的玩家，请核对 10 位数字用户码是否输入正确”，彻底杜绝英文系统原始堆栈直接上屏。
+- **好友二级页面战绩卡片“卡中卡”重叠彻底消除 (`battle_card_item.dart` & `player_profile_screen.dart`)**：
+  - 根因定位：屏幕已有 16px padding，外层容器又有 14px padding，内层 `BattleCardItem` 又自带 16px horizontal margin，卡片左右可用宽度被压缩了近 100px 造成文字与图标重叠；且同为 `bgCard` 颜色，并含有会无限递归打开自己的「查看对方资料」按钮。
+  - 改动落地：
+    - 为 `BattleCardItem` 新增 `isEmbedded: true`（内嵌模式）与 `showViewProfileButton` 参数。
+    - 内嵌模式下横向 Margin 归零，宽度瞬间释放 32px 以上，时间、局数、MR 与击杀标记舒展排版不再折行重叠。
+    - 背景色自动换装为更有层次感的 `AppColors.bgSecondary`，与外层大卡片拉开视觉层次。
+    - 自动隐藏展开后的「查看对方资料」按钮，根除递归打开同一个玩家主页的循环 Bug。
+- **服务端 503 异常明确标注与诊断优化 (`app_logger.dart` & `capcom_sync_engine.dart`)**：
+  - 在 `AppLogger.sanitizeMessage` 与同步引擎中为 HTTP 503/403/400 状态码提供专门的中文提示（如“卡普空服务器维护或临时访问受限 (503)，已保留本地离线数据”），避免用户将卡普空官方服务器维护误判为软件崩溃。
+- **产物更新**：
+  - 编译并部署测试版本 `sf6_assistant_v1.2.5b.apk`。
+
 ### v1.2.5a (build 2501) - 综合增强版
 - **多账号管理与无感切换 (`settings_screen.dart` & `home_screen.dart` & `auth_service.dart`)**：
   - 根因解决：换账号登录时由于状态覆盖曾导致原账号数据丢失，无法多号并存。

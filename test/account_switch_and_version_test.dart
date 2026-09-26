@@ -5,8 +5,8 @@ import 'package:sf6_tracker/services/update_service.dart';
 
 void main() {
   group('Version and Account Switch Tests', () {
-    test('Current app version is v1.2.5.1 matching test version specification', () {
-      expect(AppLogger.currentAppVersion, equals('v1.2.5.1'));
+    test('Current app version is v1.2.6', () {
+      expect(AppLogger.currentAppVersion, equals('v1.2.6'));
     });
 
     test('UpdateService compares multi-segment test versions correctly', () {

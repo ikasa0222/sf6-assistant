@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
+import 'package:sf6_tracker/data/frame_data_database.dart';
 import 'package:sf6_tracker/models/frame_data_model.dart';
 import 'package:sf6_tracker/services/frame_data_service.dart';
+import 'package:sf6_tracker/ui/widgets/move_action_preview.dart';
 import 'package:sf6_tracker/ui/widgets/move_detail_modal.dart';
 import 'package:sf6_tracker/ui/widgets/sf6_command_view.dart';
 
@@ -110,7 +112,7 @@ class _MovelistScreenState extends State<MovelistScreen> {
             child: ListenableBuilder(
               listenable: widget.frameDataService,
               builder: (context, _) {
-                final allMoves = widget.frameDataService.currentMoves;
+                final allMoves = FrameDataDatabase.getCharacterMoves(widget.characterId);
 
                 final specials = allMoves.where((m) => m.type == MoveType.special).toList();
                 final supers = allMoves.where((m) => m.type == MoveType.superArt).toList();
@@ -192,6 +194,7 @@ class _MovelistScreenState extends State<MovelistScreen> {
             context,
             move: move,
             characterNameZh: charName,
+            characterId: widget.characterId,
             displayMode: _isModern ? CommandDisplayMode.modern : CommandDisplayMode.graphic,
           );
         },
@@ -279,15 +282,11 @@ class _MovelistScreenState extends State<MovelistScreen> {
               const SizedBox(width: 10),
 
               // Right: Move Thumbnail
-              Container(
-                width: 72,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: AppColors.bgSecondary,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.borderSubtle.withOpacity(0.5), width: 0.8),
-                ),
-                child: const Icon(Icons.sports_martial_arts, size: 28, color: AppColors.bgCardHighlight),
+              MoveActionPreview(
+                characterId: widget.characterId,
+                move: move,
+                width: 82,
+                height: 56,
               ),
             ],
           ),

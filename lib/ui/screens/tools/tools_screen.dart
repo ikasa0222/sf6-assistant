@@ -708,67 +708,182 @@ class _ToolsScreenState extends State<ToolsScreen> {
   }
 
   void _showNotesDialog(BuildContext context) {
+    final currentChar = Sf6Characters.getById(_selectedCharId);
+    int selectedTab = 0; // 0: current character, 1: all characters
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.bgCard,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
       builder: (ctx) {
-        final notes = widget.notesService.notes;
-        return Container(
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        return StatefulBuilder(
+          builder: (modalContext, setModalState) {
+            final allNotes = widget.notesService.notes;
+            final charNotes = allNotes.where((n) => n.targetKey == _selectedCharId).toList();
+            final displayedNotes = selectedTab == 0 ? charNotes : allNotes;
+
+            return Container(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('精选对策心得与习惯笔记', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.add, color: AppColors.accentNeonCyan),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _showAddNoteDialog(context);
-                    },
+                  Row(
+                    children: [
+                      const Text('精选对策心得与习惯笔记', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.add_circle_outline, color: AppColors.accentNeonCyan),
+                        tooltip: '添加新对策',
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _showAddNoteDialog(context);
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Tab switch: Current character vs All
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => setModalState(() => selectedTab = 0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: selectedTab == 0 ? AppColors.accentNeonCyan.withOpacity(0.2) : AppColors.bgSecondary,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: selectedTab == 0 ? AppColors.accentNeonCyan : AppColors.borderSubtle,
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            '当前: ${currentChar.nameZh} (${charNotes.length})',
+                            style: TextStyle(
+                              color: selectedTab == 0 ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                              fontSize: 11,
+                              fontWeight: selectedTab == 0 ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => setModalState(() => selectedTab = 1),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: selectedTab == 1 ? const Color(0xFF7C4DFF).withOpacity(0.25) : AppColors.bgSecondary,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: selectedTab == 1 ? const Color(0xFF7C4DFF) : AppColors.borderSubtle,
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            '全部对策库 (${allNotes.length})',
+                            style: TextStyle(
+                              color: selectedTab == 1 ? Colors.white : AppColors.textSecondary,
+                              fontSize: 11,
+                              fontWeight: selectedTab == 1 ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  Expanded(
+                    child: displayedNotes.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('暂无该角色专属笔记', style: TextStyle(color: AppColors.textTertiary, fontSize: 13)),
+                                const SizedBox(height: 8),
+                                TextButton(
+                                  onPressed: () => setModalState(() => selectedTab = 1),
+                                  child: const Text('查看其他角色对策 >', style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 12)),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: displayedNotes.length,
+                            itemBuilder: (_, i) {
+                              final n = displayedNotes[i];
+                              final isCustom = !n.id.startsWith('note_');
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.bgSecondary,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: AppColors.borderSubtle.withOpacity(0.6), width: 0.8),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        CharacterAvatar(characterId: n.targetKey, size: 22, showBorder: false),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            n.title,
+                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                                          ),
+                                        ),
+                                        if (isCustom)
+                                          IconButton(
+                                            icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.textTertiary),
+                                            onPressed: () async {
+                                              await widget.notesService.deleteNote(n.id);
+                                              setModalState(() {});
+                                            },
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      n.content,
+                                      style: const TextStyle(color: Color(0xFFD0D0DC), fontSize: 11.5, height: 1.45),
+                                    ),
+                                    if (n.tags.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        children: n.tags.map((tag) {
+                                          return Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.bgCard,
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              '#$tag',
+                                              style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 9.5),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: notes.isEmpty
-                    ? const Center(child: Text('暂无笔记，点击上方加号添加对策', style: TextStyle(color: AppColors.textTertiary)))
-                    : ListView.builder(
-                        itemCount: notes.length,
-                        itemBuilder: (_, i) {
-                          final n = notes[i];
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: AppColors.bgSecondary,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    CharacterAvatar(characterId: n.targetKey, size: 20, showBorder: false),
-                                    const SizedBox(width: 6),
-                                    Text(n.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(n.content, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

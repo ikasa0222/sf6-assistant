@@ -29,6 +29,10 @@ class FrameDataService extends ChangeNotifier {
 
   void selectCharacter(String charId) {
     _selectedCharacterId = charId;
+    _searchQuery = '';
+    _selectedCategory = null;
+    _filterOnlyPlusOnBlock = false;
+    _filterOnlyPunishable = false;
     loadFrameDataForCharacter(charId);
   }
 

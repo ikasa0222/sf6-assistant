@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/models/frame_data_model.dart';
+import 'package:sf6_tracker/ui/widgets/move_action_preview.dart';
 import 'package:sf6_tracker/ui/widgets/sf6_command_view.dart';
 
 class MoveDetailModal extends StatelessWidget {
   final FrameMove move;
   final String characterNameZh;
+  final String characterId;
   final CommandDisplayMode displayMode;
   final VoidCallback? onOpenFullFrameData;
 
@@ -13,6 +15,7 @@ class MoveDetailModal extends StatelessWidget {
     super.key,
     required this.move,
     required this.characterNameZh,
+    this.characterId = 'ryu',
     this.displayMode = CommandDisplayMode.graphic,
     this.onOpenFullFrameData,
   });
@@ -20,6 +23,7 @@ class MoveDetailModal extends StatelessWidget {
   static void show(BuildContext context, {
     required FrameMove move,
     required String characterNameZh,
+    String characterId = 'ryu',
     CommandDisplayMode displayMode = CommandDisplayMode.graphic,
     VoidCallback? onOpenFullFrameData,
   }) {
@@ -30,6 +34,7 @@ class MoveDetailModal extends StatelessWidget {
       builder: (_) => MoveDetailModal(
         move: move,
         characterNameZh: characterNameZh,
+        characterId: characterId,
         displayMode: displayMode,
         onOpenFullFrameData: onOpenFullFrameData,
       ),
@@ -115,35 +120,12 @@ class MoveDetailModal extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Move Action Preview Banner
-                  Container(
+                  MoveActionPreview(
+                    characterId: characterId,
+                    move: move,
                     width: double.infinity,
-                    height: 140,
-                    decoration: BoxDecoration(
-                      color: AppColors.bgCard,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.borderSubtle, width: 0.8),
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        const Icon(Icons.sports_kabaddi, size: 64, color: AppColors.bgCardHighlight),
-                        Positioned(
-                          bottom: 8,
-                          right: 10,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.6),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              characterNameZh,
-                              style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 10, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    height: 160,
+                    isBanner: true,
                   ),
                   const SizedBox(height: 12),
 

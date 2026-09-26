@@ -67,10 +67,16 @@ lib/
 | **深度克制与胜率分析** | 我方角色筛选、官方比赛模式联动筛选、最优/最差对策高亮、面对各对手胜率表 | `lib/ui/screens/analytics/analytics_screen.dart`<br>`lib/services/stats_service.dart` |
 | **MR 天梯走势折线图** | 基于已归档大师对局自动绘制的 MR 评分波动曲线 | `lib/ui/widgets/mr_trend_chart.dart` |
 | **好友与俱乐部战队** | 好友在线状态、战队成员列表、特别关注置顶 | `lib/ui/screens/social/social_screen.dart`<br>`lib/ui/screens/social/club_detail_screen.dart`<br>`lib/services/social_service.dart` |
-| **官方角色帧数表与多模式招式显示** | 全角色完整帧数（发生、持续、硬直差、判定与打康优势），支持顶部常驻切换：官方图形图标（红黄蓝拳脚圆底与方向箭头）、5LP 数字记法、站轻腿 中文通俗全称 | `lib/ui/screens/tools/tools_screen.dart`<br>`lib/services/frame_data_service.dart`<br>`lib/ui/widgets/sf6_command_view.dart`<br>`lib/data/frame_data_database.dart` |
-| **Supercombo 连招教学与确反卡片** | 深度集成 Supercombo GG 真实民工/确反连段库：确反康/打断康/绿冲/迸发起手徽章、指令序列图形渲染、伤害、斗气/SA槽消耗、要点解析与一键复制 | `lib/ui/screens/tools/tools_screen.dart`<br>`lib/models/combo_recipe.dart`<br>`lib/services/combo_service.dart`<br>`lib/ui/widgets/combo_recipe_card.dart`<br>`lib/data/sf6_combos_database.dart`<br>`assets/data/sf6_combos.json` |
-| **Supercombo GG 爬虫与数据提取** | 基于 Playwright + Edge 绕过 Cloudflare 智能抓取 Supercombo GG 全角色连段与帧数，生成轻量离线 JSON 数据集 | `scripts/crawler_supercombo.py` |
-| **玩家与角色对策心得笔记** | 针对特定对手或角色的实战备忘录、实战标签 CRUD | `lib/ui/screens/tools/tools_screen.dart`<br>`lib/services/notes_service.dart` |
+| **格斗家门户主枢纽 (Fighter Hub)** | 1:1 本地化重构格斗工具箱：角色超大幅 Hero 立绘、个性名言徽章、基础属性横幅卡片、招式表/帧数表/实用连招/碰撞框/心得笔记网格化流线入口 | `lib/ui/screens/tools/tools_screen.dart` |
+| **格斗家基础属性面板 (Attributes)** | 1:1 还原小程序四大机动维度：生命核心 (体力值)、投掷交锋 (投掷距离/受击框)、地面机动 (前后步行速度、前冲/后退帧数与位移、绿冲最短/最远距离与投/防)、空中机动 (跳跃时间 4+38+3、最高点) | `lib/ui/screens/tools/character_attributes_screen.dart`<br>`lib/models/character_stats.dart`<br>`lib/data/character_stats_database.dart` |
+| **招式表与经典/现代切换 (Movelist)** | 1:1 还原小程序招式表：经典 (Classic) 与现代 (Modern) 模式胶囊条切换、必杀技/超必杀技分类、官方图形指令与 OD 槽消耗、招式动作缩略图、点击唤起招式详情 | `lib/ui/screens/tools/movelist_screen.dart`<br>`lib/ui/widgets/move_detail_modal.dart` |
+| **招式详情弹窗 (Move Detail Modal)** | 1:1 还原小程序招式弹窗：紫色强调条与英日双语名、招式动作大图、变种版本判定表 (L/M/H/OD 发生/被防/命中)、特性解析说明、分享招式与查看完整帧数跳转 | `lib/ui/widgets/move_detail_modal.dart` |
+| **独立卡片化帧数表 (Frame Data)** | 1:1 还原小程序卡片式帧数表：经典/现代切换、招式强度徽章 (L/M/H)、发生白字、被防差红绿高亮、命中差硬直、点击卡片直达招式弹窗 | `lib/ui/screens/tools/frame_data_screen.dart`<br>`lib/services/frame_data_service.dart`<br>`lib/data/frame_data_database.dart` |
+| **连招推荐精选与卡片重构 (Combos)** | 1:1 还原小程序高颜值连招卡片：首行确反康/打断康起手红标 + 迸发/绿冲条件标签 + 官方控制器图形指令；次行 4 列紧凑排版（伤害高亮、位置条件、难度等级、斗气与 SA 槽彩条）；支持起手类型快速筛选 | `lib/ui/screens/tools/combos_screen.dart`<br>`lib/ui/widgets/combo_recipe_card.dart`<br>`lib/models/combo_recipe.dart`<br>`lib/services/combo_service.dart`<br>`assets/data/sf6_combos.json` |
+| **碰撞框判定查阅 (Hitbox Viewer)** | 1:1 还原小程序碰撞框查阅界面：角色横幅、招式分类芯片、网格标尺打击/受击判定图谱、逐帧播放与帧进控制 | `lib/ui/screens/tools/hitbox_viewer_screen.dart` |
+| **招式多模式显示切换** | 全局支持 4 种指令渲染模式：官方图形图标（红黄蓝拳脚圆底与方向箭头）、5LP 数字记法、站轻腿 中文通俗全称、现代模式按键 | `lib/ui/widgets/sf6_command_view.dart` |
+| **Supercombo GG 爬虫脚本** | 基于 Playwright + Edge 智能抓取 Supercombo GG 全角色连段与帧数，生成轻量离线 JSON 数据集 | `scripts/crawler_supercombo.py` |
+| **玩家与角色对策心得笔记** | 针对特定对手或角色的实战备忘录、实战标签 CRUD | `lib/services/notes_service.dart` |
 | **本地备份与恢复 (导出导入)** | 将本地全部战绩与对策笔记导出为独立 JSON 文件备份、防数据丢失 | `lib/services/backup_service.dart`<br>`lib/ui/screens/settings/settings_screen.dart` |
 | **软件在线更新与检查** | 接入 GitHub Releases API、代理镜像下载、版本号对比 | `lib/services/update_service.dart`<br>`lib/ui/screens/settings/settings_screen.dart` |
 | **全天候运行日志与诊断** | 内存日志记录、闪存防抖写入持久化、异常堆栈排查与一键导出 | `lib/core/utils/app_logger.dart`<br>`lib/ui/screens/settings/settings_screen.dart` |
@@ -237,24 +243,51 @@ lib/
 - **产物更新**：
   - 编译并部署正式版本 `sf6_assistant_v1.2.4d.apk`。
 
-### v1.2.5c (build 2503)
+### v1.2.5c (build 2503) - 格斗家主枢纽与视觉本地化重构 (对齐小程序规范)
+- **全面模仿与本地化优秀小程序 UI 交互设计 (1:1 像素级还原 `photofotlearn` 截屏规范)**：
+  - **格斗家主枢纽门户 (Fighter Portal / Hub)** (`lib/ui/screens/tools/tools_screen.dart`)：
+    - 彻底重构原有粗糙平铺的工具箱主页，改为以格斗家为中心的沉浸式主门户。
+    - 顶部角色快速切换胶囊条与全角色无缝切换。
+    - 角色超大立绘英雄栏 (Hero Section)、个性化专属名言气泡与上手难度徽章。
+    - 基础属性入口横幅卡片，实时显示核心生命值与机动等级。
+    - 招式表与帧数表双核心卡片，实用连招精选预览卡片（支持实时伤害与资源标签），碰撞框查阅与精选笔记入口卡片。
+  - **格斗家基础属性详情页 (Character Attributes)** (`lib/ui/screens/tools/character_attributes_screen.dart`, `lib/models/character_stats.dart`, `lib/data/character_stats_database.dart`)：
+    - 1:1 还原小程序四大机动维度全卡片排版：
+      - 生命核心 (Vitals)：真实体力值（如豪鬼 9000、隆/肯 10000、桑吉尔夫 11000）。
+      - 投掷交锋 (Throws)：正向/后向投掷发生、伤害、抓取范围与受击框。
+      - 地面机动 (Ground Movement)：前进/后退步行速度、前冲/后撤速度与位移距离、绿冲最短/最远滑行距离以及绿冲投/防安全判定。
+      - 空中机动 (Jumping)：跳跃时间（起跳 4F + 滞空 38F + 落地 3F）与最高点高度。
+  - **招式表与经典/现代双模式切换 (Movelist)** (`lib/ui/screens/tools/movelist_screen.dart`)：
+    - 1:1 还原小程序胶囊切换条与必杀技/超必杀技卡片流。
+    - 经典 (Classic) 模式与现代 (Modern) 模式分离，现代模式提供常规快捷输入与手动输入双对照。
+    - 招式卡片集成官方图形指令、OD 斗气槽格数消耗提示、招式动作缩略图与特性描述，点击唤起招式详情。
+  - **招式详情弹窗 (Move Detail Modal)** (`lib/ui/widgets/move_detail_modal.dart`)：
+    - 1:1 还原小程序招式弹窗。
+    - 顶部紫色强调条与英日官方双语招式名，招式动作大图。
+    - 变种版本判定表：L / M / H / OD 四种强度的发生、持续、被防差与命中差。
+    - 招式性能要点解析，底部提供「分享招式」与「查看完整帧数」无缝跳转。
+  - **独立卡片化帧数表 (Frame Data)** (`lib/ui/screens/tools/frame_data_screen.dart`)：
+    - 经典/现代模式切换，普通技/特殊技/必杀技分类。
+    - 招式强度轻中重徽章 (L蓝 / M黄 / H红)，发生白字、被防差红绿高亮、命中差硬直。
+    - 点击任意招式行直接唤起招式详情弹窗。
+  - **实用连招精选卡片与独立页 (Combos)** (`lib/ui/screens/tools/combos_screen.dart`, `lib/ui/widgets/combo_recipe_card.dart`)：
+    - 1:1 还原小程序连招卡片版式。
+    - 首行：起手类型红底徽章 (确反康 Punish Counter / 打断康 Counter Hit / 普通命中) + 迸发/绿冲条件标签 + 官方控制器图形指令。
+    - 次行：4 列紧凑排布：伤害高亮 (青绿色)、版边/版中位置 (暖橙色)、难度等级 (紫蓝色)、斗气与 SA 槽彩条。
+    - 连招独立页集成 supercombo 数据源标头与起手类型快速筛选芯片。
+  - **碰撞框查阅界面 (Hitbox Viewer)** (`lib/ui/screens/tools/hitbox_viewer_screen.dart`)：
+    - 角色横幅、招式分类芯片、网格标尺打击/受击判定图谱、逐帧播放与帧进控制。
 - **招式多模式显示切换 (官方图形 / 5LP 数字 / 站轻腿 中文 / 现代模式)**：
-  - 需求背景：格斗玩家在不同交流语境下习惯不同的表达体系（新手偏好中文通俗术语如「站轻腿」「升龙拳」，老玩家偏好街机数字记法如「5LP」「2MK」「236P」，而官网与攻略更倾向于直观的图形按键与箭头）。
-  - 实现落地：
-    - 新增指令渲染组件 `Sf6CommandView` (`lib/ui/widgets/sf6_command_view.dart`)，支持 4 种显示模式：
-      - `graphic`（街霸官网原生图形图标：彩色圆底红黄蓝拳脚图标 + 方向指示箭头）
-      - `numpad`（经典数字简记法，如 `5LP`, `2MK`, `236P`）
-      - `chinese`（中文通俗全称，如 `站轻脚`, `蹲中脚`, `波动拳`, `升龙拳`）
-      - `modern`（现代模式简化输入记法，如 `5L`, `2M`, `SP`）
-    - 在「格斗工具箱」顶部常驻提供单触分段切换器 (`[ 官方图形 ]` `[ 5LP 数字 ]` `[ 站轻腿 中文 ]`)，实时全局联动帧数表指令与连招卡片。
-- **Supercombo GG 数据深度融入与轻量化连招教学库**：
-  - 核心原则：坚决贯彻「好用且绝对不臃肿」，全套连招采用纯文本离线结构化存储 (`assets/data/sf6_combos.json`，总大小仅 250 KB，安装包增量 < 0.2 MB)，零网络依赖，拒绝数百兆冗余图片。
-  - 数据模型与界面呈现：
-    - 构建 `ComboRecipe` 实体与 `ComboRecipeCard` 组件，1:1 还原高颜值实战连招卡片。
-    - 包含起手徽章（确反康 Punish Counter / 打断康 Counter Hit / 斗气迸发 Drive Impact / 绿冲连段 Drive Rush / 普通命中）、位置条件（全屏 / 版边 / 版中）、伤害数值、难度评级、斗气槽与 SA 槽格数消耗、实战破绽与打拆时机要点解析，并支持一键复制连招指令至系统剪贴板。
-    - 工具箱新增「连招推荐与确反 (Combos)」独立 Tab，覆盖隆、肯、卢克、嘉米、豪鬼、特瑞、春丽、古烈、桑吉尔夫、韩蛛俐等全主流角色逾 500 套实战锦标赛连段。
-- **独立 Supercombo GG 自动化爬虫脚本**：
-  - 编写 `scripts/crawler_supercombo.py`，采用 Playwright + Edge 智能突破 Cloudflare 拦截，自动化抓取 Supercombo GG 维基全角色的最新连招与帧数表格，支持后续游戏大版本更新时一键同步。
+  - 新增指令渲染组件 `Sf6CommandView` (`lib/ui/widgets/sf6_command_view.dart`)，支持 4 种显示模式：
+    - `graphic`（街霸官网原生图形图标：彩色圆底红黄蓝拳脚图标 + 方向指示箭头）
+    - `numpad`（经典数字简记法，如 `5LP`, `2MK`, `236P`）
+    - `chinese`（中文通俗全称，如 `站轻脚`, `蹲中脚`, `波动拳`, `升龙拳`）
+    - `modern`（现代模式简化输入记法，如 `5L`, `2M`, `SP`）
+- **Supercombo GG 数据深度融入与轻量化离线库**：
+  - 纯文本离线结构化存储 (`assets/data/sf6_combos.json`，总大小仅 250 KB，安装包增量 < 0.2 MB)，零网络依赖。
+  - 编写 `scripts/crawler_supercombo.py`，采用 Playwright + Edge 智能突破 Cloudflare 抓取全角色最新连段与帧数。
+- **产物更新**：
+  - 编译并部署测试版本 `sf6_assistant_v1.2.5c.apk`。
 
 ### v1.2.5b (build 2502)
 - **真实战报分享海报长图**：采用 `screenshot` 与 `share_plus` 将对战结算与精彩回合渲染为高清 PNG 战报长图，支持系统原生多渠道分享与剪贴板复制。

@@ -54,3 +54,6 @@ android/local.properties
 
 # Widget Preview related
 .widget_preview/
+
+# Local screenshot references
+photofotlearn/

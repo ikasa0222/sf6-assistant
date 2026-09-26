@@ -11,7 +11,7 @@ class ComboRecipeCard extends StatefulWidget {
   const ComboRecipeCard({
     super.key,
     required this.recipe,
-    required this.displayMode,
+    this.displayMode = CommandDisplayMode.graphic,
   });
 
   @override
@@ -21,248 +21,259 @@ class ComboRecipeCard extends StatefulWidget {
 class _ComboRecipeCardState extends State<ComboRecipeCard> {
   bool _isExpanded = false;
 
-  Color _getStarterColor(String starter) {
-    final lower = starter.toLowerCase();
-    if (lower.contains('punish')) return AppColors.loseRed;
-    if (lower.contains('counter')) return Colors.orangeAccent;
-    if (lower.contains('impact') || lower.contains('di')) return AppColors.accentNeonCyan;
-    if (lower.contains('rush') || lower.contains('dr')) return AppColors.winGreen;
-    return AppColors.textSecondary;
-  }
-
   @override
   Widget build(BuildContext context) {
     final recipe = widget.recipe;
-    final starterColor = _getStarterColor(recipe.starterType);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
       decoration: BoxDecoration(
         color: AppColors.bgCard,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderSubtle, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: AppColors.borderSubtle.withOpacity(0.6), width: 0.8),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Row: Starter Badge + Position + Damage + Difficulty
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.bgSecondary.withOpacity(0.5),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
-            ),
-            child: Row(
-              children: [
-                // Starter badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: starterColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: starterColor.withOpacity(0.8), width: 1),
-                  ),
-                  child: Text(
-                    recipe.starterZh,
-                    style: TextStyle(
-                      color: starterColor,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          setState(() {
+            _isExpanded = !_isExpanded;
+          });
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Line 1: Starter Pills + Full Graphic Motion Sequence
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 5,
+                runSpacing: 5,
+                children: [
+                  // Starter Badge (Red pill for 确反康)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD32F2F),
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-
-                // Position badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgCardHighlight,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    recipe.positionZh,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-
-                // Damage
-                if (recipe.damage != '-' && recipe.damage.isNotEmpty)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        '伤害 ',
-                        style: TextStyle(color: AppColors.textTertiary, fontSize: 10),
+                    child: Text(
+                      recipe.starterZh,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
                       ),
-                      Text(
-                        recipe.damage,
+                    ),
+                  ),
+
+                  // Secondary action badge (e.g. 斗气迸发 / 绿冲)
+                  if (_hasSecondaryAction(recipe))
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: AppColors.borderSubtle, width: 0.8),
+                      ),
+                      child: Text(
+                        _getSecondaryActionText(recipe),
                         style: const TextStyle(
-                          color: AppColors.accentNeonCyan,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                          color: AppColors.textPrimary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                    ],
-                  ),
+                    ),
 
-                // Difficulty chip
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgCardHighlight,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: AppColors.borderSubtle, width: 0.8),
+                  // Graphic Command Sequence
+                  Sf6CommandView(
+                    rawCommand: _cleanComboForGraphic(recipe.comboSequence),
+                    mode: widget.displayMode,
+                    iconSize: 18,
                   ),
-                  child: Text(
-                    recipe.difficultyZh,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Line 2: 4 Columns (伤害, 位置, 难度, 资源)
+              Row(
+                children: [
+                  // 伤害
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '伤害',
+                          style: TextStyle(color: Color(0xFF8E8E93), fontSize: 10, fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          recipe.damage.isNotEmpty && recipe.damage != '-' ? recipe.damage : '2800+',
+                          style: const TextStyle(
+                            color: Color(0xFF00E676),
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
 
-          // Main Command Sequence Row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Sf6CommandView(
-              rawCommand: recipe.comboSequence,
-              mode: widget.displayMode,
-              iconSize: 20,
-              textStyle: const TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-                height: 1.4,
-              ),
-            ),
-          ),
-
-          // Footer Row: Gauges + Copy + Notes Toggle
-          Padding(
-            padding: const EdgeInsets.only(left: 12, right: 12, bottom: 8),
-            child: Row(
-              children: [
-                // Drive Gauge Cost
-                _buildGaugeCost('斗气', recipe.driveGauge, AppColors.winGreen),
-                const SizedBox(width: 8),
-
-                // Super Gauge Cost
-                _buildGaugeCost('SA', recipe.superGauge, Colors.purpleAccent),
-                const Spacer(),
-
-                // Copy Button
-                IconButton(
-                  icon: const Icon(Icons.copy, size: 14, color: AppColors.textTertiary),
-                  tooltip: '复制连招指令',
-                  constraints: const BoxConstraints(),
-                  padding: const EdgeInsets.all(4),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: recipe.comboSequence));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('已复制: ${recipe.comboSequence}'),
-                        duration: const Duration(seconds: 1),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                ),
-
-                // Notes toggle button if notes exist
-                if (recipe.notes.trim().isNotEmpty) ...[
-                  const SizedBox(width: 4),
-                  InkWell(
-                    onTap: () => setState(() => _isExpanded = !_isExpanded),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _isExpanded ? '收起解析' : '要点解析',
-                            style: const TextStyle(color: AppColors.textTertiary, fontSize: 10),
+                  // 位置
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '位置',
+                          style: TextStyle(color: Color(0xFF8E8E93), fontSize: 10, fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          recipe.positionZh,
+                          style: const TextStyle(
+                            color: Color(0xFFFFA726),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
                           ),
-                          Icon(
-                            _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                            size: 14,
-                            color: AppColors.textTertiary,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 难度
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '难度',
+                          style: TextStyle(color: Color(0xFF8E8E93), fontSize: 10, fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          recipe.difficultyZh,
+                          style: const TextStyle(
+                            color: Color(0xFFB388FF),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 资源
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '资源',
+                          style: TextStyle(color: Color(0xFF8E8E93), fontSize: 10, fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Drive Gauge Bar
+                            _meterIcon(const Color(0xFF00E676)),
+                            const SizedBox(width: 3),
+                            Text(
+                              recipe.driveGauge.isNotEmpty ? recipe.driveGauge : '1',
+                              style: const TextStyle(color: Color(0xFF00E676), fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(width: 6),
+                            // SA Gauge Bar
+                            _meterIcon(const Color(0xFFFF4081)),
+                            const SizedBox(width: 3),
+                            Text(
+                              recipe.superGauge.isNotEmpty && recipe.superGauge != '0' ? recipe.superGauge : '-',
+                              style: const TextStyle(color: Color(0xFFFF4081), fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
-              ],
-            ),
-          ),
+              ),
 
-          // Expandable Notes
-          if (_isExpanded && recipe.notes.trim().isNotEmpty)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                color: AppColors.bgSecondary,
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(11)),
-              ),
-              child: Text(
-                recipe.notes,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 11,
-                  height: 1.45,
+              // Expanded Section (Notes & Copy)
+              if (_isExpanded) ...[
+                const SizedBox(height: 10),
+                const Divider(height: 1, color: AppColors.borderSubtle),
+                const SizedBox(height: 8),
+                if (recipe.notes.trim().isNotEmpty) ...[
+                  Text(
+                    recipe.notes,
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 11.5, height: 1.45),
+                  ),
+                  const SizedBox(height: 6),
+                ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: const Icon(Icons.copy, size: 13, color: AppColors.accentNeonCyan),
+                      label: const Text(
+                        '复制连招文本',
+                        style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 11),
+                      ),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: recipe.comboSequence));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('已复制: ${recipe.comboSequence}'),
+                            duration: const Duration(seconds: 1),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
-              ),
-            ),
-        ],
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildGaugeCost(String label, String cost, Color color) {
-    final cleanCost = cost.trim();
-    if (cleanCost.isEmpty || cleanCost == '0') {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('$label 消耗: ', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
-          const Text('0', style: TextStyle(color: AppColors.textTertiary, fontSize: 10, fontWeight: FontWeight.bold)),
-        ],
-      );
-    }
-
+  Widget _meterIcon(Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+      width: 12,
+      height: 7,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withOpacity(0.4), width: 0.8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('$label ', style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
-          Text(cost, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900)),
-        ],
+        color: color,
+        borderRadius: BorderRadius.circular(1.5),
       ),
     );
+  }
+
+  bool _hasSecondaryAction(ComboRecipe r) {
+    final seq = r.comboSequence.toUpperCase();
+    return seq.contains('DI') || seq.contains('DR') || r.starterType.toLowerCase().contains('impact');
+  }
+
+  String _getSecondaryActionText(ComboRecipe r) {
+    final seq = r.comboSequence.toUpperCase();
+    if (seq.contains('DI') || r.starterType.toLowerCase().contains('impact')) return '斗气迸发';
+    if (seq.contains('DR')) return '绿冲起手';
+    return '实战连段';
+  }
+
+  String _cleanComboForGraphic(String seq) {
+    // If it has PC or DI in front, remove them from the command line because they are rendered as badges
+    String res = seq;
+    res = res.replaceAll(RegExp(r'^(PC|CH)\s*(DI|DR)?\s*', caseSensitive: false), '');
+    return res.trim();
   }
 }

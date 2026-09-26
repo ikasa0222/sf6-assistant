@@ -20,7 +20,16 @@ class StorageService {
       final jsonStr = await _secureStorage.read(key: _keyAccounts);
       if (jsonStr == null || jsonStr.isEmpty) return [];
       final list = jsonDecode(jsonStr) as List;
-      return list.map((e) => CapcomAccount.fromJson(e as Map<String, dynamic>)).toList();
+      final parsed = list.map((e) => CapcomAccount.fromJson(e as Map<String, dynamic>)).toList();
+      final seenIds = <String>{};
+      final uniqueAccounts = <CapcomAccount>[];
+      for (final acc in parsed) {
+        if (acc.id.isNotEmpty && !seenIds.contains(acc.id)) {
+          seenIds.add(acc.id);
+          uniqueAccounts.add(acc);
+        }
+      }
+      return uniqueAccounts;
     } catch (e) {
       print('Error reading accounts from secure storage: $e');
       return [];
@@ -28,13 +37,21 @@ class StorageService {
   }
 
   Future<void> saveAccounts(List<CapcomAccount> accounts) async {
-    final list = accounts.map((a) => a.toJson()).toList();
+    final seenIds = <String>{};
+    final uniqueAccounts = <CapcomAccount>[];
+    for (final acc in accounts) {
+      if (acc.id.isNotEmpty && !seenIds.contains(acc.id)) {
+        seenIds.add(acc.id);
+        uniqueAccounts.add(acc);
+      }
+    }
+    final list = uniqueAccounts.map((a) => a.toJson()).toList();
     await _secureStorage.write(key: _keyAccounts, value: jsonEncode(list));
   }
 
   Future<void> addOrUpdateAccount(CapcomAccount account) async {
     final accounts = await getAccounts();
-    final index = accounts.indexWhere((a) => a.id == account.id || a.capcomId == account.capcomId);
+    final index = accounts.indexWhere((a) => a.id == account.id);
     if (index >= 0) {
       accounts[index] = account;
     } else {

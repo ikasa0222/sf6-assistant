@@ -40,16 +40,19 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeAccount = authService.activeAccount;
-    final activePlatform = authService.activePlatform;
+    return ListenableBuilder(
+      listenable: authService,
+      builder: (context, _) {
+        final activeAccount = authService.activeAccount;
+        final activePlatform = authService.activePlatform;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('设置与账号管理', style: TextStyle(fontWeight: FontWeight.bold)),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        children: [
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('设置与账号管理', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          body: ListView(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            children: [
           // 1. Multi-Account Management Section
           _buildSectionHeader('多账号管理与切换 (Accounts & Profiles)'),
           Container(
@@ -198,6 +201,31 @@ class SettingsScreen extends StatelessWidget {
                                 ),
                                 onPressed: () async {
                                   await authService.switchAccount(acc.id);
+                                  final plat = authService.activePlatform;
+                                  if (plat != null && battleLogService != null) {
+                                    await battleLogService!.loadRecords(
+                                      shortId: plat.shortId,
+                                      platform: plat.platformType.code,
+                                      fighterId: plat.fighterId,
+                                      lp: plat.currentLp,
+                                      mr: plat.currentMr,
+                                      mainCharId: plat.mainCharId,
+                                      clubName: plat.clubName,
+                                      characterUsages: plat.characterUsages,
+                                    );
+                                    if (statsService != null) {
+                                      await statsService!.loadStats(
+                                        shortId: plat.shortId,
+                                        platform: plat.platformType.code,
+                                      );
+                                    }
+                                    if (socialService != null) {
+                                      await socialService!.loadSocialData(
+                                        clubName: plat.clubName,
+                                        shortId: plat.shortId,
+                                      );
+                                    }
+                                  }
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('已切换至账号: $fighterName ($shortId)')),
@@ -274,7 +302,28 @@ class SettingsScreen extends StatelessWidget {
                             return ChoiceChip(
                               label: Text(plat.platformType.displayName),
                               selected: isSelected,
-                              onSelected: (_) => authService.switchPlatform(index),
+                              onSelected: (_) async {
+                                await authService.switchPlatform(index);
+                                final curPlat = authService.activePlatform;
+                                if (curPlat != null && battleLogService != null) {
+                                  await battleLogService!.loadRecords(
+                                    shortId: curPlat.shortId,
+                                    platform: curPlat.platformType.code,
+                                    fighterId: curPlat.fighterId,
+                                    lp: curPlat.currentLp,
+                                    mr: curPlat.currentMr,
+                                    mainCharId: curPlat.mainCharId,
+                                    clubName: curPlat.clubName,
+                                    characterUsages: curPlat.characterUsages,
+                                  );
+                                  if (statsService != null) {
+                                    await statsService!.loadStats(
+                                      shortId: curPlat.shortId,
+                                      platform: curPlat.platformType.code,
+                                    );
+                                  }
+                                }
+                              },
                               selectedColor: AppColors.accentNeonCyan.withOpacity(0.25),
                               backgroundColor: AppColors.bgSecondary,
                               labelStyle: TextStyle(
@@ -406,7 +455,9 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
-  }
+  },
+);
+}
 
   void _checkForUpdates(BuildContext context) async {
     showDialog(

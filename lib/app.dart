@@ -151,9 +151,6 @@ class _Sf6AppState extends State<Sf6App> {
       return;
     }
     _lastActivePlatformKey = currentKey;
-    if (_battleLogService.isBackgroundSyncing) {
-      return;
-    }
     await _loadAllData(_authService.activePlatform);
     if (mounted) setState(() {});
   }

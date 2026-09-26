@@ -54,10 +54,11 @@ class CapcomSyncEngine {
     battleLogService.setSyncing(true);
 
     try {
+      final startingAccountId = authService.activeAccount?.id;
       final activePlat = authService.activePlatform;
       String shortId = activePlat?.shortId ?? '';
 
-      AppLogger.instance.sync('SyncEngine', '[REFRESH_INIT] 开始全量数据同步, shortId: $shortId, platform: ${activePlat?.platformType.displayName}');
+      AppLogger.instance.sync('SyncEngine', '[REFRESH_INIT] 开始全量数据同步, shortId: $shortId, platform: ${activePlat?.platformType.displayName}, accountId: $startingAccountId');
       onProgress?.call(0.15, '正在获取官方登录会话与 Cookie...');
 
       String cookieHeader = authService.activeAccount?.cookieSession ?? '';
@@ -498,9 +499,22 @@ class CapcomSyncEngine {
         finalDirectMr = mainU.mr;
       }
 
+      // 4. Guard against account switch during long-running network fetch
+      if (startingAccountId != null && authService.activeAccount?.id != startingAccountId) {
+        AppLogger.instance.warn(
+          'SyncEngine',
+          '账号在同步过程中发生切换 (发起时: $startingAccountId, 当前: ${authService.activeAccount?.id})，丢弃旧账号拉取结果以防串号与状态覆盖',
+        );
+        return const SyncResult(
+          success: false,
+          message: '检测到当前账号已切换，已安全终止本次同步写入。',
+        );
+      }
+
       // 4. Update AuthService
       AppLogger.instance.sync('SyncEngine', '[REFRESH_STATE_TRANSITION] 写入更新至 AuthService & BattleLogService');
       await authService.updateActiveProfile(
+        targetAccountId: startingAccountId,
         fighterId: fighterName,
         shortId: shortId,
         platformType: activePlat?.platformType ?? PlatformType.nintendoSwitch2,

@@ -1772,6 +1772,23 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () async {
                         if (!isActive) {
                           await authService.switchAccount(acc.id);
+                          final plat = authService.activePlatform;
+                          if (plat != null) {
+                            await battleLogService.loadRecords(
+                              shortId: plat.shortId,
+                              platform: plat.platformType.code,
+                              fighterId: plat.fighterId,
+                              lp: plat.currentLp,
+                              mr: plat.currentMr,
+                              mainCharId: plat.mainCharId,
+                              clubName: plat.clubName,
+                              characterUsages: plat.characterUsages,
+                            );
+                            await statsService?.loadStats(
+                              shortId: plat.shortId,
+                              platform: plat.platformType.code,
+                            );
+                          }
                           _fetchPlayTime();
                         }
                         if (ctx.mounted) Navigator.pop(ctx);

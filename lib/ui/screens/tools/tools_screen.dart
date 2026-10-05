@@ -1,154 +1,707 @@
 import 'package:flutter/material.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
+import 'package:sf6_tracker/data/character_stats_database.dart';
+import 'package:sf6_tracker/models/character_stats.dart';
+import 'package:sf6_tracker/models/combo_recipe.dart';
 import 'package:sf6_tracker/models/player_note.dart';
+import 'package:sf6_tracker/services/combo_service.dart';
 import 'package:sf6_tracker/services/frame_data_service.dart';
 import 'package:sf6_tracker/services/notes_service.dart';
+import 'package:sf6_tracker/ui/screens/tools/character_attributes_screen.dart';
+import 'package:sf6_tracker/ui/screens/tools/combos_screen.dart';
+import 'package:sf6_tracker/ui/screens/tools/frame_data_screen.dart';
+import 'package:sf6_tracker/ui/screens/tools/hitbox_viewer_screen.dart';
+import 'package:sf6_tracker/services/auth_service.dart';
+import 'package:sf6_tracker/services/battle_log_service.dart';
+import 'package:sf6_tracker/ui/screens/tools/movelist_screen.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
 
 class ToolsScreen extends StatefulWidget {
   final FrameDataService frameDataService;
   final NotesService notesService;
+  final ComboService? comboService;
+  final AuthService? authService;
+  final BattleLogService? battleLogService;
 
   const ToolsScreen({
     super.key,
     required this.frameDataService,
     required this.notesService,
+    this.comboService,
+    this.authService,
+    this.battleLogService,
   });
 
   @override
   State<ToolsScreen> createState() => _ToolsScreenState();
 }
 
-class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  bool _isFrameCharGridExpanded = false;
+class _ToolsScreenState extends State<ToolsScreen> {
+  late ComboService _comboService;
+  late String _selectedCharId;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    widget.frameDataService.loadFrameDataForCharacter(widget.frameDataService.selectedCharacterId);
+    _comboService = widget.comboService ?? ComboService();
+    _comboService.init();
+
+    final mainChar = widget.authService?.activePlatform?.mainCharId ??
+        widget.battleLogService?.userProfile?.mainCharacterId ??
+        '';
+    if (mainChar.isNotEmpty && Sf6Characters.all.any((c) => c.id == mainChar)) {
+      widget.frameDataService.setDefaultCharacter(mainChar);
+    }
+
+    _selectedCharId = widget.frameDataService.selectedCharacterId;
+    widget.frameDataService.loadFrameDataForCharacter(_selectedCharId);
+    _comboService.loadCombosForCharacter(_selectedCharId);
     widget.notesService.loadNotes();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  void _onSelectCharacter(String charId) {
+    setState(() {
+      _selectedCharId = charId;
+    });
+    widget.frameDataService.selectCharacter(charId);
+    _comboService.selectCharacter(charId);
   }
 
   @override
   Widget build(BuildContext context) {
+    final stats = CharacterStatsDatabase.getStats(_selectedCharId);
+    final char = Sf6Characters.getById(_selectedCharId);
+
     return Scaffold(
+      backgroundColor: const Color(0xFF0C0D12),
       appBar: AppBar(
-        title: const Text('格斗工具箱', style: TextStyle(fontWeight: FontWeight.bold)),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppColors.accentNeonCyan,
-          labelColor: AppColors.accentNeonCyan,
-          unselectedLabelColor: AppColors.textSecondary,
-          tabs: const [
-            Tab(text: '官方帧数表 (Frame Data)'),
-            Tab(text: '对策与习惯笔记 (Notes)'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          stats.nameZh,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.people_outline, color: AppColors.accentNeonCyan),
+            tooltip: '切换角色',
+            onPressed: () => _showCharacterPickerSheet(context),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 28),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Character Hero Section (Screenshot 1)
+            _buildHeroSection(stats, char),
+            const SizedBox(height: 16),
+
+            // Card 1: 基础属性 (Basic Attributes)
+            _buildAttributesCard(stats),
+            const SizedBox(height: 12),
+
+            // Card 2 & 3: 招式表 & 帧数表 (2-Column Grid)
+            Row(
+              children: [
+                Expanded(
+                  child: _buildNavCard(
+                    icon: Icons.sports_esports_outlined,
+                    iconBgColor: const Color(0xFF7C4DFF),
+                    title: '招式表',
+                    subtitle: '必杀技 / SA',
+                    tag: 'CLASSIC & MODERN >',
+                    tagColor: const Color(0xFFB388FF),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MovelistScreen(
+                            characterId: _selectedCharId,
+                            frameDataService: widget.frameDataService,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildNavCard(
+                    icon: Icons.timer_outlined,
+                    iconBgColor: const Color(0xFF00E676),
+                    title: '帧数表',
+                    subtitle: '发生 / 确反',
+                    tag: 'FRAME DATA >',
+                    tagColor: const Color(0xFF00E676),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FrameDataScreen(
+                            characterId: _selectedCharId,
+                            frameDataService: widget.frameDataService,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Card 4: 实用连招 (Practical Combos)
+            _buildCombosCard(context),
+            const SizedBox(height: 12),
+
+            // Card 5 & 6: 碰撞框 & 精选笔记 (2-Column Grid)
+            Row(
+              children: [
+                // 碰撞框
+                Expanded(
+                  child: _buildHitboxCard(context, stats),
+                ),
+                const SizedBox(width: 12),
+                // 精选笔记
+                Expanded(
+                  child: _buildNotesCard(context),
+                ),
+              ],
+            ),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+    );
+  }
+
+  Widget _buildHeroSection(CharacterStats stats, Sf6Character char) {
+    return Container(
+      width: double.infinity,
+      height: 230,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFF1E212B).withOpacity(0.5),
+            const Color(0xFF0C0D12),
+          ],
+        ),
+      ),
+      child: Stack(
         children: [
-          _buildFrameDataTab(),
-          _buildNotesTab(),
+          // Background Character Render
+          Positioned(
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: 220,
+            child: Opacity(
+              opacity: 0.85,
+              child: Image.asset(
+                'assets/images/characters/${char.id}.png',
+                fit: BoxFit.contain,
+                alignment: Alignment.centerRight,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          ),
+          // Gradient Fade Overlay
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    const Color(0xFF0C0D12),
+                    const Color(0xFF0C0D12).withOpacity(0.7),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.45, 1.0],
+                ),
+              ),
+            ),
+          ),
+          // Foreground Text (Title & Lore Quote)
+          Positioned(
+            left: 16,
+            bottom: 20,
+            right: 120,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  stats.nameZh,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  stats.quote,
+                  style: const TextStyle(
+                    color: Color(0xFF9E9EB2),
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildFrameDataTab() {
-    return ListenableBuilder(
-      listenable: widget.frameDataService,
-      builder: (context, _) {
-        final selectedCharId = widget.frameDataService.selectedCharacterId;
-        final moves = widget.frameDataService.currentMoves;
-        final plusFilter = widget.frameDataService.filterOnlyPlusOnBlock;
-        final punishFilter = widget.frameDataService.filterOnlyPunishable;
-
-        return Column(
-          children: [
-            // Character Picker Control Header
-            Container(
-              color: AppColors.bgSecondary,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              child: Row(
+  Widget _buildAttributesCard(CharacterStats stats) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.bgSecondary,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSubtle.withOpacity(0.7), width: 0.8),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CharacterAttributesScreen(characterId: _selectedCharId),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
                 children: [
-                  const Icon(Icons.sports_kabaddi, size: 16, color: AppColors.accentNeonCyan),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      '当前角色: ${Sf6Characters.getById(selectedCharId).nameZh}',
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.accentNeonCyan.withOpacity(0.18),
                     ),
+                    child: const Icon(Icons.monitor_heart_outlined, size: 14, color: AppColors.accentNeonCyan),
                   ),
-                  InkWell(
-                    onTap: () => setState(() => _isFrameCharGridExpanded = !_isFrameCharGridExpanded),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: _isFrameCharGridExpanded ? AppColors.accentNeonCyan.withOpacity(0.2) : AppColors.bgCard,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: _isFrameCharGridExpanded ? AppColors.accentNeonCyan : AppColors.borderSubtle),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(_isFrameCharGridExpanded ? Icons.view_carousel : Icons.grid_view, size: 12, color: AppColors.accentNeonCyan),
-                          const SizedBox(width: 4),
-                          Text(
-                            _isFrameCharGridExpanded ? '收起' : '展开全角色',
-                            style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    '基础属性',
+                    style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  const Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.textTertiary),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // 4 Metrics
+              Row(
+                children: [
+                  _attributeMetric('体力', '${stats.lifePoints}'),
+                  _attributeMetric('前进速度', '${stats.forwardWalkSpeed}'),
+                  _attributeMetric('后退速度', '${stats.backwardWalkSpeed}'),
+                  _attributeMetric('难度', stats.difficulty),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _attributeMetric(String label, String value) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 11),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavCard({
+    required IconData icon,
+    required Color iconBgColor,
+    required String title,
+    required String subtitle,
+    required String tag,
+    required Color tagColor,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      height: 110,
+      decoration: BoxDecoration(
+        color: AppColors.bgSecondary,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSubtle.withOpacity(0.7), width: 0.8),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: iconBgColor.withOpacity(0.2),
                     ),
+                    child: Icon(icon, size: 15, color: iconBgColor),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    title,
+                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
-            ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 11),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    tag,
+                    style: TextStyle(color: tagColor, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-            // Character Picker (Grid Wrap or Horizontal List)
-            if (_isFrameCharGridExpanded)
+  Widget _buildCombosCard(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _comboService,
+      builder: (context, _) {
+        final combos = _comboService.currentCombos;
+        final previewCombos = combos.take(2).toList();
+
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.bgSecondary,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.borderSubtle.withOpacity(0.7), width: 0.8),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CombosScreen(
+                    characterId: _selectedCharId,
+                    comboService: _comboService,
+                  ),
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFFFFA726).withOpacity(0.18),
+                        ),
+                        child: const Icon(Icons.flash_on, size: 15, color: Color(0xFFFFA726)),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        '实用连招',
+                        style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.textTertiary),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Preview Rows (Screenshot 1)
+                  if (previewCombos.isNotEmpty)
+                    ...previewCombos.map((c) => _comboPreviewRow(c))
+                  else
+                    _comboPreviewFallback(),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _comboPreviewRow(ComboRecipe c) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              c.comboSequence,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w600),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '${c.damage.isNotEmpty && c.damage != "-" ? c.damage : "2820"} DMG',
+            style: const TextStyle(
+              color: Color(0xFFFFA726),
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _comboPreviewFallback() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Row(
+        children: [
+          Expanded(
+            child: Text(
+              'PC DI HK,MK>214HK',
+              style: TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w600),
+            ),
+          ),
+          Text(
+            '2820 DMG',
+            style: TextStyle(color: Color(0xFFFFA726), fontSize: 11, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHitboxCard(BuildContext context, CharacterStats stats) {
+    return Container(
+      height: 135,
+      decoration: BoxDecoration(
+        color: AppColors.bgSecondary,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSubtle.withOpacity(0.7), width: 0.8),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => HitboxViewerScreen(characterId: _selectedCharId),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.loseRed.withOpacity(0.18),
+                    ),
+                    child: const Icon(Icons.track_changes_outlined, size: 14, color: AppColors.loseRed),
+                  ),
+                  const SizedBox(width: 6),
+                  const Text('碰撞框', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgCard,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text('${stats.hitboxCount} 项', style: const TextStyle(color: AppColors.textSecondary, fontSize: 9)),
+                  ),
+                ],
+              ),
+              const Text(
+                '按招式进入碰撞框列表与逐帧查看。',
+                style: TextStyle(color: Color(0xFF8E8E93), fontSize: 10),
+              ),
               Container(
-                constraints: const BoxConstraints(maxHeight: 220),
-                color: AppColors.bgSecondary,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.bgCard,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text('点击查阅 >', style: TextStyle(color: AppColors.loseRed, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotesCard(BuildContext context) {
+    return ListenableBuilder(
+      listenable: widget.notesService,
+      builder: (context, _) {
+        final notes = widget.notesService.notes.where((n) => n.targetKey == _selectedCharId).toList();
+
+        return Container(
+          height: 135,
+          decoration: BoxDecoration(
+            color: AppColors.bgSecondary,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.borderSubtle.withOpacity(0.7), width: 0.8),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => _showNotesDialog(context),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFF1E88E5).withOpacity(0.18),
+                        ),
+                        child: const Icon(Icons.menu_book_outlined, size: 14, color: Color(0xFF1E88E5)),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text('精选笔记', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  Text(
+                    '${notes.isNotEmpty ? notes.length : widget.notesService.notes.length}',
+                    style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                  ),
+                  const Text('查看全部 >', style: TextStyle(color: Color(0xFF1E88E5), fontSize: 10, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCharacterPickerSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgCard,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('选择出战格斗家', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Flexible(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: Sf6Characters.all.map((char) {
-                      final isSelected = char.id == selectedCharId;
+                    children: Sf6Characters.all.map((c) {
+                      final isSelected = c.id == _selectedCharId;
                       return InkWell(
                         onTap: () {
-                          widget.frameDataService.selectCharacter(char.id);
+                          Navigator.pop(ctx);
+                          _onSelectCharacter(c.id);
                         },
                         borderRadius: BorderRadius.circular(8),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.accentNeonCyan.withOpacity(0.2) : AppColors.bgCard,
+                            color: isSelected ? AppColors.accentNeonCyan.withOpacity(0.2) : AppColors.bgSecondary,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: isSelected ? AppColors.accentNeonCyan : AppColors.borderSubtle),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              CharacterAvatar(characterId: char.id, size: 24, showBorder: false),
+                              CharacterAvatar(characterId: c.id, size: 24, showBorder: false),
                               const SizedBox(width: 6),
                               Text(
-                                char.nameZh,
+                                c.nameZh,
                                 style: TextStyle(
                                   color: isSelected ? AppColors.accentNeonCyan : AppColors.textPrimary,
-                                  fontSize: 11,
+                                  fontSize: 12,
                                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
@@ -159,444 +712,246 @@ class _ToolsScreenState extends State<ToolsScreen> with SingleTickerProviderStat
                     }).toList(),
                   ),
                 ),
-              )
-            else
-              Container(
-                height: 94,
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                color: AppColors.bgSecondary,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  itemCount: Sf6Characters.all.length,
-                  itemBuilder: (context, index) {
-                    final char = Sf6Characters.all[index];
-                    final isSelected = char.id == selectedCharId;
-                    return GestureDetector(
-                      onTap: () {
-                        widget.frameDataService.selectCharacter(char.id);
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 5),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: isSelected ? AppColors.accentNeonCyan : Colors.transparent,
-                                  width: 2.5,
-                                ),
-                                boxShadow: isSelected
-                                    ? [
-                                        BoxShadow(
-                                          color: AppColors.accentNeonCyan.withOpacity(0.5),
-                                          blurRadius: 8,
-                                          spreadRadius: 1,
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: CharacterAvatar(
-                                characterId: char.id,
-                                size: 42,
-                                showBorder: false,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              char.nameZh,
-                              style: TextStyle(
-                                color: isSelected ? AppColors.accentNeonCyan : AppColors.textSecondary,
-                                fontSize: 10,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
               ),
-
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: const InputDecoration(
-                        hintText: '搜索招式名称 / 指令 (如 2MK / 升龙)...',
-                        prefixIcon: Icon(Icons.search, size: 18, color: AppColors.textTertiary),
-                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      ),
-                      onChanged: widget.frameDataService.setSearchQuery,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Quick Filter Chips
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  FilterChip(
-                    label: const Text('被防有利 (+On Block)'),
-                    selected: plusFilter,
-                    selectedColor: AppColors.winGreen.withOpacity(0.25),
-                    checkmarkColor: AppColors.winGreen,
-                    labelStyle: TextStyle(
-                      color: plusFilter ? AppColors.winGreen : AppColors.textSecondary,
-                      fontSize: 12,
-                      fontWeight: plusFilter ? FontWeight.bold : FontWeight.normal,
-                    ),
-                    onSelected: (_) => widget.frameDataService.togglePlusOnBlockFilter(),
-                  ),
-                  const SizedBox(width: 8),
-                  FilterChip(
-                    label: const Text('大确反招式 (-On Block)'),
-                    selected: punishFilter,
-                    selectedColor: AppColors.loseRed.withOpacity(0.25),
-                    checkmarkColor: AppColors.loseRed,
-                    labelStyle: TextStyle(
-                      color: punishFilter ? AppColors.loseRed : AppColors.textSecondary,
-                      fontSize: 12,
-                      fontWeight: punishFilter ? FontWeight.bold : FontWeight.normal,
-                    ),
-                    onSelected: (_) => widget.frameDataService.togglePunishableFilter(),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 6),
-
-            // Frame Data Table Header
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: AppColors.bgCard,
-              child: const Row(
-                children: [
-                  Expanded(flex: 4, child: Text('招式名 / 指令', style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.bold))),
-                  Expanded(flex: 2, child: Text('发生', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.bold))),
-                  Expanded(flex: 2, child: Text('被防差', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.bold))),
-                  Expanded(flex: 2, child: Text('命中差', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.bold))),
-                  Expanded(flex: 2, child: Text('伤害', textAlign: TextAlign.right, style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.bold))),
-                ],
-              ),
-            ),
-
-            // Moves List
-            Expanded(
-              child: moves.isEmpty
-                  ? const Center(
-                      child: Text('没有找到符合条件的招式', style: TextStyle(color: AppColors.textTertiary)),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      itemCount: moves.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final move = moves[index];
-                        final isPlus = move.isPlusOnBlock;
-                        final isPunish = move.isPunishableOnBlock;
-
-                        Color blockColor = AppColors.textPrimary;
-                        if (isPlus) blockColor = AppColors.winGreen;
-                        if (isPunish) blockColor = AppColors.loseRed;
-
-                        return ExpansionTile(
-                          dense: true,
-                          tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-                          title: Row(
-                            children: [
-                              Expanded(
-                                flex: 4,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      move.name,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
-                                    ),
-                                    Text(
-                                      move.command,
-                                      style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 11, fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Text('${move.startup}F', textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: AppColors.textPrimary)),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  move.onBlock,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w900,
-                                    color: blockColor,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(move.onHit, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Text('${move.damage}', textAlign: TextAlign.right, style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-                              ),
-                            ],
-                          ),
-                          children: [
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              color: AppColors.bgSecondary,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      _buildFrameDetailBadge('持续: ${move.active}F'),
-                                      const SizedBox(width: 8),
-                                      _buildFrameDetailBadge('硬直: ${move.recovery}F'),
-                                      const SizedBox(width: 8),
-                                      _buildFrameDetailBadge(move.isCancelable ? '可取消 (Cancelable)' : '不可取消', color: move.isCancelable ? AppColors.accentNeonCyan : AppColors.textTertiary),
-                                    ],
-                                  ),
-                                  if (move.notes.isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    Text('实战笔记: ${move.notes}', style: const TextStyle(color: AppColors.accentNeonYellow, fontSize: 12)),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildFrameDetailBadge(String text, {Color color = AppColors.textSecondary}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppColors.borderSubtle),
-      ),
-      child: Text(text, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
-    );
-  }
-
-  Widget _buildNotesTab() {
-    return ListenableBuilder(
-      listenable: widget.notesService,
-      builder: (context, _) {
-        final notes = widget.notesService.notes;
-
-        return Scaffold(
-          body: notes.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.note_alt_outlined, size: 48, color: AppColors.textTertiary),
-                      const SizedBox(height: 12),
-                      const Text('暂无对策笔记', style: TextStyle(color: AppColors.textSecondary)),
-                      const SizedBox(height: 8),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.add, color: Colors.black),
-                        label: const Text('添加第一条角色/对手对策', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
-                        onPressed: () => _showAddNoteDialog(context),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: notes.length,
-                  itemBuilder: (context, index) {
-                    final note = notes[index];
-                    final char = Sf6Characters.getById(note.targetKey);
-
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                CharacterAvatar(characterId: char.id, size: 36),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        note.title.isNotEmpty ? note.title : '对阵 ${char.nameZh} (${char.nameEn})',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
-                                      ),
-                                      Text(
-                                        '更新时间: ${note.updatedAt.month}月${note.updatedAt.day}日',
-                                        style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.loseRed),
-                                  onPressed: () => widget.notesService.deleteNote(note.id),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              note.content,
-                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
-                            ),
-                            if (note.tags.isNotEmpty) ...[
-                              const SizedBox(height: 10),
-                              Wrap(
-                                spacing: 6,
-                                children: note.tags.map((tag) {
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.bgSecondary,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text('#$tag', style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 11)),
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-          floatingActionButton: FloatingActionButton(
-            backgroundColor: AppColors.accentNeonCyan,
-            onPressed: () => _showAddNoteDialog(context),
-            child: const Icon(Icons.add, color: Colors.black),
+            ],
           ),
         );
       },
     );
   }
 
+  void _showNotesDialog(BuildContext context) {
+    final currentChar = Sf6Characters.getById(_selectedCharId);
+    int selectedTab = 0; // 0: current character, 1: all characters
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.bgCard,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (modalContext, setModalState) {
+            final allNotes = widget.notesService.notes;
+            final charNotes = allNotes.where((n) => n.targetKey == _selectedCharId).toList();
+            final displayedNotes = selectedTab == 0 ? charNotes : allNotes;
+
+            return Container(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text('精选对策心得与习惯笔记', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.add_circle_outline, color: AppColors.accentNeonCyan),
+                        tooltip: '添加新对策',
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _showAddNoteDialog(context);
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Tab switch: Current character vs All
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => setModalState(() => selectedTab = 0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: selectedTab == 0 ? AppColors.accentNeonCyan.withOpacity(0.2) : AppColors.bgSecondary,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: selectedTab == 0 ? AppColors.accentNeonCyan : AppColors.borderSubtle,
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            '当前: ${currentChar.nameZh} (${charNotes.length})',
+                            style: TextStyle(
+                              color: selectedTab == 0 ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                              fontSize: 11,
+                              fontWeight: selectedTab == 0 ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => setModalState(() => selectedTab = 1),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: selectedTab == 1 ? const Color(0xFF7C4DFF).withOpacity(0.25) : AppColors.bgSecondary,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: selectedTab == 1 ? const Color(0xFF7C4DFF) : AppColors.borderSubtle,
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            '全部对策库 (${allNotes.length})',
+                            style: TextStyle(
+                              color: selectedTab == 1 ? Colors.white : AppColors.textSecondary,
+                              fontSize: 11,
+                              fontWeight: selectedTab == 1 ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  Expanded(
+                    child: displayedNotes.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('暂无该角色专属笔记', style: TextStyle(color: AppColors.textTertiary, fontSize: 13)),
+                                const SizedBox(height: 8),
+                                TextButton(
+                                  onPressed: () => setModalState(() => selectedTab = 1),
+                                  child: const Text('查看其他角色对策 >', style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 12)),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: displayedNotes.length,
+                            itemBuilder: (_, i) {
+                              final n = displayedNotes[i];
+                              final isCustom = !n.id.startsWith('note_');
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.bgSecondary,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: AppColors.borderSubtle.withOpacity(0.6), width: 0.8),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        CharacterAvatar(characterId: n.targetKey, size: 22, showBorder: false),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            n.title,
+                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                                          ),
+                                        ),
+                                        if (isCustom)
+                                          IconButton(
+                                            icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.textTertiary),
+                                            onPressed: () async {
+                                              await widget.notesService.deleteNote(n.id);
+                                              setModalState(() {});
+                                            },
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      n.content,
+                                      style: const TextStyle(color: Color(0xFFD0D0DC), fontSize: 11.5, height: 1.45),
+                                    ),
+                                    if (n.tags.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        children: n.tags.map((tag) {
+                                          return Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.bgCard,
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              '#$tag',
+                                              style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 9.5),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showAddNoteDialog(BuildContext context) {
-    String selectedChar = 'ryu';
+    String selectedChar = _selectedCharId;
     final titleController = TextEditingController();
     final noteController = TextEditingController();
-    final tagsController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: AppColors.bgCard,
-              title: const Text('添加对策心得与习惯记录', style: TextStyle(color: AppColors.textPrimary)),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('选择对手角色：', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                    const SizedBox(height: 6),
-                    DropdownButton<String>(
-                      isExpanded: true,
-                      value: selectedChar,
-                      dropdownColor: AppColors.bgCard,
-                      items: Sf6Characters.all.map((c) {
-                        return DropdownMenuItem(
-                          value: c.id,
-                          child: Text('${c.nameZh} (${c.nameEn})', style: const TextStyle(color: AppColors.textPrimary)),
-                        );
-                      }).toList(),
-                      onChanged: (val) {
-                        if (val != null) setDialogState(() => selectedChar = val);
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: titleController,
-                      decoration: const InputDecoration(
-                        labelText: '对策标题 (可选)',
-                        hintText: '例如: 对阵 肯 迅雷脚确反',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: noteController,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        labelText: '对策心得 / 起手习惯 / 弱点破绽',
-                        hintText: '如：该玩家倒地极爱升龙凹招；中距离习惯用 2MK 抢打，多用波动拳压制...',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: tagsController,
-                      decoration: const InputDecoration(
-                        labelText: '标签 (用空格分隔)',
-                        hintText: '凹招 偷下段 升龙确反',
-                      ),
-                    ),
-                  ],
-                ),
+        return AlertDialog(
+          backgroundColor: AppColors.bgCard,
+          title: const Text('添加对策心得记录', style: TextStyle(color: AppColors.textPrimary)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(labelText: '对策标题', hintText: '例如: 对阵 豪鬼 斩空波确反'),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('取消', style: TextStyle(color: AppColors.textSecondary)),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
-                  onPressed: () async {
-                    if (noteController.text.trim().isNotEmpty) {
-                      final tags = tagsController.text.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
-                      final note = PlayerNote(
-                        id: 'note_${DateTime.now().millisecondsSinceEpoch}',
-                        targetKey: selectedChar,
-                        isCharacterNote: true,
-                        title: titleController.text.trim().isNotEmpty ? titleController.text.trim() : '对阵 ${Sf6Characters.getById(selectedChar).nameZh} 对策',
-                        content: noteController.text.trim(),
-                        tags: tags,
-                        updatedAt: DateTime.now(),
-                      );
-                      await widget.notesService.addOrUpdateNote(note);
-                      if (dialogContext.mounted) Navigator.pop(dialogContext);
-                    }
-                  },
-                  child: const Text('保存对策', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            );
-          },
+              const SizedBox(height: 10),
+              TextField(
+                controller: noteController,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: '对策心得 / 破绽分析', hintText: '记录打法与心得...'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('取消', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
+              onPressed: () async {
+                if (noteController.text.trim().isNotEmpty) {
+                  final note = PlayerNote(
+                    id: 'note_${DateTime.now().millisecondsSinceEpoch}',
+                    targetKey: selectedChar,
+                    isCharacterNote: true,
+                    title: titleController.text.trim().isNotEmpty ? titleController.text.trim() : '对策笔记',
+                    content: noteController.text.trim(),
+                    updatedAt: DateTime.now(),
+                  );
+                  await widget.notesService.addOrUpdateNote(note);
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                }
+              },
+              child: const Text('保存', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+            ),
+          ],
         );
       },
     );

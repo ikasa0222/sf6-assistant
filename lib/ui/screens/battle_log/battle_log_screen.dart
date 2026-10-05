@@ -12,6 +12,7 @@ import 'package:sf6_tracker/services/social_service.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
 import 'package:sf6_tracker/ui/widgets/battle_card_item.dart';
 import 'package:sf6_tracker/ui/widgets/share_battle_card.dart';
+import 'package:sf6_tracker/ui/widgets/share_battle_dialog.dart';
 
 class BattleLogScreen extends StatefulWidget {
   final AuthService authService;
@@ -424,62 +425,7 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
   }
 
   void _showShareDialog(BuildContext context, BattleRecord record) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
-            color: AppColors.bgPrimary,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.textTertiary.withOpacity(0.4),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                '对战战报预览',
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              ShareBattleCard(record: record),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.share, color: Colors.black),
-                      label: const Text('分享到社交平台', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accentNeonCyan,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('已准备好战报长图分享！')),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    ShareBattleDialog.show(context, record);
   }
 
   void _showAddNoteDialog(BuildContext context, BattleRecord record) {

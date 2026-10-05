@@ -10,6 +10,7 @@ import 'package:sf6_tracker/services/stats_service.dart';
 import 'package:sf6_tracker/services/social_service.dart';
 import 'package:sf6_tracker/services/frame_data_service.dart';
 import 'package:sf6_tracker/services/notes_service.dart';
+import 'package:sf6_tracker/services/combo_service.dart';
 import 'package:sf6_tracker/core/storage/secure_storage.dart';
 import 'package:sf6_tracker/ui/screens/home/home_screen.dart';
 import 'package:sf6_tracker/ui/screens/battle_log/battle_log_screen.dart';
@@ -35,6 +36,7 @@ class _Sf6AppState extends State<Sf6App> {
   final SocialService _socialService = SocialService();
   final FrameDataService _frameDataService = FrameDataService();
   final NotesService _notesService = NotesService();
+  final ComboService _comboService = ComboService();
 
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   AppSettings _settings = const AppSettings();
@@ -54,6 +56,7 @@ class _Sf6AppState extends State<Sf6App> {
   Future<void> _initializeApp() async {
     _settings = await StorageService.instance.getSettings();
     await _authService.initialize();
+    await _comboService.init();
 
     _lastActivePlatformKey = '${_authService.activeAccount?.id}_${_authService.activePlatform?.shortId}';
     await _loadAllData(_authService.activePlatform);
@@ -148,9 +151,6 @@ class _Sf6AppState extends State<Sf6App> {
       return;
     }
     _lastActivePlatformKey = currentKey;
-    if (_battleLogService.isBackgroundSyncing) {
-      return;
-    }
     await _loadAllData(_authService.activePlatform);
     if (mounted) setState(() {});
   }
@@ -249,6 +249,9 @@ class _Sf6AppState extends State<Sf6App> {
           screen: ToolsScreen(
             frameDataService: _frameDataService,
             notesService: _notesService,
+            comboService: _comboService,
+            authService: _authService,
+            battleLogService: _battleLogService,
           ),
         ),
       _NavigationItem(

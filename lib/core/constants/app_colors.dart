@@ -16,6 +16,7 @@ class AppColors {
   static const Color driveGaugeGreen = Color(0xFF00E676);
   static const Color burnoutGray = Color(0xFF78909C);
   static const Color driveImpactMagenta = Color(0xFFE040FB);
+  static const Color brandPurple = Color(0xFF7C4DFF);
 
   // Status & Match Results
   static const Color winGreen = Color(0xFF00E676);

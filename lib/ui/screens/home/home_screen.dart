@@ -4,6 +4,7 @@ import 'package:sf6_tracker/models/user_profile.dart';
 import 'package:sf6_tracker/models/account_profile.dart';
 import 'package:sf6_tracker/models/battle_record.dart';
 import 'package:sf6_tracker/models/play_time_model.dart';
+import 'package:sf6_tracker/models/home_card_config.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/core/constants/ranks.dart';
@@ -19,6 +20,7 @@ import 'package:sf6_tracker/core/utils/app_logger.dart';
 import 'package:sf6_tracker/core/network/capcom_sync_engine.dart';
 import 'package:sf6_tracker/ui/widgets/quick_sync_dialog.dart';
 import 'package:sf6_tracker/ui/screens/auth/login_webview_screen.dart';
+import 'package:sf6_tracker/ui/widgets/ranked_score_chart_card.dart';
 
 class HomeScreen extends StatefulWidget {
   final AuthService authService;
@@ -47,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isPlayTimeExpanded = false;
   PlayTimeModel? _playTime;
   String? _loadedShortId;
+  List<HomeCardConfig> _cardConfigs = HomeCardConfig.defaults;
 
   AuthService get authService => widget.authService;
   BattleLogService get battleLogService => widget.battleLogService;
@@ -59,6 +62,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fetchPlayTime();
+    _loadCardConfigs();
+  }
+
+  Future<void> _loadCardConfigs() async {
+    final configs = await StorageService.instance.getHomeCardConfigs();
+    if (mounted) {
+      setState(() {
+        _cardConfigs = configs;
+      });
+    }
   }
 
   void _fetchPlayTime() async {
@@ -291,6 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
               );
               if (mounted) {
                 _fetchPlayTime();
+                _loadCardConfigs();
                 if (res.needLogin) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('官方会话已过期，请重新登录'), backgroundColor: AppColors.loseRed),
@@ -316,24 +330,104 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _safeBuildCard('玩家资料卡片', () => _buildFighterHeroCard(context, profile, activePlatform, mainChar)),
-              const SizedBox(height: 12),
-              _safeBuildCard('角色天梯榜', () => _buildMultiCharacterLadder(context, profile)),
-              const SizedBox(height: 12),
-              _safeBuildCard('近期状态', () => _buildRecentFormCard()),
-              const SizedBox(height: 12),
-              _safeBuildCard('快速统计', () => _buildQuickStatsGrid(profile)),
-              const SizedBox(height: 12),
-              if (profile != null) _safeBuildCard('能力雷达', () => _buildRadarCard(profile.radarStats)),
-              const SizedBox(height: 16),
-            ],
+            children: _buildDynamicHomeCards(context, profile, activePlatform, mainChar),
           ),
         ),
       ),
     );
       },
     );
+  }
+
+  List<Widget> _buildDynamicHomeCards(
+    BuildContext context,
+    UserProfile? profile,
+    PlatformProfile? activePlatform,
+    Sf6Character? mainChar,
+  ) {
+    final visibleConfigs = _cardConfigs
+        .where((c) => c.isVisible || c.key == HomeCardConfig.keyHero)
+        .toList();
+
+    final widgets = <Widget>[];
+
+    for (final config in visibleConfigs) {
+      Widget? cardWidget;
+      switch (config.key) {
+        case HomeCardConfig.keyHero:
+          cardWidget = _safeBuildCard(
+            '玩家资料卡片',
+            () => _buildFighterHeroCard(context, profile, activePlatform, mainChar),
+          );
+          break;
+        case HomeCardConfig.keyScoreChart:
+          cardWidget = _safeBuildCard(
+            '排位分数走势',
+            () => RankedScoreChartCard(
+              battleLogService: battleLogService,
+              authService: authService,
+            ),
+          );
+          break;
+        case HomeCardConfig.keyLadder:
+          cardWidget = _safeBuildCard(
+            '角色天梯榜',
+            () => _buildMultiCharacterLadder(context, profile),
+          );
+          break;
+        case HomeCardConfig.keyRecentForm:
+          cardWidget = _safeBuildCard(
+            '近期状态',
+            () => _buildRecentFormCard(),
+          );
+          break;
+        case HomeCardConfig.keyPlayTime:
+          cardWidget = _safeBuildCard(
+            '最爱内容与游玩时长',
+            () => _buildPlayTimeCard(_resolveEffectivePlayTime(profile)),
+          );
+          break;
+        case HomeCardConfig.keyQuickStats:
+          cardWidget = _safeBuildCard(
+            '快速统计',
+            () => _buildQuickStatsGrid(profile),
+          );
+          break;
+        case HomeCardConfig.keyRadar:
+          if (profile != null) {
+            cardWidget = _safeBuildCard(
+              '能力雷达',
+              () => _buildRadarCard(profile.radarStats),
+            );
+          }
+          break;
+      }
+
+      if (cardWidget != null) {
+        if (widgets.isNotEmpty) {
+          widgets.add(const SizedBox(height: 12));
+        }
+        widgets.add(cardWidget);
+      }
+    }
+
+    if (visibleConfigs.length <= 1) {
+      widgets.add(const SizedBox(height: 12));
+      widgets.add(
+        const Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              '已隐藏其他卡片，可在设置中重新开启',
+              style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
+            ),
+          ),
+        ),
+      );
+    }
+
+    widgets.add(const SizedBox(height: 16));
+    return widgets;
   }
 
   Widget _buildFighterHeroCard(BuildContext context, UserProfile? profile, PlatformProfile? platform, Sf6Character? mainChar) {
@@ -409,6 +503,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
+                        if (authService.accounts.length > 1) ...[
+                          IconButton(
+                            icon: const Icon(Icons.switch_account, color: AppColors.accentNeonCyan, size: 18),
+                            tooltip: '切换账号 (${authService.accounts.length}个)',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () => _showAccountSwitchSheet(context),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
                         IconButton(
                           icon: const Icon(Icons.share, color: AppColors.accentNeonCyan, size: 18),
                           tooltip: '分享战绩海报',
@@ -1400,7 +1504,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     border: Border.all(color: AppColors.accentNeonYellow.withOpacity(0.5)),
                   ),
                   child: Text(
-                    '总时长: ',
+                    '总时长: ${pt.formattedTotalDuration}',
                     style: const TextStyle(
                       color: AppColors.accentNeonYellow,
                       fontSize: 11,
@@ -1417,7 +1521,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     border: Border.all(color: AppColors.accentNeonYellow.withOpacity(0.5)),
                   ),
                   child: Text(
-                    '总时长: ',
+                    '总时长: ${pt.total}',
                     style: const TextStyle(
                       color: AppColors.accentNeonYellow,
                       fontSize: 11,
@@ -1497,7 +1601,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             border: Border.all(color: item.color, width: 1.5),
                           ),
                           child: Text(
-                            '',
+                            '${idx + 1}',
                             style: TextStyle(
                               color: item.color,
                               fontSize: 10,
@@ -1532,7 +1636,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             borderRadius: BorderRadius.circular(3),
                           ),
                           child: Text(
-                            '\%',
+                            '${item.percentage}%',
                             style: const TextStyle(
                               color: AppColors.textTertiary,
                               fontSize: 11,
@@ -1553,7 +1657,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          _isPlayTimeExpanded ? '收起更多模式' : '查看全部 \ 个模式',
+                          _isPlayTimeExpanded ? '收起更多模式' : '查看全部 ${pt.items.length} 个模式',
                           style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 11),
                         ),
                         Icon(
@@ -1635,7 +1739,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 2),
           Text(
-            '',
+            '$count 场',
             style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 13,
@@ -1678,6 +1782,200 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showAccountSwitchSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final accounts = authService.accounts;
+        final activeId = authService.activeAccount?.id;
+
+        return Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141622),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.accentNeonCyan, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.accentNeonCyan.withOpacity(0.25),
+                blurRadius: 16,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.switch_account, color: AppColors.accentNeonCyan, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        '切换玩家账号',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: AppColors.textSecondary, size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Divider(color: AppColors.borderSubtle),
+              const SizedBox(height: 8),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.45,
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: accounts.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, idx) {
+                    final acc = accounts[idx];
+                    final isActive = acc.id == activeId;
+                    final plat = acc.activePlatform;
+                    final charId = plat?.mainCharId.isNotEmpty == true ? plat!.mainCharId : 'luke';
+                    final lp = plat?.currentLp ?? 0;
+                    final mr = plat?.currentMr ?? 0;
+                    final name = plat?.fighterId.isNotEmpty == true ? plat!.fighterId : acc.displayName;
+                    final sid = plat?.shortId.isNotEmpty == true ? plat!.shortId : acc.capcomId;
+
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () async {
+                        if (!isActive) {
+                          await authService.switchAccount(acc.id);
+                          final plat = authService.activePlatform;
+                          if (plat != null) {
+                            await battleLogService.loadRecords(
+                              shortId: plat.shortId,
+                              platform: plat.platformType.code,
+                              fighterId: plat.fighterId,
+                              lp: plat.currentLp,
+                              mr: plat.currentMr,
+                              mainCharId: plat.mainCharId,
+                              clubName: plat.clubName,
+                              characterUsages: plat.characterUsages,
+                            );
+                            await statsService?.loadStats(
+                              shortId: plat.shortId,
+                              platform: plat.platformType.code,
+                            );
+                          }
+                          _fetchPlayTime();
+                        }
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isActive ? AppColors.accentNeonCyan.withOpacity(0.12) : AppColors.bgSecondary,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isActive ? AppColors.accentNeonCyan : AppColors.borderSubtle,
+                            width: isActive ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            CharacterAvatar(characterId: charId, size: 36),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: isActive ? AppColors.accentNeonCyan : AppColors.textPrimary,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                      if (isActive) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.accentNeonCyan,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Text(
+                                            '当前使用',
+                                            style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Short ID: $sid  •  ${plat?.platformType.displayName ?? "Steam"}  •  ${mr > 0 ? "$mr MR" : "$lp LP"}',
+                                    style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (isActive)
+                              const Icon(Icons.check_circle, color: AppColors.accentNeonCyan, size: 20)
+                            else
+                              const Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 18),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.add, size: 16, color: AppColors.accentNeonYellow),
+                      label: const Text('添加/绑定新账号', style: TextStyle(color: AppColors.accentNeonYellow, fontSize: 12, fontWeight: FontWeight.bold)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.accentNeonYellow),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _showQuickBindDialog(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

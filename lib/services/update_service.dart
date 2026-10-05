@@ -129,52 +129,44 @@ class UpdateService extends ChangeNotifier {
   }
 
   /// Returns > 0 if v1 > v2, < 0 if v1 < v2, 0 if equal
+  int compareVersionStrings(String v1, String v2) => _compareVersions(v1, v2);
+
   int _compareVersions(String v1, String v2) {
     try {
       final s1 = v1.toLowerCase().replaceFirst(RegExp(r'^v'), '').trim();
       final s2 = v2.toLowerCase().replaceFirst(RegExp(r'^v'), '').trim();
 
-      final regex = RegExp(r'^(\d+)\.(\d+)\.(\d+)([-a-z0-9.]*)');
-      final m1 = regex.firstMatch(s1);
-      final m2 = regex.firstMatch(s2);
-
-      if (m1 != null && m2 != null) {
-        final maj1 = int.parse(m1.group(1)!);
-        final min1 = int.parse(m1.group(2)!);
-        final pat1 = int.parse(m1.group(3)!);
-        final extra1 = m1.group(4) ?? '';
-
-        final maj2 = int.parse(m2.group(1)!);
-        final min2 = int.parse(m2.group(2)!);
-        final pat2 = int.parse(m2.group(3)!);
-        final extra2 = m2.group(4) ?? '';
-
-        if (maj1 != maj2) return maj1.compareTo(maj2);
-        if (min1 != min2) return min1.compareTo(min2);
-        if (pat1 != pat2) return pat1.compareTo(pat2);
-
-        // If extra parts exist (e.g. 'c' vs 'b', '-c' vs '-b')
-        final cleanExtra1 = extra1.replaceAll(RegExp(r'[^a-z0-9]'), '');
-        final cleanExtra2 = extra2.replaceAll(RegExp(r'[^a-z0-9]'), '');
-        if (cleanExtra1.isNotEmpty || cleanExtra2.isNotEmpty) {
-          if (cleanExtra1.isEmpty) return 1; // Release without suffix > alpha/beta
-          if (cleanExtra2.isEmpty) return -1;
-          return cleanExtra1.compareTo(cleanExtra2);
+      List<int> toParts(String str) {
+        final rawParts = str.split('.');
+        final List<int> nums = [];
+        for (final p in rawParts) {
+          final n = int.tryParse(p);
+          if (n != null) {
+            nums.add(n);
+          } else {
+            final match = RegExp(r'^(\d*)([a-z]*)$').firstMatch(p);
+            if (match != null) {
+              if (match.group(1)?.isNotEmpty == true) {
+                nums.add(int.parse(match.group(1)!));
+              }
+              final letters = match.group(2) ?? '';
+              for (final code in letters.codeUnits) {
+                nums.add(code - 96);
+              }
+            }
+          }
         }
-        return 0;
+        return nums;
       }
 
-      final cleanV1 = v1.replaceAll(RegExp(r'[^0-9.]'), '');
-      final cleanV2 = v2.replaceAll(RegExp(r'[^0-9.]'), '');
-      final parts1 = cleanV1.split('.').map((e) => int.tryParse(e) ?? 0).toList();
-      final parts2 = cleanV2.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+      final p1 = toParts(s1);
+      final p2 = toParts(s2);
 
-      final maxLen = parts1.length > parts2.length ? parts1.length : parts2.length;
+      final maxLen = p1.length > p2.length ? p1.length : p2.length;
       for (int i = 0; i < maxLen; i++) {
-        final p1 = i < parts1.length ? parts1[i] : 0;
-        final p2 = i < parts2.length ? parts2[i] : 0;
-        if (p1 > p2) return 1;
-        if (p1 < p2) return -1;
+        final val1 = i < p1.length ? p1[i] : 0;
+        final val2 = i < p2.length ? p2[i] : 0;
+        if (val1 != val2) return val1.compareTo(val2);
       }
       return 0;
     } catch (_) {

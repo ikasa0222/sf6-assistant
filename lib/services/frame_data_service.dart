@@ -1,15 +1,26 @@
 import 'package:flutter/foundation.dart';
+import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/models/frame_data_model.dart';
 import 'package:sf6_tracker/data/frame_data_database.dart';
+import 'package:sf6_tracker/ui/widgets/sf6_command_view.dart';
 
 class FrameDataService extends ChangeNotifier {
-  String _selectedCharacterId = 'elena';
+  String _selectedCharacterId = 'ryu';
   List<FrameMove> _currentMoves = [];
   bool _isLoading = false;
   String _searchQuery = '';
   MoveType? _selectedCategory;
   bool _filterOnlyPlusOnBlock = false;
   bool _filterOnlyPunishable = false;
+  CommandDisplayMode _displayMode = CommandDisplayMode.graphic;
+
+  FrameDataService({String? defaultCharacterId}) {
+    if (defaultCharacterId != null && defaultCharacterId.isNotEmpty) {
+      selectCharacter(defaultCharacterId);
+    } else {
+      selectCharacter('ryu');
+    }
+  }
 
   String get selectedCharacterId => _selectedCharacterId;
   List<FrameMove> get currentMoves => _filteredMoves();
@@ -18,10 +29,34 @@ class FrameDataService extends ChangeNotifier {
   MoveType? get selectedCategory => _selectedCategory;
   bool get filterOnlyPlusOnBlock => _filterOnlyPlusOnBlock;
   bool get filterOnlyPunishable => _filterOnlyPunishable;
+  CommandDisplayMode get displayMode => _displayMode;
+
+  void setDisplayMode(CommandDisplayMode mode) {
+    _displayMode = mode;
+    notifyListeners();
+  }
+
+  void setDefaultCharacter(String charId) {
+    selectCharacter(charId);
+  }
+
+  void init({String? mainCharId}) {
+    if (mainCharId != null && mainCharId.isNotEmpty) {
+      selectCharacter(mainCharId);
+    } else {
+      selectCharacter('ryu');
+    }
+  }
 
   void selectCharacter(String charId) {
-    _selectedCharacterId = charId;
-    loadFrameDataForCharacter(charId);
+    final valid = Sf6Characters.all.any((c) => c.id == charId);
+    final targetId = valid ? charId : 'ryu';
+    _selectedCharacterId = targetId;
+    _searchQuery = '';
+    _selectedCategory = null;
+    _filterOnlyPlusOnBlock = false;
+    _filterOnlyPunishable = false;
+    loadFrameDataForCharacter(targetId);
   }
 
   void setSearchQuery(String q) {

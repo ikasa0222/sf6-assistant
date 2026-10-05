@@ -7,6 +7,7 @@ import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
 import 'package:sf6_tracker/ui/widgets/share_battle_card.dart';
+import 'package:sf6_tracker/ui/widgets/share_battle_dialog.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
 import 'package:sf6_tracker/ui/screens/social/player_profile_screen.dart';
 
@@ -15,6 +16,9 @@ class BattleCardItem extends StatefulWidget {
   final VoidCallback? onShare;
   final VoidCallback? onAddNote;
   final AuthService? authService;
+  final bool isEmbedded;
+  final bool showViewProfileButton;
+  final EdgeInsetsGeometry? customMargin;
 
   const BattleCardItem({
     super.key,
@@ -22,6 +26,9 @@ class BattleCardItem extends StatefulWidget {
     this.onShare,
     this.onAddNote,
     this.authService,
+    this.isEmbedded = false,
+    this.showViewProfileButton = true,
+    this.customMargin,
   });
 
   @override
@@ -32,36 +39,56 @@ class _BattleCardItemState extends State<BattleCardItem> {
   bool _isExpanded = false;
 
   void _showShareDialog(BuildContext context, BattleRecord record) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ShareBattleCard(record: record),
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accentNeonCyan,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                icon: const Icon(Icons.close, size: 18),
-                label: const Text('关闭预览', style: TextStyle(fontWeight: FontWeight.bold)),
-                onPressed: () => Navigator.pop(ctx),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    ShareBattleDialog.show(context, record);
   }
 
   String _formatPlatform(String raw) {
     return PlatformType.formatPlatformBadge(raw);
+  }
+
+  void _showReplayGuideDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.ondemand_video, color: AppColors.accentNeonCyan, size: 20),
+            SizedBox(width: 8),
+            Text(
+              '回放使用指南',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: const SingleChildScrollView(
+          child: Text(
+            '【街霸6 游戏内录像回放指引】\n\n'
+            '1. 启动《街头霸王 6》主机或 PC 客户端；\n'
+            '2. 在主菜单进入【多功能菜单】或【格斗中心 (Battle Hub)】；\n'
+            '3. 打开【CFN (Capcom Fighters Network)】-> 选择【对战转播 / 录像】；\n'
+            '4. 选择【录像搜索】并在代码框粘贴或输入您复制的 12 位录像代码；\n'
+            '5. 点击确认即可立即观看该场对局的完整逐帧录像与按键输入！',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              height: 1.6,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: const Text('我知道了', style: TextStyle(color: AppColors.accentNeonCyan)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -70,13 +97,18 @@ class _BattleCardItemState extends State<BattleCardItem> {
     final isWin = r.isWin;
     final oppChar = Sf6Characters.getById(r.opponentCharacterId);
 
+    final defaultMargin = widget.isEmbedded
+        ? const EdgeInsets.symmetric(horizontal: 0, vertical: 4)
+        : const EdgeInsets.symmetric(horizontal: 16, vertical: 6);
+    final cardColor = widget.isEmbedded ? AppColors.bgSecondary : AppColors.bgCard;
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: widget.customMargin ?? defaultMargin,
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(12),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isWin ? AppColors.winGreen.withOpacity(0.3) : AppColors.loseRed.withOpacity(0.3),
+          color: isWin ? AppColors.winGreen.withOpacity(0.35) : AppColors.loseRed.withOpacity(0.35),
           width: 1,
         ),
       ),
@@ -332,47 +364,48 @@ class _BattleCardItemState extends State<BattleCardItem> {
                               ),
                             ),
                           ),
-                          InkWell(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => PlayerProfileScreen(
-                                    shortId: r.opponentShortId,
-                                    fighterId: r.opponentFighterId,
-                                    mainCharacterId: r.opponentCharacterId,
-                                    lp: r.opponentLp ?? 0,
-                                    mr: r.opponentMr ?? 0,
-                                    platform: r.opponentPlatform,
-                                    authService: widget.authService,
-                                  ),
-                                ),
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(6),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.accentNeonCyan.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: AppColors.accentNeonCyan.withOpacity(0.6)),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.person_search, size: 13, color: AppColors.accentNeonCyan),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    '查看对方资料',
-                                    style: TextStyle(
-                                      color: AppColors.accentNeonCyan,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
+                          if (widget.showViewProfileButton && !widget.isEmbedded && r.opponentShortId.isNotEmpty)
+                            InkWell(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => PlayerProfileScreen(
+                                      shortId: r.opponentShortId,
+                                      fighterId: r.opponentFighterId,
+                                      mainCharacterId: r.opponentCharacterId,
+                                      lp: r.opponentLp ?? 0,
+                                      mr: r.opponentMr ?? 0,
+                                      platform: r.opponentPlatform,
+                                      authService: widget.authService,
                                     ),
                                   ),
-                                ],
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.accentNeonCyan.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: AppColors.accentNeonCyan.withOpacity(0.6)),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.person_search, size: 13, color: AppColors.accentNeonCyan),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      '查看对方资料',
+                                      style: TextStyle(
+                                        color: AppColors.accentNeonCyan,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
                         ],
                       ),
                     ),
@@ -454,14 +487,15 @@ class _BattleCardItemState extends State<BattleCardItem> {
                                   ),
                                 ),
                               ),
-                              if (r.replayCode.isNotEmpty)
+                              if (r.replayCode.isNotEmpty) ...[
                                 InkWell(
                                   onTap: () {
                                     Clipboard.setData(ClipboardData(text: r.replayCode));
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('已复制对战录像代码到剪贴板！'),
-                                        duration: Duration(seconds: 1),
+                                        content: Text('录像代码已复制！在《街霸6》对战转播输入即可观看'),
+                                        backgroundColor: AppColors.winGreen,
+                                        duration: Duration(seconds: 2),
                                       ),
                                     );
                                   },
@@ -470,6 +504,15 @@ class _BattleCardItemState extends State<BattleCardItem> {
                                     child: Icon(Icons.copy, size: 14, color: AppColors.accentNeonCyan),
                                   ),
                                 ),
+                                const SizedBox(width: 6),
+                                InkWell(
+                                  onTap: () => _showReplayGuideDialog(context),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(2),
+                                    child: Icon(Icons.help_outline, size: 14, color: AppColors.accentNeonYellow),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sf6_tracker/models/account_profile.dart';
 import 'package:sf6_tracker/models/app_settings.dart';
 import 'package:sf6_tracker/models/friend_model.dart';
+import 'package:sf6_tracker/models/home_card_config.dart';
 
 class StorageService {
   static final StorageService instance = StorageService._init();
@@ -20,7 +21,16 @@ class StorageService {
       final jsonStr = await _secureStorage.read(key: _keyAccounts);
       if (jsonStr == null || jsonStr.isEmpty) return [];
       final list = jsonDecode(jsonStr) as List;
-      return list.map((e) => CapcomAccount.fromJson(e as Map<String, dynamic>)).toList();
+      final parsed = list.map((e) => CapcomAccount.fromJson(e as Map<String, dynamic>)).toList();
+      final seenIds = <String>{};
+      final uniqueAccounts = <CapcomAccount>[];
+      for (final acc in parsed) {
+        if (acc.id.isNotEmpty && !seenIds.contains(acc.id)) {
+          seenIds.add(acc.id);
+          uniqueAccounts.add(acc);
+        }
+      }
+      return uniqueAccounts;
     } catch (e) {
       print('Error reading accounts from secure storage: $e');
       return [];
@@ -28,13 +38,21 @@ class StorageService {
   }
 
   Future<void> saveAccounts(List<CapcomAccount> accounts) async {
-    final list = accounts.map((a) => a.toJson()).toList();
+    final seenIds = <String>{};
+    final uniqueAccounts = <CapcomAccount>[];
+    for (final acc in accounts) {
+      if (acc.id.isNotEmpty && !seenIds.contains(acc.id)) {
+        seenIds.add(acc.id);
+        uniqueAccounts.add(acc);
+      }
+    }
+    final list = uniqueAccounts.map((a) => a.toJson()).toList();
     await _secureStorage.write(key: _keyAccounts, value: jsonEncode(list));
   }
 
   Future<void> addOrUpdateAccount(CapcomAccount account) async {
     final accounts = await getAccounts();
-    final index = accounts.indexWhere((a) => a.id == account.id || a.capcomId == account.capcomId);
+    final index = accounts.indexWhere((a) => a.id == account.id);
     if (index >= 0) {
       accounts[index] = account;
     } else {
@@ -320,5 +338,38 @@ class StorageService {
   Future<void> setLastSeenAnnouncementVersion(String version) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyLastAnnouncementVersion, version);
+  }
+
+  static const String _keyHomeCardConfigs = 'sf6_home_card_configs';
+
+  Future<List<HomeCardConfig>> getHomeCardConfigs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString(_keyHomeCardConfigs);
+      if (jsonStr == null || jsonStr.isEmpty) {
+        return HomeCardConfig.defaults;
+      }
+      final list = jsonDecode(jsonStr) as List;
+      final savedConfigs = list
+          .map((e) => HomeCardConfig.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+      final existingKeys = savedConfigs.map((c) => c.key).toSet();
+      final result = List<HomeCardConfig>.from(savedConfigs);
+      for (final def in HomeCardConfig.defaults) {
+        if (!existingKeys.contains(def.key)) {
+          result.add(def);
+        }
+      }
+      return result;
+    } catch (e) {
+      return HomeCardConfig.defaults;
+    }
+  }
+
+  Future<void> saveHomeCardConfigs(List<HomeCardConfig> configs) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = configs.map((c) => c.toJson()).toList();
+    await prefs.setString(_keyHomeCardConfigs, jsonEncode(list));
   }
 }

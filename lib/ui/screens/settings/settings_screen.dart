@@ -15,10 +15,12 @@ import 'package:sf6_tracker/services/battle_log_service.dart';
 import 'package:sf6_tracker/services/stats_service.dart';
 import 'package:sf6_tracker/services/social_service.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:sf6_tracker/services/media_cache_service.dart';
 import 'package:sf6_tracker/services/update_service.dart';
 import 'package:sf6_tracker/ui/screens/auth/login_webview_screen.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
 import 'package:sf6_tracker/ui/widgets/quick_sync_dialog.dart';
+import 'package:sf6_tracker/ui/screens/settings/home_cards_management_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   final AuthService authService;
@@ -40,18 +42,21 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeAccount = authService.activeAccount;
-    final activePlatform = authService.activePlatform;
+    return ListenableBuilder(
+      listenable: authService,
+      builder: (context, _) {
+        final activeAccount = authService.activeAccount;
+        final activePlatform = authService.activePlatform;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('设置与账号管理', style: TextStyle(fontWeight: FontWeight.bold)),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        children: [
-          // 1. Account & Platform Switcher Section
-          _buildSectionHeader('账号与玩家资料管理 (Account & Profile)'),
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('设置与账号管理', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          body: ListView(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            children: [
+          // 1. Multi-Account Management Section
+          _buildSectionHeader('多账号管理与切换 (Accounts & Profiles)'),
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
@@ -60,48 +65,194 @@ class SettingsScreen extends StatelessWidget {
               border: Border.all(color: AppColors.borderSubtle),
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Current Active Capcom ID
-                ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: activeAccount != null ? AppColors.accentNeonCyan : AppColors.bgSecondary,
-                    child: Icon(Icons.person, color: activeAccount != null ? Colors.black : AppColors.textTertiary),
-                  ),
-                  title: Text(
-                    activePlatform?.fighterId ?? activeAccount?.displayName ?? '未绑定玩家',
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                  ),
-                  subtitle: Text(
-                    activeAccount != null
-                        ? 'Short ID: ${activePlatform?.shortId ?? activeAccount.capcomId}  •  ${activePlatform?.platformType.displayName ?? "Steam"}'
-                        : '点击右侧添加账号或直接绑定 Short ID',
-                    style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      if (activeAccount != null)
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: AppColors.accentNeonCyan, size: 20),
-                          tooltip: '修改玩家资料',
-                          onPressed: () => _showEditProfileDialog(context),
-                        ),
+                      Row(
+                        children: [
+                          const Icon(Icons.manage_accounts, color: AppColors.accentNeonCyan, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            '已保存的账号 (${authService.accounts.length})',
+                            style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                        ],
+                      ),
                       TextButton.icon(
-                        icon: const Icon(Icons.add, size: 16),
-                        label: const Text('网页登录'),
-                        style: TextButton.styleFrom(foregroundColor: AppColors.accentNeonCyan),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => LoginWebViewScreen(authService: authService),
-                            ),
-                          );
-                        },
+                        icon: const Icon(Icons.add, size: 14),
+                        label: const Text('添加账号', style: TextStyle(fontSize: 12)),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.accentNeonCyan,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: () => _showAddAccountMenu(context),
                       ),
                     ],
                   ),
                 ),
+                if (authService.accounts.isEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          const Text('尚未添加任何玩家账号', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+                          const SizedBox(height: 8),
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.language, size: 16),
+                            label: const Text('前往网页登录官方账号'),
+                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan, foregroundColor: Colors.black),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => LoginWebViewScreen(authService: authService),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    itemCount: authService.accounts.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    itemBuilder: (context, index) {
+                      final acc = authService.accounts[index];
+                      final isActive = acc.id == activeAccount?.id;
+                      final plat = acc.activePlatform;
+                      final fighterName = plat?.fighterId.isNotEmpty == true ? plat!.fighterId : acc.displayName;
+                      final shortId = plat?.shortId.isNotEmpty == true ? plat!.shortId : acc.capcomId;
+                      final lp = plat?.currentLp ?? 0;
+                      final mr = plat?.currentMr ?? 0;
+                      final platName = plat?.platformType.displayName ?? 'Steam';
+                      final mainChar = plat?.mainCharId.isNotEmpty == true ? plat!.mainCharId : 'luke';
+
+                      return Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: isActive ? AppColors.accentNeonCyan.withOpacity(0.08) : AppColors.bgSecondary,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isActive ? AppColors.accentNeonCyan : AppColors.borderSubtle.withOpacity(0.4),
+                            width: isActive ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            CharacterAvatar(characterId: mainChar, size: 36),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          fighterName,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: isActive ? AppColors.accentNeonCyan : AppColors.textPrimary,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      if (isActive)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.accentNeonCyan,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Text(
+                                            '使用中',
+                                            style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Short ID: $shortId  •  $platName  •  ${mr > 0 ? "$mr MR" : "$lp LP"}',
+                                    style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (!isActive) ...[
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  visualDensity: VisualDensity.compact,
+                                  backgroundColor: AppColors.accentNeonCyan.withOpacity(0.15),
+                                  foregroundColor: AppColors.accentNeonCyan,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                ),
+                                onPressed: () async {
+                                  await authService.switchAccount(acc.id);
+                                  final plat = authService.activePlatform;
+                                  if (plat != null && battleLogService != null) {
+                                    await battleLogService!.loadRecords(
+                                      shortId: plat.shortId,
+                                      platform: plat.platformType.code,
+                                      fighterId: plat.fighterId,
+                                      lp: plat.currentLp,
+                                      mr: plat.currentMr,
+                                      mainCharId: plat.mainCharId,
+                                      clubName: plat.clubName,
+                                      characterUsages: plat.characterUsages,
+                                    );
+                                    if (statsService != null) {
+                                      await statsService!.loadStats(
+                                        shortId: plat.shortId,
+                                        platform: plat.platformType.code,
+                                      );
+                                    }
+                                    if (socialService != null) {
+                                      await socialService!.loadSocialData(
+                                        clubName: plat.clubName,
+                                        shortId: plat.shortId,
+                                      );
+                                    }
+                                  }
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('已切换至账号: $fighterName ($shortId)')),
+                                    );
+                                  }
+                                },
+                                child: const Text('切换', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              ),
+                              const SizedBox(width: 4),
+                            ],
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.textTertiary),
+                              tooltip: '移除该账号',
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () => _showConfirmDeleteAccountDialog(context, acc),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+                const SizedBox(height: 8),
                 const Divider(height: 1),
 
                 // Quick Silent Sync Action
@@ -130,15 +281,6 @@ class SettingsScreen extends StatelessWidget {
                   subtitle: const Text('随时自定义当前玩家名称、Short ID 与段位积分', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
                   onTap: () => _showEditProfileDialog(context),
                 ),
-                const Divider(height: 1),
-
-                // Manual Bind ID
-                ListTile(
-                  leading: const Icon(Icons.link, color: AppColors.accentNeonCyan),
-                  title: const Text('手动绑定/切换 Short ID', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
-                  subtitle: const Text('通过 10 位 Short ID 快速绑定账号', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
-                  onTap: () => _showQuickBindDialog(context),
-                ),
 
                 // Platform Switcher Chips (Steam, NS2, PSN, Xbox)
                 if (activeAccount != null && activeAccount.linkedPlatforms.isNotEmpty) ...[
@@ -162,7 +304,28 @@ class SettingsScreen extends StatelessWidget {
                             return ChoiceChip(
                               label: Text(plat.platformType.displayName),
                               selected: isSelected,
-                              onSelected: (_) => authService.switchPlatform(index),
+                              onSelected: (_) async {
+                                await authService.switchPlatform(index);
+                                final curPlat = authService.activePlatform;
+                                if (curPlat != null && battleLogService != null) {
+                                  await battleLogService!.loadRecords(
+                                    shortId: curPlat.shortId,
+                                    platform: curPlat.platformType.code,
+                                    fighterId: curPlat.fighterId,
+                                    lp: curPlat.currentLp,
+                                    mr: curPlat.currentMr,
+                                    mainCharId: curPlat.mainCharId,
+                                    clubName: curPlat.clubName,
+                                    characterUsages: curPlat.characterUsages,
+                                  );
+                                  if (statsService != null) {
+                                    await statsService!.loadStats(
+                                      shortId: curPlat.shortId,
+                                      platform: curPlat.platformType.code,
+                                    );
+                                  }
+                                }
+                              },
                               selectedColor: AppColors.accentNeonCyan.withOpacity(0.25),
                               backgroundColor: AppColors.bgSecondary,
                               labelStyle: TextStyle(
@@ -175,28 +338,6 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ),
-                ],
-
-                // Logout button
-                if (activeAccount != null) ...[
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.logout, color: AppColors.loseRed, size: 20),
-                    title: const Text('退出并解绑当前账号', style: TextStyle(color: AppColors.loseRed, fontSize: 14)),
-                    onTap: () async {
-                      await authService.logoutAccount(activeAccount.id);
-                      try {
-                        final cookieManager = CookieManager.instance();
-                        await cookieManager.deleteAllCookies();
-                        await InAppWebViewController.clearAllCache();
-                      } catch (_) {}
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('已退出当前账号并清除登录会话凭据')),
-                        );
-                      }
-                    },
                   ),
                 ],
               ],
@@ -233,6 +374,21 @@ class SettingsScreen extends StatelessWidget {
                   activeColor: AppColors.accentNeonCyan,
                   onChanged: (val) {
                     onUpdateSettings(settings.copyWith(showMatchupNotes: val));
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.dashboard_customize_outlined, color: AppColors.accentNeonCyan),
+                  title: const Text('首页卡片管理', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                  subtitle: const Text('自定义首页卡片显示顺序与显隐状态', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+                  trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 20),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const HomeCardsManagementScreen(),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -298,6 +454,32 @@ class SettingsScreen extends StatelessWidget {
                     );
                   },
                 ),
+                const Divider(height: 1),
+                FutureBuilder<Map<String, dynamic>>(
+                  future: MediaCacheService.instance.getCacheStats(),
+                  builder: (context, snapshot) {
+                    final stats = snapshot.data ?? {'count': 0, 'sizeBytes': 0, 'formattedSize': '0.0 MB'};
+                    final count = stats['count'] ?? 0;
+                    final formattedSize = stats['formattedSize'] ?? '0.0 MB';
+                    return ListTile(
+                      leading: const Icon(Icons.image, color: AppColors.accentNeonCyan),
+                      title: const Text('碰撞框动图沙盒缓存', style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold)),
+                      subtitle: Text('已缓存 ' + count.toString() + ' 个招式动图 (' + formattedSize.toString() + ')，支持离线秒开', style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                      trailing: TextButton(
+                        onPressed: () async {
+                          await MediaCacheService.instance.clearCache();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('已清空碰撞框动图缓存，释放磁盘空间。')),
+                            );
+                            (context as Element).markNeedsBuild();
+                          }
+                        },
+                        child: const Text('清除缓存', style: TextStyle(color: AppColors.loseRed, fontSize: 12)),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -316,7 +498,9 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
-  }
+  },
+);
+}
 
   void _checkForUpdates(BuildContext context) async {
     showDialog(
@@ -543,6 +727,133 @@ class SettingsScreen extends StatelessWidget {
               ],
             );
           },
+        );
+      },
+    );
+  }
+
+  void _showAddAccountMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141622),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.accentNeonCyan, width: 1.5),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.person_add, color: AppColors.accentNeonCyan, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    '添加玩家账号',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentNeonCyan.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.language, color: AppColors.accentNeonCyan, size: 22),
+                ),
+                title: const Text('通过网页登录官方卡普空账号', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
+                subtitle: const Text('支持多账号同时共存，登录后自动嗅探抓取 100 场战绩与官方全量数据', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => LoginWebViewScreen(authService: authService),
+                    ),
+                  );
+                },
+              ),
+              const Divider(color: AppColors.borderSubtle),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentNeonYellow.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.tag, color: AppColors.accentNeonYellow, size: 22),
+                ),
+                title: const Text('通过 10 位 Short ID 快速绑定', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
+                subtitle: const Text('无需密码即可快速添加并绑定其他玩家或小号', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showQuickBindDialog(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showConfirmDeleteAccountDialog(BuildContext context, CapcomAccount acc) {
+    final name = acc.activePlatform?.fighterId.isNotEmpty == true ? acc.activePlatform!.fighterId : acc.displayName;
+    final sid = acc.activePlatform?.shortId.isNotEmpty == true ? acc.activePlatform!.shortId : acc.capcomId;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          backgroundColor: AppColors.bgCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: AppColors.loseRed),
+              SizedBox(width: 8),
+              Text('移除账号确认', style: TextStyle(color: AppColors.textPrimary, fontSize: 16)),
+            ],
+          ),
+          content: Text(
+            '确定要从本机移除账号 [$name] (Short ID: $sid) 吗？\n\n提示：该账号已保存在本地数据库中的对战历史、胜率记录不会丢失，再次添加该 Short ID 时即可重新读取。',
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('取消', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.loseRed,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                Navigator.pop(dialogCtx);
+                await authService.logoutAccount(acc.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('已从本机移除账号: $name')),
+                  );
+                }
+              },
+              child: const Text('确认移除', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
         );
       },
     );

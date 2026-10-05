@@ -27,7 +27,8 @@ class AppLogger {
   AppLogger._();
   static final AppLogger instance = AppLogger._();
 
-  static const String currentAppVersion = 'v1.2.5';
+  static const String currentAppVersion = 'v1.2.6.4';
+  static const String currentBuildNumber = '2604';
   final List<LogEntry> _logs = [];
   static const int _maxLogs = 600;
   static const String _crashLogPrefKey = 'sf6_persisted_crash_logs';
@@ -103,6 +104,13 @@ class AppLogger {
     if (message.contains('This exception was thrown because the response has a status code of')) {
       final m = RegExp(r'status code of (\d+)').firstMatch(message);
       final code = m != null ? m.group(1) : 'HTTP 错误';
+      if (code == '503') {
+        return '[503] 卡普空服务器维护或临时访问受限，已保留本地离线数据';
+      } else if (code == '403') {
+        return '[403] 官方登录会话已过期，请重新登录授权';
+      } else if (code == '400') {
+        return '[400] 请求参数有误或目标玩家数据未公开';
+      }
       return '[$code] 接口响应异常 (请确认网络连接或稍后重试)';
     }
     if (message.length > 300 && message.contains('DioException')) {
@@ -153,6 +161,7 @@ class AppLogger {
   /// Builds a concise summary report (~15 lines) ideal for fast sharing with developer
   String buildConciseDiagnosticSummary({
     String appVersion = currentAppVersion,
+    String buildNumber = currentBuildNumber,
     String activeAccountName = '未登录',
     String activePlatformName = '未选择',
     String activeShortId = '无',
@@ -165,7 +174,7 @@ class AppLogger {
     final nowStr = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
     final sb = StringBuffer();
     sb.writeln('【街霸6助手 - 运行诊断摘要】 ($nowStr)');
-    sb.writeln('版本: $appVersion | 环境: Android Release');
+    sb.writeln('版本: $appVersion | 构建: $buildNumber | 环境: Android Release');
     sb.writeln('账号: $activeAccountName (Short ID: $activeShortId, 平台: $activePlatformName)');
     sb.writeln('段位: $activeLp LP | $activeMr MR' + (clubName.isNotEmpty ? ' | 战队: [$clubName]' : ''));
     sb.writeln('本地 SQLite 对局库: 已缓存 $dbBattleRecordsCount 场历史战绩');
@@ -190,6 +199,7 @@ class AppLogger {
   /// Builds a comprehensive report with both summary and full execution logs
   String buildComprehensiveReport({
     String appVersion = currentAppVersion,
+    String buildNumber = currentBuildNumber,
     String activeAccountName = '未登录',
     String activePlatformName = '未选择',
     String activeShortId = '无',
@@ -204,6 +214,7 @@ class AppLogger {
     final sb = StringBuffer();
     sb.writeln(buildConciseDiagnosticSummary(
       appVersion: appVersion,
+      buildNumber: buildNumber,
       activeAccountName: activeAccountName,
       activePlatformName: activePlatformName,
       activeShortId: activeShortId,

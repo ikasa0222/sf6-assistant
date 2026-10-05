@@ -54,10 +54,11 @@ class CapcomSyncEngine {
     battleLogService.setSyncing(true);
 
     try {
+      final startingAccountId = authService.activeAccount?.id;
       final activePlat = authService.activePlatform;
       String shortId = activePlat?.shortId ?? '';
 
-      AppLogger.instance.sync('SyncEngine', '[REFRESH_INIT] 开始全量数据同步, shortId: $shortId, platform: ${activePlat?.platformType.displayName}');
+      AppLogger.instance.sync('SyncEngine', '[REFRESH_INIT] 开始全量数据同步, shortId: $shortId, platform: ${activePlat?.platformType.displayName}, accountId: $startingAccountId');
       onProgress?.call(0.15, '正在获取官方登录会话与 Cookie...');
 
       String cookieHeader = authService.activeAccount?.cookieSession ?? '';
@@ -179,7 +180,7 @@ class CapcomSyncEngine {
             final rawCid = c['character_id'] ?? c['character_tool_name'] ?? c['character_name'];
             if (rawCid == null) continue;
             final cidStr = rawCid.toString().trim().toLowerCase();
-            if (cidStr == '0' || cidStr == 'cha' || cidStr == 'all' || cidStr == 'total') continue;
+            if (cidStr == '0' || cidStr == 'cha' || cidStr == 'character' || cidStr == 'all' || cidStr == 'total' || cidStr == 'summary' || cidStr.isEmpty) continue;
 
             final cChar = Sf6Characters.fromCapcomId(rawCid);
             final rawLpNum = c['league_info']?['league_point'] ?? c['league_point'] ?? c['lp'] ?? 0;
@@ -216,7 +217,7 @@ class CapcomSyncEngine {
             final rawCid = c['character_id'] ?? c['character_tool_name'] ?? c['character_name'];
             if (rawCid == null) continue;
             final cidStr = rawCid.toString().trim().toLowerCase();
-            if (cidStr == '0' || cidStr == 'cha' || cidStr == 'all' || cidStr == 'total') continue;
+            if (cidStr == '0' || cidStr == 'cha' || cidStr == 'character' || cidStr == 'all' || cidStr == 'total' || cidStr == 'summary' || cidStr.isEmpty) continue;
 
             final cChar = Sf6Characters.fromCapcomId(rawCid);
             final rawMatches = c['play_count'] ?? c['total_matches'] ?? c['playing_count'] ?? c['matches'] ?? c['battle_count'] ?? 0;
@@ -260,6 +261,17 @@ class CapcomSyncEngine {
           }
         } catch (e) {
           AppLogger.instance.warn('SyncEngine', '解析官方对手克制表异常: $e');
+        }
+
+        // Parse & persist play times from /play page
+        try {
+          final ptPlay = NextDataParser.parsePlayTime(playData);
+          if (ptPlay.hasData && shortId.isNotEmpty) {
+            await StorageService.instance.savePlayTimeJson(shortId, ptPlay.toJson());
+            AppLogger.instance.net('SyncEngine', '成功持久化官方模式时长: ${ptPlay.items.length} 个模式, 累计 ${ptPlay.formattedTotalDuration}');
+          }
+        } catch (e) {
+          AppLogger.instance.warn('SyncEngine', '解析 /play 模式时长异常: $e');
         }
       }).catchError((e) {
         AppLogger.instance.warn('SyncEngine', '同步 /play 异常: $e');
@@ -487,9 +499,22 @@ class CapcomSyncEngine {
         finalDirectMr = mainU.mr;
       }
 
+      // 4. Guard against account switch during long-running network fetch
+      if (startingAccountId != null && authService.activeAccount?.id != startingAccountId) {
+        AppLogger.instance.warn(
+          'SyncEngine',
+          '账号在同步过程中发生切换 (发起时: $startingAccountId, 当前: ${authService.activeAccount?.id})，丢弃旧账号拉取结果以防串号与状态覆盖',
+        );
+        return const SyncResult(
+          success: false,
+          message: '检测到当前账号已切换，已安全终止本次同步写入。',
+        );
+      }
+
       // 4. Update AuthService
       AppLogger.instance.sync('SyncEngine', '[REFRESH_STATE_TRANSITION] 写入更新至 AuthService & BattleLogService');
       await authService.updateActiveProfile(
+        targetAccountId: startingAccountId,
         fighterId: fighterName,
         shortId: shortId,
         platformType: activePlat?.platformType ?? PlatformType.nintendoSwitch2,
@@ -543,9 +568,10 @@ class CapcomSyncEngine {
       );
     } catch (e, stack) {
       AppLogger.instance.error('CapcomSyncEngine', '同步异常: $e\n$stack');
+      final cleanMsg = AppLogger.sanitizeMessage(e.toString());
       return SyncResult(
         success: false,
-        message: '同步异常: $e',
+        message: cleanMsg,
       );
     } finally {
       _isSyncing = false;

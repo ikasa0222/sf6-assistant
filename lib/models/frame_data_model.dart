@@ -45,6 +45,54 @@ enum MoveType {
   }
 }
 
+class MoveVariation {
+  final String version;
+  final String startup;
+  final String active;
+  final String recovery;
+  final String onBlock;
+  final String onHit;
+  final int damage;
+  final String invincible;
+  final String notes;
+
+  const MoveVariation({
+    required this.version,
+    required this.startup,
+    required this.active,
+    required this.recovery,
+    required this.onBlock,
+    required this.onHit,
+    required this.damage,
+    this.invincible = '',
+    this.notes = '',
+  });
+
+  Map<String, dynamic> toJson() => {
+    'version': version,
+    'startup': startup,
+    'active': active,
+    'recovery': recovery,
+    'onBlock': onBlock,
+    'onHit': onHit,
+    'damage': damage,
+    'invincible': invincible,
+    'notes': notes,
+  };
+
+  factory MoveVariation.fromJson(Map<String, dynamic> json) => MoveVariation(
+    version: json['version'] ?? '',
+    startup: json['startup'] ?? '-',
+    active: json['active'] ?? '-',
+    recovery: json['recovery'] ?? '-',
+    onBlock: json['onBlock'] ?? '-',
+    onHit: json['onHit'] ?? '-',
+    damage: json['damage'] ?? 0,
+    invincible: json['invincible'] ?? '',
+    notes: json['notes'] ?? '',
+  );
+}
+
 class FrameMove {
   final String name;
   final String command;
@@ -59,6 +107,7 @@ class FrameMove {
   final String driveGaugeRecovery;
   final bool isCancelable;
   final String notes;
+  final List<MoveVariation> variations;
 
   FrameMove({
     required this.name,
@@ -74,6 +123,7 @@ class FrameMove {
     this.driveGaugeRecovery = '0',
     this.isCancelable = false,
     this.notes = '',
+    this.variations = const [],
   });
 
   bool get isPlusOnBlock {
@@ -108,6 +158,7 @@ class FrameMove {
     'driveGaugeRecovery': driveGaugeRecovery,
     'isCancelable': isCancelable,
     'notes': notes,
+    'variations': variations.map((v) => v.toJson()).toList(),
   };
 
   factory FrameMove.fromJson(Map<String, dynamic> json) => FrameMove(
@@ -124,6 +175,10 @@ class FrameMove {
     driveGaugeRecovery: json['driveGaugeRecovery'] ?? '0',
     isCancelable: json['isCancelable'] == true || json['isCancelable'] == 1,
     notes: json['notes'] ?? '',
+    variations: (json['variations'] as List<dynamic>?)
+            ?.map((e) => MoveVariation.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        const [],
   );
 }
 

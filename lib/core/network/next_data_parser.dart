@@ -831,7 +831,7 @@ class NextDataParser {
           final rawCid = c['character_id'] ?? c['character_tool_name'] ?? c['character_name'];
           if (rawCid == null) continue;
           final cidStr = rawCid.toString().trim().toLowerCase();
-          if (cidStr == '0' || cidStr == 'cha' || cidStr == 'all' || cidStr == 'total') continue;
+          if (cidStr == '0' || cidStr == 'cha' || cidStr == 'character' || cidStr == 'all' || cidStr == 'total' || cidStr == 'summary' || cidStr.isEmpty) continue;
 
           final cChar = Sf6Characters.fromCapcomId(rawCid);
           final rawLpNum = c['league_info']?['league_point'] ?? c['league_point'] ?? c['lp'] ?? 0;
@@ -865,7 +865,7 @@ class NextDataParser {
           final rawCid = c['character_id'] ?? c['character_tool_name'] ?? c['character_name'];
           if (rawCid == null) continue;
           final cidStr = rawCid.toString().trim().toLowerCase();
-          if (cidStr == '0' || cidStr == 'cha' || cidStr == 'all' || cidStr == 'total') continue;
+          if (cidStr == '0' || cidStr == 'cha' || cidStr == 'character' || cidStr == 'all' || cidStr == 'total' || cidStr == 'summary' || cidStr.isEmpty) continue;
 
           final cChar = Sf6Characters.fromCapcomId(rawCid);
           final matches = _toInt(c['play_count'] ?? c['total_matches'] ?? c['playing_count'] ?? c['matches'] ?? c['battle_count']);

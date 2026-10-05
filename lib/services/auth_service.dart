@@ -33,6 +33,7 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> switchAccount(String accountId) async {
+    _accounts = await _storage.getAccounts();
     final account = _accounts.firstWhere((a) => a.id == accountId, orElse: () => _accounts.first);
     _activeAccount = account;
     await _storage.setActiveAccountId(accountId);
@@ -44,11 +45,13 @@ class AuthService extends ChangeNotifier {
     if (platformIndex >= 0 && platformIndex < _activeAccount!.linkedPlatforms.length) {
       _activeAccount = _activeAccount!.copyWith(activePlatformIndex: platformIndex);
       await _storage.addOrUpdateAccount(_activeAccount!);
+      _accounts = await _storage.getAccounts();
       notifyListeners();
     }
   }
 
   Future<void> updateActiveProfile({
+    String? targetAccountId,
     required String fighterId,
     required String shortId,
     required PlatformType platformType,
@@ -58,6 +61,12 @@ class AuthService extends ChangeNotifier {
     String? clubName,
     List<CharacterUsage>? characterUsages,
   }) async {
+    // If a specific targetAccountId was requested and it no longer matches the active account, abort
+    if (targetAccountId != null && _activeAccount != null && _activeAccount!.id != targetAccountId) {
+      debugPrint('[AuthService] 目标账号已切换 (target: $targetAccountId, current: ${_activeAccount?.id})，跳过写入');
+      return;
+    }
+
     final cleanShortId = shortId.trim();
     final cleanFighterId = fighterId.trim().isNotEmpty ? fighterId.trim() : 'Fighter_$cleanShortId';
 
@@ -84,10 +93,11 @@ class AuthService extends ChangeNotifier {
       activeIdx = currentPlatforms.length - 1;
     }
 
-    final currentId = _activeAccount?.id ?? 'acc_$cleanShortId';
+    final currentId = targetAccountId ?? _activeAccount?.id ?? 'acc_$cleanShortId';
+    final preservedCapcomId = _activeAccount?.capcomId.isNotEmpty == true ? _activeAccount!.capcomId : cleanShortId;
     final updatedAccount = CapcomAccount(
       id: currentId,
-      capcomId: cleanShortId,
+      capcomId: preservedCapcomId,
       displayName: cleanFighterId,
       cookieSession: _activeAccount?.cookieSession ?? '',
       linkedPlatforms: currentPlatforms,

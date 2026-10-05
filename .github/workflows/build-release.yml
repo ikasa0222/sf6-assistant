@@ -37,7 +37,7 @@ jobs:
         run: flutter test --concurrency=1
 
       - name: Build Release APK
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
 
       - name: Rename APKs
         run: |

@@ -27,7 +27,6 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.x'
           channel: 'stable'
           cache: true
 
@@ -35,7 +34,7 @@ jobs:
         run: flutter pub get
 
       - name: Run Tests
-        run: flutter test
+        run: flutter test --concurrency=1
 
       - name: Build Release APK
         run: flutter build apk --release --split-per-abi
@@ -55,3 +54,9 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SF6_Assistant_Android_APKs
+          path: release-apks/*.apk

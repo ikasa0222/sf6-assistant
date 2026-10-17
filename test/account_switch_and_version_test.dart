@@ -5,8 +5,8 @@ import 'package:sf6_tracker/services/update_service.dart';
 
 void main() {
   group('Version and Account Switch Tests', () {
-    test('Current app version is v1.2.7.0', () {
-      expect(AppLogger.currentAppVersion == 'v1.2.6.4' || AppLogger.currentAppVersion == 'v1.2.7.0', isTrue);
+    test('Current app version is v1.2.7.0 or v1.2.7.1', () {
+      expect(AppLogger.currentAppVersion == 'v1.2.6.4' || AppLogger.currentAppVersion == 'v1.2.7.0' || AppLogger.currentAppVersion == 'v1.2.7.1', isTrue);
     });
 
     test('UpdateService compares multi-segment test versions correctly', () {

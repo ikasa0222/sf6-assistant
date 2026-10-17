@@ -112,25 +112,25 @@ class Sf6MoveMediaHelper {
       if (name.contains('狂暴之肩') || cmd.contains('623P') || name.contains('cruel shoulder') || name.contains('cruelshoulder')) {
         return 'arjun-cruelshoulder-hp.gif';
       }
-      if (name.contains('呼吸之环') || cmd.contains('214K') || name.contains('breathing ring') || name.contains('breathingring')) {
+      if (name.contains('呼吸之环') || name.contains('breathing ring') || name.contains('breathingring') || cmd.contains('236K') || cmd.contains('214K')) {
         return 'arjun-breathingring-hk.gif';
       }
-      if (name.contains('神柱') || cmd.contains('22P') || name.contains('divine pillar') || name.contains('divinepillar')) {
+      if (name.contains('神柱') || name.contains('divine pillar') || name.contains('divinepillar') || cmd.contains('214K') || cmd.contains('22P')) {
         return 'arjun-divinepillar-hp.gif';
       }
-      if (name.contains('阴森审讯') || cmd.contains('63214K') || name.contains('ghastly interrogation') || name.contains('ghastlyinterrogation')) {
+      if (name.contains('阴森审讯') || name.contains('ghastly interrogation') || name.contains('ghastlyinterrogation') || cmd.contains('63214K') || cmd.contains('63214P')) {
         return 'arjun-ghastlyinterrogation.gif';
       }
-      if (name.contains('不屈防壁') || cmd.contains('214P') || name.contains('indomitable defense') || name.contains('indomitabledefense')) {
+      if (name.contains('不屈防壁') || name.contains('indomitable defense') || name.contains('indomitabledefense') || cmd.contains('214P') || cmd.contains('22HK')) {
         return 'arjun-indomitabledefense.gif';
       }
-      if (name.contains('SA1') || name.contains('咆哮毁灭') || cmd.contains('236236K')) {
+      if (name.contains('sa1') || move.name.contains('SA1') || name.contains('咆哮毁灭') || name.contains('howling destruction') || cmd.contains('236236P') || cmd.contains('236236K')) {
         return 'arjun-sa1.gif';
       }
-      if (name.contains('SA2') || name.contains('瞬间遗忘') || cmd.contains('214214P')) {
+      if (name.contains('sa2') || move.name.contains('SA2') || name.contains('瞬间遗忘') || name.contains('instant oblivion') || cmd.contains('214214P')) {
         return 'arjun-sa2.gif';
       }
-      if (name.contains('SA3') || name.contains('CA') || name.contains('夜叉之令') || cmd.contains('236236P')) {
+      if (name.contains('sa3') || move.name.contains('SA3') || name.contains('ca') || move.name.contains('CA') || name.contains('夜叉之令') || name.contains('yaksha') || cmd.contains('236236K') || cmd.contains('236236P')) {
         return 'arjun-sa3.gif';
       }
     }

@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sf6_tracker/core/utils/app_logger.dart';
+import 'package:sf6_tracker/data/frame_data_database.dart';
 import 'app.dart';
 
 void main() async {
@@ -10,6 +11,7 @@ void main() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     await AppLogger.instance.init();
+    await FrameDataDatabase.init();
 
     // Global Flutter framework error hook
     FlutterError.onError = (FlutterErrorDetails details) {

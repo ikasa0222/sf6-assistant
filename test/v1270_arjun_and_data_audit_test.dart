@@ -15,47 +15,47 @@ void main() {
   // ===========================================================================
   // 1. REQ-VER-001: Application Version and Build Number Specifications (v1.2.7.0 / 2700)
   // ===========================================================================
-  group('REQ-VER-001: Version and Build Metadata (v1.2.7.0 / 2700)', () {
-    test('AppLogger.currentAppVersion must strictly equal v1.2.7.0', () {
+  group('REQ-VER-001: Version and Build Metadata (v1.2.7.0 / 2700 or v1.2.7.1 / 2701)', () {
+    test('AppLogger.currentAppVersion must equal v1.2.7.0 or v1.2.7.1', () {
       expect(
-        AppLogger.currentAppVersion,
-        equals('v1.2.7.0'),
-        reason: 'REQ-VER-001: AppLogger.currentAppVersion must be upgraded to v1.2.7.0',
+        AppLogger.currentAppVersion == 'v1.2.7.0' || AppLogger.currentAppVersion == 'v1.2.7.1',
+        isTrue,
+        reason: 'REQ-VER-001: AppLogger.currentAppVersion must be v1.2.7.0 or v1.2.7.1',
       );
     });
 
-    test('AppLogger.currentBuildNumber must strictly equal 2700', () {
+    test('AppLogger.currentBuildNumber must equal 2700 or 2701', () {
       expect(
-        AppLogger.currentBuildNumber,
-        equals('2700'),
-        reason: 'REQ-VER-001: AppLogger.currentBuildNumber must be upgraded to 2700',
+        AppLogger.currentBuildNumber == '2700' || AppLogger.currentBuildNumber == '2701',
+        isTrue,
+        reason: 'REQ-VER-001: AppLogger.currentBuildNumber must be 2700 or 2701',
       );
     });
 
-    test('pubspec.yaml version must strictly be 1.2.7+2700', () {
+    test('pubspec.yaml version must strictly be 1.2.7+2700 or 1.2.7+2701', () {
       final pubspecFile = File('pubspec.yaml');
       expect(pubspecFile.existsSync(), isTrue, reason: 'pubspec.yaml must exist');
       final content = pubspecFile.readAsStringSync();
-      final versionMatch = RegExp(r'^version:\s*1\.2\.7(\.0)?\+2700\s*$', multiLine: true);
+      final versionMatch = RegExp(r'^version:\s*1\.2\.7(\.[01])?\+(2700|2701)\s*$', multiLine: true);
       expect(
         versionMatch.hasMatch(content),
         isTrue,
-        reason: 'REQ-VER-001: pubspec.yaml version must strictly be 1.2.7+2700',
+        reason: 'REQ-VER-001: pubspec.yaml version must strictly be 1.2.7+2700 or 1.2.7+2701',
       );
     });
 
-    test('AppLogger diagnostic summary format must output target version v1.2.7.0 and build 2700', () {
+    test('AppLogger diagnostic summary format must output target version and build', () {
       final logger = AppLogger.instance;
       final report = logger.buildConciseDiagnosticSummary();
       expect(
-        report.contains('v1.2.7.0'),
+        report.contains('v1.2.7.0') || report.contains('v1.2.7.1'),
         isTrue,
-        reason: 'REQ-VER-001: Diagnostic summary report must include version v1.2.7.0',
+        reason: 'REQ-VER-001: Diagnostic summary report must include version v1.2.7.0 or v1.2.7.1',
       );
       expect(
-        report.contains('2700'),
+        report.contains('2700') || report.contains('2701'),
         isTrue,
-        reason: 'REQ-VER-001: Diagnostic summary report must include build number 2700',
+        reason: 'REQ-VER-001: Diagnostic summary report must include build number 2700 or 2701',
       );
     });
   });

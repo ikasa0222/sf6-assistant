@@ -24,7 +24,7 @@ enum MoveType {
   }
 
   static MoveType fromString(String type) {
-    switch (type.toLowerCase()) {
+    switch (type.toLowerCase().trim()) {
       case 'normal':
         return MoveType.normal;
       case 'unique':
@@ -32,11 +32,13 @@ enum MoveType {
         return MoveType.unique;
       case 'special':
         return MoveType.special;
-      case 'sa':
       case 'superart':
+      case 'sa':
         return MoveType.superArt;
+      case 'throwtech':
       case 'throw':
         return MoveType.throwTech;
+      case 'driveaction':
       case 'drive':
         return MoveType.driveAction;
       default:

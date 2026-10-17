@@ -11,8 +11,8 @@
 <p align="center">
   <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter" alt="Flutter"></a>
   <a href="https://android.com"><img src="https://img.shields.io/badge/Android-5.0%2B-3DDC84?logo=android" alt="Android"></a>
-  <a href="https://github.com/OldSea/SF6_Assistant/releases"><img src="https://img.shields.io/badge/Release-v1.2.6.4-FF9800?logo=github" alt="Version"></a>
-  <a href="test/"><img src="https://img.shields.io/badge/Tests-106%20Passed-4CAF50?logo=checkmarx" alt="Tests"></a>
+  <a href="https://github.com/OldSea/SF6_Assistant/releases"><img src="https://img.shields.io/badge/Release-v1.2.7.0-FF9800?logo=github" alt="Version"></a>
+  <a href="test/"><img src="https://img.shields.io/badge/Tests-138%20Passed-4CAF50?logo=checkmarx" alt="Tests"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
 </p>
 

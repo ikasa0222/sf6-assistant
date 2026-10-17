@@ -472,6 +472,82 @@ class Sf6CombosDatabase {
           ),
         ];
 
+      case 'arjun':
+        return [
+          const ComboRecipe(
+            id: 'arjun_1',
+            characterId: 'arjun',
+            starterType: '确反康',
+            comboSequence: 'PC 5HP > 4HP > 236PP, 623HP > 236236P (SA3)',
+            position: '任意位置',
+            damage: '5820',
+            driveGauge: '2',
+            superGauge: '3',
+            difficulty: '进阶',
+            notes: '对手大升龙破空后的最痛确反路线。利用 4HP 取消接 OD 正义之臂打出弹墙，重狂暴之肩顺势带入 SA3 夜叉之令斩杀。',
+          ),
+          const ComboRecipe(
+            id: 'arjun_2',
+            characterId: 'arjun',
+            starterType: '普通命中',
+            comboSequence: '2LK ~ 2LP ~ 5LP > 236LP',
+            position: '任意位置',
+            damage: '1260',
+            driveGauge: '0',
+            superGauge: '0',
+            difficulty: '极简',
+            notes: '核心下段轻攻击摸奖确认，近身点中即确认接轻正义之臂换位击倒。',
+          ),
+          const ComboRecipe(
+            id: 'arjun_3',
+            characterId: 'arjun',
+            starterType: '打断康',
+            comboSequence: 'CH 5MP, 2MP > 214MK',
+            position: '版中',
+            damage: '1850',
+            driveGauge: '0',
+            superGauge: '0',
+            difficulty: '简单',
+            notes: '立回中拳抢招打断对手动作，命中后从容目押接 2MP 呼吸之环。',
+          ),
+          const ComboRecipe(
+            id: 'arjun_4',
+            characterId: 'arjun',
+            starterType: '绿冲起手',
+            comboSequence: '2MK > DRC, 5HP > 4HP > 214214P (SA2)',
+            position: '任意位置',
+            damage: '3890',
+            driveGauge: '3',
+            superGauge: '2',
+            difficulty: '普通',
+            notes: '下中脚立回突进确认，投入 3 格斗气与 2 条 SA 能量，打出高额灰血压制伤害。',
+          ),
+          const ComboRecipe(
+            id: 'arjun_5',
+            characterId: 'arjun',
+            starterType: '斗气迸发',
+            comboSequence: 'PC Drive Impact, 6HP, 22PP, 623HP',
+            position: '版边',
+            damage: '3250',
+            driveGauge: '2',
+            superGauge: '0',
+            difficulty: '普通',
+            notes: '迸发破防崩墙后，大威力冲拳接 OD 神柱引发共鸣，重狂暴之肩追击。',
+          ),
+          const ComboRecipe(
+            id: 'arjun_6',
+            characterId: 'arjun',
+            starterType: '版边崩防',
+            comboSequence: 'Wall Splat, 5HK, 236HP > 236236K (SA1)',
+            position: '版边',
+            damage: '3150',
+            driveGauge: '0',
+            superGauge: '1',
+            difficulty: '简单',
+            notes: '对手力竭被推墙崩防的极简惩罚，单槽 SA1 稳定收割。',
+          ),
+        ];
+
       default:
         return [
           ComboRecipe(

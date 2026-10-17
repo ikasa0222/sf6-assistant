@@ -267,6 +267,14 @@ class Sf6Characters {
       archetype: '太阳能量 / 空间控制型',
     ),
     Sf6Character(
+      id: 'arjun',
+      nameEn: 'Arjun',
+      nameZh: '阿俊',
+      shortCode: 'ARJ',
+      avatarUrl: 'https://www.streetfighter.com/6/buckler/assets/character/arjun/icon.png',
+      archetype: '徒手瑜伽 / 灰血压制型',
+    ),
+    Sf6Character(
       id: 'random',
       nameEn: 'Random',
       nameZh: '随机',
@@ -278,7 +286,8 @@ class Sf6Characters {
 
   static Sf6Character getById(String id) {
     if (id.trim().isEmpty) return all.first;
-    final lower = id.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    final trimmed = id.trim();
+    final lower = trimmed.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
     if (lower == 'random' || lower == 'rand' || lower == '254' || lower == '255') {
       return all.firstWhere((c) => c.id == 'random');
     }
@@ -292,11 +301,14 @@ class Sf6Characters {
     if (lower == 'viper') {
       return all.firstWhere((c) => c.id == 'cviper');
     }
+    if (lower == 'arjun' || lower == 'arj') {
+      return all.firstWhere((c) => c.id == 'arjun');
+    }
 
     for (final c in all) {
       if (c.id.replaceAll(RegExp(r'[^a-z0-9]'), '') == lower ||
           c.nameEn.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '') == lower ||
-          c.nameZh == id ||
+          c.nameZh == trimmed ||
           c.shortCode.toLowerCase() == lower) {
         return c;
       }
@@ -360,6 +372,7 @@ class Sf6Characters {
         32: 'ingrid',
         33: 'yasmine',
         34: 'sagat',
+        35: 'arjun',
       };
       final charId = capcomMap[num];
       if (charId != null) return getById(charId);

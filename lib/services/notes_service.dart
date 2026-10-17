@@ -60,6 +60,15 @@ class NotesService extends ChangeNotifier {
     final now = DateTime.now();
     return [
       PlayerNote(
+        id: 'note_arjun',
+        targetKey: 'arjun',
+        isCharacterNote: true,
+        title: '阿俊 (Arjun) 灰血压制与对策复盘',
+        content: '1. 【立回防范】阿俊 5MK 与 6HP 手长判定极强，但收招硬直较大，可多尝试绿冲下中脚下盘插动。\n2. 【规避指令投】阿俊拥有 5F 极速指令投（阴森审讯），近身压制被其贴身时需提防打拆投，果断跳跃或后撤步确反。\n3. 【破防防壁】注意其 214P 不屈防壁架势，切忌无脑出高硬直单发攻击被其 Moral Breakdown 借力反击。\n4. 【血量优势】阿俊拥有 10500 高额体魄，需打出稳健的差合与连段收割。',
+        tags: ['防指令投', '破防壁', '立回插动', '灰血压制'],
+        updatedAt: now,
+      ),
+      PlayerNote(
         id: 'note_akuma',
         targetKey: 'akuma',
         isCharacterNote: true,

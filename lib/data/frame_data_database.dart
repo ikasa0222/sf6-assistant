@@ -149,6 +149,268 @@ class FrameDataDatabase {
     ),
   ];
 
+  static final List<MoveVariation> armOfJusticeVariations = [
+    const MoveVariation(
+      version: 'L (轻)',
+      startup: '14',
+      active: '3',
+      recovery: '18',
+      onBlock: '-6',
+      onHit: '+2',
+      damage: 700,
+      notes: '快速直冲掌',
+    ),
+    const MoveVariation(
+      version: 'M (中)',
+      startup: '17',
+      active: '3',
+      recovery: '18',
+      onBlock: '-4',
+      onHit: '+3',
+      damage: 800,
+      notes: '中距离突进',
+    ),
+    const MoveVariation(
+      version: 'H (重)',
+      startup: '20',
+      active: '3',
+      recovery: '19',
+      onBlock: '-2',
+      onHit: '击倒',
+      damage: 900,
+      notes: '重型推移',
+    ),
+    const MoveVariation(
+      version: 'OD (强化)',
+      startup: '14',
+      active: '4',
+      recovery: '16',
+      onBlock: '+2',
+      onHit: '大弹墙',
+      damage: 1200,
+      notes: '消耗2气，弹墙连段起手',
+    ),
+  ];
+
+  static final List<MoveVariation> cruelShoulderVariations = [
+    const MoveVariation(
+      version: 'L (轻)',
+      startup: '6',
+      active: '4',
+      recovery: '34',
+      onBlock: '-24',
+      onHit: '击倒',
+      damage: 1100,
+      invincible: '1-8F 空中攻击无敌',
+      notes: '轻狂暴之肩对空',
+    ),
+    const MoveVariation(
+      version: 'M (中)',
+      startup: '7',
+      active: '4',
+      recovery: '36',
+      onBlock: '-28',
+      onHit: '击倒',
+      damage: 1250,
+      invincible: '1-9F 空中攻击无敌',
+      notes: '中狂暴之肩截击',
+    ),
+    const MoveVariation(
+      version: 'H (重)',
+      startup: '8',
+      active: '5',
+      recovery: '38',
+      onBlock: '-32',
+      onHit: '击倒',
+      damage: 1350,
+      invincible: '1-10F 对空完全无敌',
+      notes: '重狂暴之肩防空',
+    ),
+    const MoveVariation(
+      version: 'OD (强化)',
+      startup: '6',
+      active: '6',
+      recovery: '40',
+      onBlock: '-36',
+      onHit: '击倒',
+      damage: 1450,
+      invincible: '1-8F 完全无敌 (核心凹招，命中触发神柱共鸣)',
+      notes: '第1帧完全无敌凹招',
+    ),
+  ];
+
+  static final List<MoveVariation> breathingRingVariations = [
+    const MoveVariation(
+      version: 'L (轻)',
+      startup: '15',
+      active: '3',
+      recovery: '20',
+      onBlock: '-4',
+      onHit: '+1',
+      damage: 600,
+      notes: '制造灰血冲击波',
+    ),
+    const MoveVariation(
+      version: 'M (中)',
+      startup: '18',
+      active: '3',
+      recovery: '20',
+      onBlock: '-2',
+      onHit: '击倒',
+      damage: 750,
+      notes: '中距离灰血波',
+    ),
+    const MoveVariation(
+      version: 'H (重)',
+      startup: '22',
+      active: '4',
+      recovery: '18',
+      onBlock: '+1',
+      onHit: '击倒',
+      damage: 900,
+      notes: '压制有利波',
+    ),
+    const MoveVariation(
+      version: 'OD (强化)',
+      startup: '16',
+      active: '4',
+      recovery: '18',
+      onBlock: '+3',
+      onHit: '崩防浮空',
+      damage: 1050,
+      notes: '消耗2气，被防+3有利',
+    ),
+  ];
+
+  static final List<MoveVariation> divinePillarVariations = [
+    const MoveVariation(
+      version: 'L (轻)',
+      startup: '26',
+      active: '4',
+      recovery: '22',
+      onBlock: '+1',
+      onHit: '击倒',
+      damage: 600,
+      notes: '近距离光柱压制',
+    ),
+    const MoveVariation(
+      version: 'M (中)',
+      startup: '29',
+      active: '4',
+      recovery: '22',
+      onBlock: '+2',
+      onHit: '击倒',
+      damage: 600,
+      notes: '中距离召唤',
+    ),
+    const MoveVariation(
+      version: 'H (重)',
+      startup: '32',
+      active: '4',
+      recovery: '22',
+      onBlock: '+3',
+      onHit: '击倒',
+      damage: 600,
+      notes: '远距离防空',
+    ),
+    const MoveVariation(
+      version: 'OD (强化)',
+      startup: '24',
+      active: '6',
+      recovery: '20',
+      onBlock: '+4',
+      onHit: '大浮空',
+      damage: 900,
+      notes: '双重能量光柱夹击',
+    ),
+  ];
+
+  static final List<MoveVariation> interrogationVariations = [
+    const MoveVariation(
+      version: 'L (轻)',
+      startup: '8',
+      active: '2',
+      recovery: '40',
+      onBlock: '不可防',
+      onHit: '倒地',
+      damage: 1800,
+      notes: '抓取距离极长',
+    ),
+    const MoveVariation(
+      version: 'M (中)',
+      startup: '7',
+      active: '2',
+      recovery: '40',
+      onBlock: '不可防',
+      onHit: '倒地',
+      damage: 2000,
+      notes: '中距离指令投',
+    ),
+    const MoveVariation(
+      version: 'H (重)',
+      startup: '5',
+      active: '2',
+      recovery: '40',
+      onBlock: '不可防',
+      onHit: '倒地',
+      damage: 2200,
+      notes: '发生最快5F',
+    ),
+    const MoveVariation(
+      version: 'OD (强化)',
+      startup: '5',
+      active: '2',
+      recovery: '40',
+      onBlock: '不可防',
+      onHit: '大暴击',
+      damage: 2500,
+      notes: '消耗2气超高爆发指令投',
+    ),
+  ];
+
+  static final List<MoveVariation> indomitableDefenseVariations = [
+    const MoveVariation(
+      version: 'L (轻)',
+      startup: '1',
+      active: '18',
+      recovery: '15',
+      onBlock: '架招',
+      onHit: '反击',
+      damage: 900,
+      notes: '轻架招',
+    ),
+    const MoveVariation(
+      version: 'M (中)',
+      startup: '1',
+      active: '18',
+      recovery: '15',
+      onBlock: '架招',
+      onHit: '反击',
+      damage: 900,
+      notes: '中架招',
+    ),
+    const MoveVariation(
+      version: 'H (重)',
+      startup: '1',
+      active: '18',
+      recovery: '15',
+      onBlock: '架招',
+      onHit: '反击',
+      damage: 900,
+      notes: '重架招',
+    ),
+    const MoveVariation(
+      version: 'OD (强化)',
+      startup: '1',
+      active: '24',
+      recovery: '15',
+      onBlock: '强化架招',
+      onHit: '大崩防',
+      damage: 1200,
+      notes: '强化架招吸收一切攻击',
+    ),
+  ];
+
   static List<FrameMove> getCharacterMoves(String charId) {
     var id = charId.toLowerCase().trim();
     if (id == 'gouki') id = 'akuma';
@@ -695,6 +957,30 @@ class FrameDataDatabase {
         ]);
         break;
 
+      case 'arjun':
+        list.addAll(_getNormalsFor(id));
+        list.addAll([
+          FrameMove(name: '责任之刃 (Blade of Duty)', command: '6MP', type: MoveType.unique, damage: 800, startup: '20', active: '3', recovery: '18', onBlock: '-1', onHit: '+3', notes: '中段开罐破蹲防'),
+          FrameMove(name: '凌驾法律 (Above the Law)', command: '6HP', type: MoveType.unique, damage: 900, startup: '18', active: '4', recovery: '18', onBlock: '-2', onHit: '+4', notes: '大威力前踏冲拳'),
+          FrameMove(name: '施加秩序 (Impose Order)', command: '4HP', type: MoveType.unique, damage: 850, startup: '16', active: '3', recovery: '16', onBlock: '+1', onHit: '+7', isCancelable: true, notes: '二连掌核心打拆连段技'),
+          FrameMove(name: '无法无天 (Loose Cannon)', command: '6HK', type: MoveType.unique, damage: 900, startup: '17', active: '4', recovery: '18', onBlock: '-4', onHit: '+4', notes: '长距离跨步下劈重踢'),
+          FrameMove(name: '镇压 (Suppression)', command: '4HK', type: MoveType.unique, damage: 850, startup: '14', active: '3', recovery: '17', onBlock: '-4', onHit: '+3', notes: '强力对空与浮空截击踢'),
+          FrameMove(name: '穷追不舍 (Hot Pursuit)', command: '3HK', type: MoveType.unique, damage: 800, startup: '13', active: '3', recovery: '20', onBlock: '-6', onHit: '+2', notes: '滑步下段偷袭'),
+          FrameMove(name: '忏悔拳 (Penitent Fist)', command: '3HP', type: MoveType.unique, damage: 850, startup: '15', active: '3', recovery: '17', onBlock: '-3', onHit: '+4', notes: '中距离插动重拳'),
+          FrameMove(name: '正义判决 (Righteous Verdict)', command: 'LP+LK', type: MoveType.throwTech, damage: 1200, startup: '5', active: '3', recovery: '23', onBlock: '不可防御', onHit: '倒地+24F', notes: '5F极速近身投'),
+          FrameMove(name: '审判天平 (Scale of the Judged)', command: '4LP+LK', type: MoveType.throwTech, damage: 1200, startup: '5', active: '3', recovery: '23', onBlock: '不可防御', onHit: '换边倒地+40F', notes: '5F极速后投换边'),
+          FrameMove(name: '正义之臂 (Arm of Justice)', command: '236P', type: MoveType.special, damage: 700, startup: '14', active: '3', recovery: '18', onBlock: '-6', onHit: '+2', variations: armOfJusticeVariations, notes: '突进直冲掌，OD版被防+2且大弹墙'),
+          FrameMove(name: '狂暴之肩 (Cruel Shoulder)', command: '623P', type: MoveType.special, damage: 1100, startup: '6', active: '4', recovery: '34', onBlock: '-24', onHit: '击倒', variations: cruelShoulderVariations, notes: '强力对空肩撞，OD版1-8F完全无敌'),
+          FrameMove(name: '呼吸之环 (Breathing Ring)', command: '214K', type: MoveType.special, damage: 600, startup: '15', active: '3', recovery: '20', onBlock: '-4', onHit: '+1', variations: breathingRingVariations, notes: '冲击波压制技，产生灰血'),
+          FrameMove(name: '神柱 (Divine Pillar)', command: '22P', type: MoveType.special, damage: 600, startup: '26', active: '4', recovery: '22', onBlock: '+1', onHit: '击倒', variations: divinePillarVariations, notes: '召唤能量神柱，被防持续有利'),
+          FrameMove(name: '阴森审讯 (Ghastly Interrogation)', command: '63214K', type: MoveType.special, damage: 2200, startup: '5', active: '2', recovery: '40', onBlock: '不可防', onHit: '倒地', variations: interrogationVariations, notes: '5F极速近身指令投'),
+          FrameMove(name: '不屈防壁 (Indomitable Defense)', command: '214P', type: MoveType.special, damage: 900, startup: '1', active: '18', recovery: '15', onBlock: '架招', onHit: '反击', variations: indomitableDefenseVariations, notes: '格挡架势反击'),
+          FrameMove(name: 'SA1: 咆哮毁灭 (Roaring Ruin)', command: '236236K', type: MoveType.superArt, damage: 2000, startup: '9', active: '6', recovery: '40', onBlock: '-18', onHit: '击倒', notes: '完全无敌对空冲击超必杀'),
+          FrameMove(name: 'SA2: 瞬间遗忘 (Instant Oblivion)', command: '214214P', type: MoveType.superArt, damage: 3000, startup: '11', active: '8', recovery: '44', onBlock: '-16', onHit: '大破防', notes: '灰血引爆超杀'),
+          FrameMove(name: 'SA3: 夜叉之令 (Order of the Yaksha)', command: '236236P', type: MoveType.superArt, damage: 4000, startup: '7', active: '8', recovery: '48', onBlock: '-26', onHit: '夜叉终结', notes: '完全无敌终结技，红血CA 4500'),
+        ]);
+        break;
+
       default:
         if (_cachedJsonMoves != null && _cachedJsonMoves!.containsKey(id)) {
           list.addAll(_cachedJsonMoves![id]!);
@@ -770,8 +1056,28 @@ class FrameDataDatabase {
           FrameMove(name: '跳跃重拳 (j.HP)', command: 'j.HP', type: MoveType.normal, damage: 800, startup: '9', active: '持续', recovery: '着地3', onBlock: '+4', onHit: '+8', isCancelable: false, notes: '跳入重拳'),
           FrameMove(name: '跳跃重脚 (j.HK)', command: 'j.HK', type: MoveType.normal, damage: 800, startup: '9', active: '持续', recovery: '着地3', onBlock: '+4', onHit: '+8', isCancelable: false, notes: '跳入重脚'),
         ];
+      case 'arjun':
+        return [
+          FrameMove(name: '站立轻拳 (5LP)', command: '5LP', type: MoveType.normal, damage: 300, startup: '4', active: '3', recovery: '8', onBlock: '+1', onHit: '+5', isCancelable: true, notes: '4F最速起手抢招，可确认连段'),
+          FrameMove(name: '蹲下轻拳 (2LP)', command: '2LP', type: MoveType.normal, damage: 300, startup: '4', active: '3', recovery: '8', onBlock: '-1', onHit: '+4', isCancelable: true, notes: '下盘4F反击插动'),
+          FrameMove(name: '站立轻脚 (5LK)', command: '5LK', type: MoveType.normal, damage: 320, startup: '5', active: '3', recovery: '10', onBlock: '-2', onHit: '+3', isCancelable: true, notes: '快速推开近战距离'),
+          FrameMove(name: '蹲下轻脚 (2LK)', command: '2LK', type: MoveType.normal, damage: 250, startup: '5', active: '2', recovery: '10', onBlock: '-3', onHit: '+2', isCancelable: false, notes: '极速下段破站防起手'),
+          FrameMove(name: '站立中拳 (5MP)', command: '5MP', type: MoveType.normal, damage: 600, startup: '6', active: '3', recovery: '13', onBlock: '+1', onHit: '+6', isCancelable: true, notes: '核心立回压制拳，被防有利'),
+          FrameMove(name: '蹲下中拳 (2MP)', command: '2MP', type: MoveType.normal, damage: 550, startup: '7', active: '3', recovery: '14', onBlock: '-1', onHit: '+4', isCancelable: true, notes: '打拆投及近距离目押核心'),
+          FrameMove(name: '站立中脚 (5MK)', command: '5MK', type: MoveType.normal, damage: 650, startup: '8', active: '4', recovery: '16', onBlock: '-3', onHit: '+3', isCancelable: false, notes: '长距离立回截击脚'),
+          FrameMove(name: '蹲下中脚 (2MK)', command: '2MK', type: MoveType.normal, damage: 500, startup: '8', active: '3', recovery: '18', onBlock: '-5', onHit: '+1', isCancelable: true, notes: '核心下段摸奖牵制，可取消接绿冲或必杀'),
+          FrameMove(name: '站立重拳 (5HP)', command: '5HP', type: MoveType.normal, damage: 850, startup: '10', active: '4', recovery: '19', onBlock: '-3', onHit: '+4', isCancelable: true, notes: '大伤害单发重确反起手'),
+          FrameMove(name: '蹲下重拳 (2HP)', command: '2HP', type: MoveType.normal, damage: 850, startup: '9', active: '4', recovery: '23', onBlock: '-11', onHit: '+2', isCancelable: true, notes: '核心地面防空重拳'),
+          FrameMove(name: '站立重脚 (5HK)', command: '5HK', type: MoveType.normal, damage: 900, startup: '11', active: '4', recovery: '19', onBlock: '-4', onHit: '+3', isCancelable: false, notes: '超长距离破招崩防打击'),
+          FrameMove(name: '蹲下重脚 (2HK)', command: '2HK', type: MoveType.normal, damage: 900, startup: '10', active: '3', recovery: '25', onBlock: '-12', onHit: '击倒', isCancelable: false, notes: '扫堂腿大确反击倒'),
+          FrameMove(name: '跳跃轻拳 (j.LP)', command: 'j.LP', type: MoveType.normal, damage: 300, startup: '4', active: '持续', recovery: '着地3', onBlock: '+2', onHit: '+6', isCancelable: false, notes: '空中最速下落抢招'),
+          FrameMove(name: '跳跃轻脚 (j.LK)', command: 'j.LK', type: MoveType.normal, damage: 300, startup: '5', active: '持续', recovery: '着地3', onBlock: '+1', onHit: '+5', isCancelable: false, notes: '打背判定脚'),
+          FrameMove(name: '跳跃中拳 (j.MP)', command: 'j.MP', type: MoveType.normal, damage: 700, startup: '7', active: '持续', recovery: '着地3', onBlock: '+3', onHit: '浮空', isCancelable: true, notes: '空对空截杀'),
+          FrameMove(name: '跳跃中脚 (j.MK)', command: 'j.MK', type: MoveType.normal, damage: 600, startup: '7', active: '持续', recovery: '着地3', onBlock: '+2', onHit: '+6', isCancelable: false, notes: '逆向跳入压制踢'),
+          FrameMove(name: '跳跃重拳 (j.HP)', command: 'j.HP', type: MoveType.normal, damage: 850, startup: '9', active: '持续', recovery: '着地3', onBlock: '+4', onHit: '+8', isCancelable: false, notes: '高伤大判定压制重拳'),
+          FrameMove(name: '跳跃重脚 (j.HK)', command: 'j.HK', type: MoveType.normal, damage: 850, startup: '9', active: '持续', recovery: '着地3', onBlock: '+4', onHit: '+8', isCancelable: false, notes: '长距离斜下重脚'),
+        ];
       case 'ryu':
-      default:
         return [
           FrameMove(name: '站立轻拳 (5LP)', command: '5LP', type: MoveType.normal, damage: 300, startup: '4', active: '3', recovery: '7', onBlock: '+1', onHit: '+5', isCancelable: true, notes: '4F最速起手抢招，点中可确认连段'),
           FrameMove(name: '蹲下轻拳 (2LP)', command: '2LP', type: MoveType.normal, damage: 300, startup: '4', active: '3', recovery: '8', onBlock: '-1', onHit: '+4', isCancelable: true, notes: '下盘4F反击插动'),
@@ -792,6 +1098,17 @@ class FrameDataDatabase {
           FrameMove(name: '跳跃重拳 (j.HP)', command: 'j.HP', type: MoveType.normal, damage: 800, startup: '9', active: '持续', recovery: '着地3', onBlock: '+4~+8', onHit: '+8', isCancelable: false, notes: '高伤大判定跳入重拳，确反破防起点'),
           FrameMove(name: '跳跃重脚 (j.HK)', command: 'j.HK', type: MoveType.normal, damage: 800, startup: '9', active: '持续', recovery: '着地3', onBlock: '+4~+8', onHit: '+8', isCancelable: false, notes: '长距离斜下重脚踢入'),
         ];
+      default:
+        _ensureJsonLoaded();
+        if (_cachedJsonMoves != null && _cachedJsonMoves!.containsKey(id)) {
+          final jsonNormals = _cachedJsonMoves![id]!
+              .where((m) => m.type == MoveType.normal)
+              .toList();
+          if (jsonNormals.isNotEmpty) {
+            return jsonNormals;
+          }
+        }
+        return [];
     }
   }
 

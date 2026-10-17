@@ -153,34 +153,49 @@
 
 ---
 
-## 🛠️ 本地编译与构建
+## 🛠️ 本地编译与构建 (Local Build)
 
-如果你想自行从源码编译 APK 安装包：
+如果你想在本地自行从源码编译 Android APK 安装包：
 
 ### 环境要求
-- **Flutter SDK**：`>= 3.0.0`
+- **Flutter SDK**：`>= 3.0.0` (推荐当前 3.47.x stable)
 - **Dart SDK**：`>= 3.0.0`
-- **Android SDK**：API Level `>= 21` (Android 5.0+)
-- **JDK**：`17`
+- **Android SDK**：API Level `>= 21` (推荐 API 34~36，配置 `ANDROID_HOME`)
+- **JDK**：`17` (推荐 OpenJDK 17)
 
-### 构建步骤
+### 一键脚本快速编译 (推荐)
+本项目已在 `scripts/` 目录内置了开箱即用的一键全自动编译脚本，自动执行前置环境检查、138 项全量单测质检、Release 编译并归档输出至 `dist/apk/`：
+
+- **Windows 终端 (PowerShell)**:
+  ```powershell
+  # 编译全架构通用全量包 (Universal APK)
+  .\scripts\build_apk.ps1
+
+  # 或者编译分架构瘦身包 (生成 arm64-v8a 等单架构 APK，体积更小)
+  .\scripts\build_apk.ps1 -SplitAbi
+  ```
+- **Windows 图形界面**:
+  直接双击根目录脚本 `scripts\build_apk.bat` 即可一键静默完成编译与打包。
+
+### 手动命令行编译步骤
 ```bash
-# 1. 克隆代码仓库
-git clone https://github.com/OldSea/SF6_Assistant.git
-cd SF6_Assistant
-
-# 2. 拉取 Flutter 依赖包
+# 1. 拉取 Flutter 依赖包
 flutter pub get
 
-# 3. 运行全量单元测试与回归套件 (106 项测试全部通过)
-flutter test
+# 2. 运行全量单元测试与回归套件 (138 项测试全部通过)
+flutter test --no-pub -j 1
 
-# 4. 编译正式版 Release 安装包
+# 3. 编译正式版 Release 安装包
+# 通用全量包 (Universal)
 flutter build apk --release --android-skip-build-dependency-validation
+
+# 或分架构瘦身包 (Split ABI)
+flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
 ```
 
 编译产物路径：
-- `build/app/outputs/flutter-apk/app-release.apk` (体积约 64.2 MB)
+- 通用包：`build/app/outputs/flutter-apk/app-release.apk`（脚本自动归档至 `dist/apk/SF6_Assistant_v1.2.7.0.apk`）
+- 分架构包：`build/app/outputs/flutter-apk/app-arm64-v8a-release.apk` 等（归档至 `dist/apk/`）
 
 ---
 

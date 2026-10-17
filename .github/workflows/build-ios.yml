@@ -32,7 +32,7 @@ jobs:
 
       - name: Build iOS Application (Unsigned)
         run: |
-          flutter build ios --release --no-codesign
+          flutter build ios --release --no-codesign --build-name=1.2.7.1 --build-number=2701
 
       - name: Package Payload into IPA
         run: |

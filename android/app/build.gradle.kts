@@ -28,9 +28,18 @@ android {
         versionName = flutter.versionName ?: "1.2.7"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("sf6_release.jks")
+            storePassword = "sf6tracker2026"
+            keyAlias = "sf6_release_key"
+            keyPassword = "sf6tracker2026"
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

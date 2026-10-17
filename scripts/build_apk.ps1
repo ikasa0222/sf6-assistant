@@ -30,10 +30,21 @@ Write-Host "Flutter 工具链正常: $($flutterVersion.Split([Environment]::NewL
 
 # 2. 读取项目版本号
 $pubspecPath = Join-Path $ProjectRoot "pubspec.yaml"
-$versionLine = Get-Content $pubspecPath | Where-Object { $_ -match "^version:\s*(.+)$" } | Select-Object -First 1
-$rawVersion = if ($versionLine -match "^version:\s*(.+)$") { $Matches[1].Trim() } else { "1.2.7+2700" }
-$displayVersion = $rawVersion -replace "\+", " (Build " -replace "$", ")"
-Write-Host "目标应用版本: $rawVersion [$displayVersion]" -ForegroundColor Cyan
+$loggerPath = Join-Path $ProjectRoot "lib\core\utils\app_logger.dart"
+
+$displayVersion = "1.2.7.1"
+$buildNumber = "2701"
+if (Test-Path $loggerPath) {
+    $loggerContent = Get-Content $loggerPath -Raw
+    if ($loggerContent -match "currentAppVersion\s*=\s*'v?([^']+)'") {
+        $displayVersion = $Matches[1]
+    }
+    if ($loggerContent -match "currentBuildNumber\s*=\s*'([^']+)'") {
+        $buildNumber = $Matches[1]
+    }
+}
+
+Write-Host "目标应用版本: v$displayVersion (Build $buildNumber)" -ForegroundColor Cyan
 Write-Host "目标芯片架构: arm64-v8a (主流 64 位安卓)" -ForegroundColor Magenta
 
 # 3. 运行自动化单元测试
@@ -56,7 +67,7 @@ if (-not (Test-Path $DistDir)) {
 }
 
 Write-Host "`n[3/4] 开始执行 Gradle Release APK 编译 (仅编译 arm64-v8a 极速构建)..." -ForegroundColor Yellow
-& flutter build apk --release --target-platform android-arm64 --android-skip-build-dependency-validation
+& flutter build apk --release --target-platform android-arm64 --build-name=$displayVersion --build-number=$buildNumber --android-skip-build-dependency-validation
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Flutter Gradle 编译失败，请检查上方 Gradle 错误输出！"
@@ -68,8 +79,7 @@ Write-Host "`n[4/4] 归档生成产物到 dist\apk 目录..." -ForegroundColor Y
 $SourceApk = Join-Path $ProjectRoot "build\app\outputs\flutter-apk\app-release.apk"
 
 if (Test-Path $SourceApk) {
-    $cleanVer = $rawVersion.Split('+')[0]
-    $targetName = "SF6_Assistant_v$cleanVer`_arm64-v8a.apk"
+    $targetName = "SF6_Assistant_v$displayVersion`_arm64-v8a.apk"
     $destPath = Join-Path $DistDir $targetName
     Copy-Item -Path $SourceApk -Destination $destPath -Force
 

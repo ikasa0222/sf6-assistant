@@ -36,12 +36,18 @@ jobs:
       - name: Run Tests
         run: flutter test --concurrency=1
 
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
       - name: Build Release APK
-        run: flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
+        run: |
+          flutter build apk --release --android-skip-build-dependency-validation
+          flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
 
       - name: Rename APKs
         run: |
           mkdir -p release-apks
+          cp build/app/outputs/flutter-apk/app-release.apk release-apks/SF6_Assistant_${{ github.ref_name }}_universal.apk || true
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk release-apks/SF6_Assistant_${{ github.ref_name }}_arm64-v8a.apk || true
           cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk release-apks/SF6_Assistant_${{ github.ref_name }}_armeabi-v7a.apk || true
           cp build/app/outputs/flutter-apk/app-x86_64-release.apk release-apks/SF6_Assistant_${{ github.ref_name }}_x86_64.apk || true

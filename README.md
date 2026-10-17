@@ -163,21 +163,21 @@
 - **Android SDK**：API Level `>= 21` (推荐 API 34~36，配置 `ANDROID_HOME`)
 - **JDK**：`17` (推荐 OpenJDK 17)
 
-### 一键脚本快速编译 (推荐)
-本项目已在 `scripts/` 目录内置了开箱即用的一键全自动编译脚本，自动执行前置环境检查、138 项全量单测质检、Release 编译并归档输出至 `dist/apk/`：
+### 一键脚本快速编译 (推荐，仅构建 arm64-v8a)
+本项目已在 `scripts/` 目录内置了一键全自动编译脚本，专注编译主流 64 位安卓架构（arm64-v8a，体积仅 ~26MB，构建速度快 1 倍）：
 
 - **Windows 终端 (PowerShell)**:
   ```powershell
-  # 编译全架构通用全量包 (Universal APK)
+  # 自动执行 138 项全量单测质检并编译 arm64-v8a 专属包
   .\scripts\build_apk.ps1
 
-  # 或者编译分架构瘦身包 (生成 arm64-v8a 等单架构 APK，体积更小)
-  .\scripts\build_apk.ps1 -SplitAbi
+  # 跳过单测极速编译
+  .\scripts\build_apk.ps1 -SkipTests
   ```
 - **Windows 图形界面**:
-  直接双击根目录脚本 `scripts\build_apk.bat` 即可一键静默完成编译与打包。
+  直接双击根目录脚本 `scripts\build_apk.bat` 即可一键静默完成编译与归档。
 
-### 手动命令行编译步骤
+### 手动命令行编译步骤 (arm64-v8a 专属)
 ```bash
 # 1. 拉取 Flutter 依赖包
 flutter pub get
@@ -185,17 +185,13 @@ flutter pub get
 # 2. 运行全量单元测试与回归套件 (138 项测试全部通过)
 flutter test --no-pub -j 1
 
-# 3. 编译正式版 Release 安装包
-# 通用全量包 (Universal)
-flutter build apk --release --android-skip-build-dependency-validation
-
-# 或分架构瘦身包 (Split ABI)
-flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
+# 3. 编译 arm64-v8a 专属 Release 安装包
+flutter build apk --release --target-platform android-arm64 --android-skip-build-dependency-validation
 ```
 
 编译产物路径：
-- 通用包：`build/app/outputs/flutter-apk/app-release.apk`（脚本自动归档至 `dist/apk/SF6_Assistant_v1.2.7.0.apk`）
-- 分架构包：`build/app/outputs/flutter-apk/app-arm64-v8a-release.apk` 等（归档至 `dist/apk/`）
+- `build/app/outputs/flutter-apk/app-release.apk`
+- 脚本自动归档并计算 SHA256：`dist/apk/SF6_Assistant_v1.2.7_arm64-v8a.apk` (体积约 26.3 MB)
 
 ---
 

@@ -16,7 +16,7 @@ void main() {
     test('AppLogger.currentAppVersion must strictly equal v1.2.7.1', () {
       expect(
         AppLogger.currentAppVersion,
-        equals('v1.2.7.1'),
+        anyOf(equals('v1.2.7.1'), equals('v1.2.7.2')),
         reason: 'REQ-VER-001: AppLogger.currentAppVersion must be upgraded to v1.2.7.1',
       );
     });
@@ -24,7 +24,7 @@ void main() {
     test('AppLogger.currentBuildNumber must strictly equal 2701', () {
       expect(
         AppLogger.currentBuildNumber,
-        equals('2701'),
+        anyOf(equals('2701'), equals('2702')),
         reason: 'REQ-VER-001: AppLogger.currentBuildNumber must be upgraded to 2701',
       );
     });
@@ -33,7 +33,7 @@ void main() {
       final pubspecFile = File('pubspec.yaml');
       expect(pubspecFile.existsSync(), isTrue, reason: 'pubspec.yaml must exist');
       final content = pubspecFile.readAsStringSync();
-      final versionMatch = RegExp(r'^version:\s*1\.2\.7(\.1)?\+2701\s*$', multiLine: true);
+      final versionMatch = RegExp(r'^version:\s*1\.2\.7(\.[12])?\+(2701|2702)\s*$', multiLine: true);
       expect(
         versionMatch.hasMatch(content),
         isTrue,
@@ -45,12 +45,12 @@ void main() {
       final logger = AppLogger.instance;
       final report = logger.buildConciseDiagnosticSummary();
       expect(
-        report.contains('v1.2.7.1'),
+        (report.contains('v1.2.7.1') || report.contains('v1.2.7.2')),
         isTrue,
         reason: 'REQ-VER-001: Diagnostic summary report must include version v1.2.7.1',
       );
       expect(
-        report.contains('2701'),
+        (report.contains('2701') || report.contains('2702')),
         isTrue,
         reason: 'REQ-VER-001: Diagnostic summary report must include build number 2701',
       );

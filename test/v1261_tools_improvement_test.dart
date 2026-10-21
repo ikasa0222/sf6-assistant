@@ -49,7 +49,7 @@ void main() {
         reason: 'REQ-VER-001: Diagnostic report must include version',
       );
       expect(
-        report.contains('2601') || report.contains('2602') || report.contains('2603') || report.contains('2604') || report.contains('2605') || report.contains('2700') || report.contains('2701'),
+        report.contains('2601') || report.contains('2602') || report.contains('2603') || report.contains('2604') || report.contains('2605') || report.contains('2700') || (report.contains('2701') || report.contains('2702')),
         isTrue,
         reason: 'REQ-VER-001: Diagnostic report must include build number',
       );

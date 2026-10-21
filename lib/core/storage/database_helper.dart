@@ -47,6 +47,18 @@ class DatabaseHelper {
             )
           ''');
         } catch (_) {}
+        try {
+          await db.execute("UPDATE battle_records SET playerCharacterId = 'arjun' WHERE playerCharacterId = 'sagat'");
+        } catch (_) {}
+        try {
+          await db.execute("UPDATE battle_records SET opponentCharacterId = 'arjun' WHERE opponentCharacterId = 'sagat'");
+        } catch (_) {}
+        try {
+          await db.execute("UPDATE official_rival_matchups SET myCharacterId = 'arjun' WHERE myCharacterId = 'sagat'");
+        } catch (_) {}
+        try {
+          await db.execute("UPDATE official_rival_matchups SET rivalCharacterId = 'arjun' WHERE rivalCharacterId = 'sagat'");
+        } catch (_) {}
       },
     );
   }

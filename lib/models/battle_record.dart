@@ -209,30 +209,37 @@ class BattleRecord {
     'roundsJson': rounds.map((r) => r.toJson()).toList().toString(),
   };
 
-  factory BattleRecord.fromMap(Map<String, dynamic> map, {List<RoundDetail>? rounds}) => BattleRecord(
-    id: map['id'] ?? '',
-    shortId: map['shortId'] ?? '',
-    platform: map['platform'] ?? 'steam',
-    playedAt: DateTime.tryParse(map['playedAt'] ?? '') ?? DateTime.now(),
-    battleType: BattleType.fromString(map['battleType'] ?? 'ranked'),
-    playerCharacterId: map['playerCharacterId'] ?? 'luke',
-    playerScore: map['playerScore'] ?? 0,
-    playerLpChange: map['playerLpChange'] ?? 0,
-    playerMrChange: map['playerMrChange'] ?? 0,
-    playerCurrentLp: map['playerCurrentLp'],
-    playerCurrentMr: map['playerCurrentMr'],
-    playerControlType: map['playerControlType'] ?? 'C',
-    opponentFighterId: map['opponentFighterId'] ?? 'Player 2',
-    opponentShortId: map['opponentShortId'] ?? '',
-    opponentPlatform: map['opponentPlatform'] ?? 'steam',
-    opponentCharacterId: map['opponentCharacterId'] ?? 'ryu',
-    opponentScore: map['opponentScore'] ?? 0,
-    opponentLp: map['opponentLp'],
-    opponentMr: map['opponentMr'],
-    opponentRankTier: map['opponentRankTier'] ?? 'master',
-    opponentControlType: map['opponentControlType'] ?? 'C',
-    isWin: map['isWin'] == 1 || map['isWin'] == true,
-    replayCode: map['replayCode'] ?? '',
-    rounds: rounds ?? [],
-  );
+  factory BattleRecord.fromMap(Map<String, dynamic> map, {List<RoundDetail>? rounds}) {
+    final rawPlayerChar = (map['playerCharacterId'] ?? 'luke').toString().trim().toLowerCase();
+    final rawOppChar = (map['opponentCharacterId'] ?? 'ryu').toString().trim().toLowerCase();
+    final pChar = rawPlayerChar == 'sagat' ? 'arjun' : (map['playerCharacterId'] ?? 'luke');
+    final oChar = rawOppChar == 'sagat' ? 'arjun' : (map['opponentCharacterId'] ?? 'ryu');
+
+    return BattleRecord(
+      id: map['id'] ?? '',
+      shortId: map['shortId'] ?? '',
+      platform: map['platform'] ?? 'steam',
+      playedAt: DateTime.tryParse(map['playedAt'] ?? '') ?? DateTime.now(),
+      battleType: BattleType.fromString(map['battleType'] ?? 'ranked'),
+      playerCharacterId: pChar,
+      playerScore: map['playerScore'] ?? 0,
+      playerLpChange: map['playerLpChange'] ?? 0,
+      playerMrChange: map['playerMrChange'] ?? 0,
+      playerCurrentLp: map['playerCurrentLp'],
+      playerCurrentMr: map['playerCurrentMr'],
+      playerControlType: map['playerControlType'] ?? 'C',
+      opponentFighterId: map['opponentFighterId'] ?? 'Player 2',
+      opponentShortId: map['opponentShortId'] ?? '',
+      opponentPlatform: map['opponentPlatform'] ?? 'steam',
+      opponentCharacterId: oChar,
+      opponentScore: map['opponentScore'] ?? 0,
+      opponentLp: map['opponentLp'],
+      opponentMr: map['opponentMr'],
+      opponentRankTier: map['opponentRankTier'] ?? 'master',
+      opponentControlType: map['opponentControlType'] ?? 'C',
+      isWin: map['isWin'] == 1 || map['isWin'] == true,
+      replayCode: map['replayCode'] ?? '',
+      rounds: rounds ?? [],
+    );
+  }
 }

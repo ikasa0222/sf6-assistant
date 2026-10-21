@@ -20,7 +20,7 @@ void main() {
       expect(Sf6Characters.fromCapcomId(31).id, equals('alex'));
       expect(Sf6Characters.fromCapcomId(32).id, equals('ingrid'));
       expect(Sf6Characters.fromCapcomId(33).id, equals('yasmine'));
-      expect(Sf6Characters.fromCapcomId(34).id, equals('sagat'));
+      expect(Sf6Characters.fromCapcomId(34).id, equals('arjun'));
     });
 
     test('Unranked characters with -1 LP or 0 LP/MR are filtered', () {

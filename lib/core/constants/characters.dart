@@ -371,7 +371,7 @@ class Sf6Characters {
         31: 'alex',
         32: 'ingrid',
         33: 'yasmine',
-        34: 'sagat',
+        34: 'arjun',
         35: 'arjun',
       };
       final charId = capcomMap[num];

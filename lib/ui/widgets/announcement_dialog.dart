@@ -16,7 +16,7 @@ class AnnouncementDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const announcementText =
-        '感谢使用街霸6助手！本次更新修复了一些已知bug，对俱乐部界面进行了优化，支持点击好友查看更详细信息，以及更多使用优化。';
+        '我们修复了一些已知问题，全新ui风格现已加入，可在设置页自由更换。';
 
     return Dialog(
       backgroundColor: Colors.transparent,

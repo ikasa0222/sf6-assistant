@@ -346,7 +346,113 @@ class SettingsScreen extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // 2. Feature Toggles
+          // 2. Theme & Aesthetics Section
+          _buildSectionHeader('界面主题与视觉美学 (Themes & Aesthetics)'),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.bgCard,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.borderSubtle),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.palette_outlined, color: AppColors.accentNeonCyan, size: 18),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          '选择应用设计系统与视觉美学',
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: settings.themeMode == AppThemeMode.claudeWarm
+                              ? const Color(0xFFD97757).withOpacity(0.2)
+                              : AppColors.accentNeonCyan.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          settings.themeMode == AppThemeMode.claudeWarm ? '全新上线' : '当前生效',
+                          style: TextStyle(
+                            color: settings.themeMode == AppThemeMode.claudeWarm
+                                ? const Color(0xFFD97757)
+                                : AppColors.accentNeonCyan,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _buildThemeOptionTile(
+                  mode: AppThemeMode.claudeWarm,
+                  title: 'Anthropic Claude 暖纸美学 (Claude Warm)',
+                  subtitle: '暖调羊皮纸底色 + 莫奈流动呼吸背景 + 苹果液态玻璃悬浮 Dock + 典雅衬线标题',
+                  colorPalette: [
+                    const Color(0xFF141413),
+                    const Color(0xFF252523),
+                    const Color(0xFFD97757),
+                    const Color(0xFF7A9A78),
+                    const Color(0xFFD97706),
+                  ],
+                  badgeText: '推荐 · 全新设计',
+                  badgeColor: const Color(0xFFD97757),
+                ),
+                const Divider(height: 1),
+                _buildThemeOptionTile(
+                  mode: AppThemeMode.esportsDark,
+                  title: '电竞暗黑风 (Esports Dark)',
+                  subtitle: '沉浸式经典电竞暗黑底色 + 荧光青粉高对比度双色霓虹',
+                  colorPalette: [
+                    AppColors.bgPrimary,
+                    AppColors.bgCard,
+                    AppColors.accentNeonCyan,
+                    AppColors.accentNeonPink,
+                  ],
+                ),
+                const Divider(height: 1),
+                _buildThemeOptionTile(
+                  mode: AppThemeMode.streetNeon,
+                  title: '街头涂鸦风 (Street Neon)',
+                  subtitle: '街霸 6 标志性街头格斗喷漆涂鸦与动感霓虹紫调',
+                  colorPalette: [
+                    const Color(0xFF100E17),
+                    const Color(0xFF7C4DFF),
+                    const Color(0xFFFF5252),
+                    const Color(0xFFFFD700),
+                  ],
+                ),
+                const Divider(height: 1),
+                _buildThemeOptionTile(
+                  mode: AppThemeMode.materialYou,
+                  title: 'Material 现代风 (Material You)',
+                  subtitle: 'Material 3 规范自适应色彩，纯净中性卡片与标准交互',
+                  colorPalette: [
+                    const Color(0xFF1C1B1F),
+                    const Color(0xFF4F378B),
+                    const Color(0xFF6750A4),
+                    const Color(0xFFE6E1E5),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // 3. Feature Toggles
           _buildSectionHeader('功能与展示选项 (Features)'),
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -548,6 +654,117 @@ class SettingsScreen extends StatelessWidget {
           fontSize: 12,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeOptionTile({
+    required AppThemeMode mode,
+    required String title,
+    required String subtitle,
+    required List<Color> colorPalette,
+    String? badgeText,
+    Color? badgeColor,
+  }) {
+    final isSelected = settings.themeMode == mode;
+    return InkWell(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onUpdateSettings(settings.copyWith(themeMode: mode));
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (mode == AppThemeMode.claudeWarm
+                  ? const Color(0xFFD97757).withOpacity(0.08)
+                  : AppColors.accentNeonCyan.withOpacity(0.06))
+              : Colors.transparent,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Icon(
+                isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                size: 20,
+                color: isSelected
+                    ? (mode == AppThemeMode.claudeWarm
+                        ? const Color(0xFFD97757)
+                        : AppColors.accentNeonCyan)
+                    : AppColors.textTertiary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      if (badgeText != null) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: (badgeColor ?? const Color(0xFFD97757)).withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: (badgeColor ?? const Color(0xFFD97757)).withOpacity(0.4),
+                            ),
+                          ),
+                          child: Text(
+                            badgeText,
+                            style: TextStyle(
+                              color: badgeColor ?? const Color(0xFFD97757),
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: AppColors.textTertiary,
+                      fontSize: 11,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: colorPalette.map((c) {
+                      return Container(
+                        width: 14,
+                        height: 14,
+                        margin: const EdgeInsets.only(right: 6),
+                        decoration: BoxDecoration(
+                          color: c,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white24, width: 1),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

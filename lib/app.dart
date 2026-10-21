@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sf6_tracker/core/theme/app_theme.dart';
+import 'package:sf6_tracker/core/theme/liquid_glass_container.dart';
+import 'package:sf6_tracker/core/theme/monet_ambient_canvas.dart';
 import 'package:sf6_tracker/models/app_settings.dart';
 import 'package:sf6_tracker/models/account_profile.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
@@ -269,12 +272,21 @@ class _Sf6AppState extends State<Sf6App> {
     ];
 
     final clampedIndex = _currentIndex.clamp(0, navItems.length - 1);
+    final isClaudeWarm = _settings.themeMode == AppThemeMode.claudeWarm;
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
       title: '街霸6助手',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.getTheme(_settings.themeMode),
+      builder: (context, child) {
+        if (isClaudeWarm && child != null) {
+          return MonetAmbientCanvas(
+            child: child,
+          );
+        }
+        return child ?? const SizedBox();
+      },
       home: Builder(
         builder: (context) {
           return PopScope(
@@ -299,23 +311,122 @@ class _Sf6AppState extends State<Sf6App> {
               }
             },
             child: Scaffold(
+              backgroundColor: isClaudeWarm ? Colors.transparent : null,
               body: IndexedStack(
                 index: clampedIndex,
                 children: navItems.map((item) => item.screen).toList(),
               ),
-              bottomNavigationBar: BottomNavigationBar(
-                currentIndex: clampedIndex,
-                onTap: (index) => setState(() => _currentIndex = index),
-                items: navItems
-                    .map((item) => BottomNavigationBarItem(
-                          icon: item.icon,
-                          label: item.label,
-                        ))
-                    .toList(),
-              ),
+              bottomNavigationBar: isClaudeWarm
+                  ? _buildClaudeWarmFloatingDock(context, navItems, clampedIndex)
+                  : BottomNavigationBar(
+                      currentIndex: clampedIndex,
+                      onTap: (index) => setState(() => _currentIndex = index),
+                      items: navItems
+                          .map((item) => BottomNavigationBarItem(
+                                icon: item.icon,
+                                label: item.label,
+                              ))
+                          .toList(),
+                    ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildClaudeWarmFloatingDock(
+    BuildContext context,
+    List<_NavigationItem> items,
+    int currentIndex,
+  ) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final effectiveBottom = math.max(14.0, bottomInset);
+
+    return SafeArea(
+      top: false,
+      left: false,
+      right: false,
+      bottom: false,
+      child: Container(
+        color: Colors.transparent,
+        padding: EdgeInsets.only(
+          left: 14,
+          right: 14,
+          bottom: effectiveBottom,
+          top: 4,
+        ),
+        child: LiquidGlassContainer(
+          borderRadius: 24,
+          blurSigma: 16,
+          backgroundColor: const Color(0xD9252523),
+          borderColor: const Color(0x3DF0EEE6),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(items.length, (index) {
+              final item = items[index];
+              final isSelected = index == currentIndex;
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _currentIndex = index);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFFD97757).withOpacity(0.18)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(16),
+                      border: isSelected
+                          ? Border.all(
+                              color: const Color(0xFFD97757).withOpacity(0.35),
+                              width: 1,
+                            )
+                          : null,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconTheme(
+                          data: IconThemeData(
+                            color: isSelected
+                                ? const Color(0xFFD97757)
+                                : const Color(0xFFB0AEA5),
+                            size: 20,
+                          ),
+                          child: item.icon,
+                        ),
+                        const SizedBox(height: 3),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            item.label,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                              color: isSelected
+                                  ? const Color(0xFFD97757)
+                                  : const Color(0xFFB0AEA5),
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
       ),
     );
   }

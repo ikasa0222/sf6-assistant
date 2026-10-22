@@ -14,30 +14,30 @@ class AppThemeColors {
 
   bool get isClaudeWarm => mode == AppThemeMode.claudeWarm;
 
-  // 1. 画布与容器背景
-  Color get bgPrimary => isClaudeWarm ? const Color(0xFF141413) : AppColors.bgPrimary;
-  Color get bgSecondary => isClaudeWarm ? const Color(0xFF1C1C1A) : AppColors.bgSecondary;
-  Color get bgCard => isClaudeWarm ? const Color(0xF2222220) : AppColors.bgCard;
-  Color get bgCardSolid => isClaudeWarm ? const Color(0xFF222220) : AppColors.bgCard;
-  Color get bgCardHighlight => isClaudeWarm ? const Color(0xFF2B2B28) : AppColors.bgCardHighlight;
-  Color get bgInput => isClaudeWarm ? const Color(0xFF171715) : AppColors.bgInput;
+  // 1. 画布与容器背景（暖纸美学：明亮温润羊皮纸浅色底；电竞朋克：经典硬核暗黑底）
+  Color get bgPrimary => isClaudeWarm ? const Color(0xFFFAF7F2) : AppColors.bgPrimary;
+  Color get bgSecondary => isClaudeWarm ? const Color(0xFFF2ECE1) : AppColors.bgSecondary;
+  Color get bgCard => isClaudeWarm ? const Color(0xFFFFFFFF) : AppColors.bgCard;
+  Color get bgCardSolid => isClaudeWarm ? const Color(0xFFFFFFFF) : AppColors.bgCard;
+  Color get bgCardHighlight => isClaudeWarm ? const Color(0xFFFFFDF9) : AppColors.bgCardHighlight;
+  Color get bgInput => isClaudeWarm ? const Color(0xFFF2ECE1) : AppColors.bgInput;
 
   // 2. 品牌与强调色（Anthropic 赤陶红 vs 荧光青）
   Color get accentPrimary => isClaudeWarm ? const Color(0xFFD97757) : AppColors.accentNeonCyan;
   Color get accentSecondary => isClaudeWarm ? const Color(0xFFD97706) : AppColors.accentNeonYellow;
-  Color get accentTertiary => isClaudeWarm ? const Color(0xFF7A9A78) : AppColors.winGreen;
-  Color get accentError => isClaudeWarm ? const Color(0xFFB53333) : AppColors.loseRed;
+  Color get accentTertiary => isClaudeWarm ? const Color(0xFF3B7248) : AppColors.winGreen;
+  Color get accentError => isClaudeWarm ? const Color(0xFFC53030) : AppColors.loseRed;
 
   // 3. 边框与微光分割线
-  Color get borderSubtle => isClaudeWarm ? const Color(0xFF2F2F2C) : AppColors.borderSubtle;
+  Color get borderSubtle => isClaudeWarm ? const Color(0xFFE5DFC9) : AppColors.borderSubtle;
   Color get borderHighlight => isClaudeWarm ? const Color(0xFFD97757) : AppColors.borderHighlight;
   Color get borderGlow => isClaudeWarm ? const Color(0x33D97757) : const Color(0x3300E5FF);
-  Color get divider => isClaudeWarm ? const Color(0xFF2F2F2C) : AppColors.divider;
+  Color get divider => isClaudeWarm ? const Color(0xFFEAE4D5) : AppColors.divider;
 
-  // 4. 文字色彩规范（温润高对比度）
-  Color get textPrimary => isClaudeWarm ? const Color(0xFFF7F5EE) : AppColors.textPrimary;
-  Color get textSecondary => isClaudeWarm ? const Color(0xFFB3B0A6) : AppColors.textSecondary;
-  Color get textTertiary => isClaudeWarm ? const Color(0xFF7A786F) : AppColors.textTertiary;
+  // 4. 文字色彩规范（温润高对比度深炭黑墨水字 vs 荧光高对比度白字）
+  Color get textPrimary => isClaudeWarm ? const Color(0xFF1E1D1B) : AppColors.textPrimary;
+  Color get textSecondary => isClaudeWarm ? const Color(0xFF635F56) : AppColors.textSecondary;
+  Color get textTertiary => isClaudeWarm ? const Color(0xFF969085) : AppColors.textTertiary;
   Color get textHighlight => isClaudeWarm ? const Color(0xFFD97757) : AppColors.accentNeonCyan;
 
   // 5. 字体排版风格（Georgia 典雅衬线体）
@@ -100,19 +100,19 @@ class AppThemeColors {
         color: bgCard,
         borderRadius: br,
         border: Border.all(
-          color: isHighlighted ? accentPrimary.withOpacity(0.55) : borderSubtle,
-          width: isHighlighted ? 1.2 : 0.8,
+          color: isHighlighted ? accentPrimary.withOpacity(0.65) : borderSubtle,
+          width: isHighlighted ? 1.5 : 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.24),
-            blurRadius: 16,
+            color: const Color(0x0C402010),
+            blurRadius: 14,
             spreadRadius: 0,
-            offset: const Offset(0, 5),
+            offset: const Offset(0, 4),
           ),
           if (isHighlighted)
             BoxShadow(
-              color: accentPrimary.withOpacity(0.08),
+              color: accentPrimary.withOpacity(0.12),
               blurRadius: 12,
               spreadRadius: 1,
               offset: const Offset(0, 0),

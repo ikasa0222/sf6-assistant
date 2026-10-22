@@ -235,7 +235,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
       onRefresh: _handleRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.fromLTRB(0, 10, 0, 110),
         children: [
           // Filter Chips
           Padding(
@@ -561,7 +561,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
       onRefresh: _handleRefresh,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.fromLTRB(0, 12, 0, 110),
         itemCount: clubs.length,
         itemBuilder: (context, index) {
           final club = clubs[index];

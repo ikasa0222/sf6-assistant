@@ -1,3 +1,4 @@
+import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:sf6_tracker/models/battle_record.dart';
 import 'package:sf6_tracker/models/player_note.dart';
@@ -121,18 +122,24 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                 return stdId == _selectedCharacterId;
               }).toList();
 
+        final colors = context.themeColors;
+
         return Scaffold(
+          backgroundColor: colors.isClaudeWarm ? Colors.transparent : null,
           appBar: AppBar(
-            title: const Text('无限对战战绩库', style: TextStyle(fontWeight: FontWeight.bold)),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            title: Text('无限对战战绩库', style: colors.titleStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            iconTheme: IconThemeData(color: colors.textPrimary),
             actions: [
               IconButton(
                 icon: _isSyncing || widget.battleLogService.isBackgroundSyncing
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accentNeonCyan),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: colors.accentPrimary),
                       )
-                    : const Icon(Icons.sync, color: AppColors.accentNeonCyan),
+                    : Icon(Icons.sync, color: colors.accentPrimary),
                 onPressed: _performOnlineSync,
                 tooltip: '从官方拉取最新战绩',
               ),
@@ -167,20 +174,23 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.bgCard,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.borderSubtle),
+                  color: colors.bgCard,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: colors.borderSubtle),
+                  boxShadow: colors.isClaudeWarm
+                      ? const [BoxShadow(color: Color(0x0A402010), blurRadius: 8, offset: Offset(0, 2))]
+                      : null,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       '已归档 ${filteredRecords.length} 局对战',
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: colors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                     Text(
                       '胜率: ${_calculateWinRate(filteredRecords)}%',
-                      style: const TextStyle(color: AppColors.winGreen, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: colors.accentTertiary, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -201,7 +211,7 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                             onRefresh: _performOnlineSync,
                             child: ListView.builder(
                               physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.only(bottom: 24, top: 4),
+                              padding: const EdgeInsets.only(bottom: 110, top: 4),
                               itemCount: filteredRecords.length,
                               itemBuilder: (context, index) {
                                 final record = filteredRecords[index];

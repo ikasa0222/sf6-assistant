@@ -52,11 +52,11 @@ void main() {
     });
 
     test('REQ-FIX-003: Version and build metadata must be synchronized to v1.2.7.2 / 2702', () {
-      expect(AppLogger.currentAppVersion, anyOf(equals('v1.2.7.2'), anyOf(equals('v1.2.7.3'), equals('v1.2.7.4'))));
-      expect(AppLogger.currentBuildNumber, anyOf(equals('2702'), anyOf(equals('2703'), equals('2704'))));
+      expect(AppLogger.currentAppVersion, anyOf(equals('v1.2.7.2'), anyOf(equals('v1.2.7.3'), anyOf(equals('v1.2.7.4'), equals('v1.2.7.5')))));
+      expect(AppLogger.currentBuildNumber, anyOf(equals('2702'), anyOf(equals('2703'), anyOf(equals('2704'), equals('2705')))));
 
       final pubspec = File('pubspec.yaml').readAsStringSync();
-      expect((pubspec.contains('version: 1.2.7+2702') || pubspec.contains('version: 1.2.7+2703') || pubspec.contains('version: 1.2.7+2704')), isTrue);
+      expect((pubspec.contains('version: 1.2.7+2702') || pubspec.contains('version: 1.2.7+2703') || pubspec.contains('version: 1.2.7+2704') || pubspec.contains('version: 1.2.7+2705')), isTrue);
     });
   });
 }

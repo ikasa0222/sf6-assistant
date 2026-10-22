@@ -16,7 +16,7 @@ void main() {
     test('AppLogger.currentAppVersion must strictly equal v1.2.7.1', () {
       expect(
         AppLogger.currentAppVersion,
-        anyOf(equals('v1.2.7.1'), anyOf(equals('v1.2.7.2'), anyOf(equals('v1.2.7.3'), equals('v1.2.7.4')))),
+        anyOf(equals('v1.2.7.1'), anyOf(equals('v1.2.7.2'), anyOf(equals('v1.2.7.3'), anyOf(equals('v1.2.7.4'), equals('v1.2.7.5'))))),
         reason: 'REQ-VER-001: AppLogger.currentAppVersion must be upgraded to v1.2.7.1',
       );
     });
@@ -24,7 +24,7 @@ void main() {
     test('AppLogger.currentBuildNumber must strictly equal 2701', () {
       expect(
         AppLogger.currentBuildNumber,
-        anyOf(equals('2701'), anyOf(equals('2702'), anyOf(equals('2703'), equals('2704')))),
+        anyOf(equals('2701'), anyOf(equals('2702'), anyOf(equals('2703'), anyOf(equals('2704'), equals('2705'))))),
         reason: 'REQ-VER-001: AppLogger.currentBuildNumber must be upgraded to 2701',
       );
     });
@@ -33,7 +33,7 @@ void main() {
       final pubspecFile = File('pubspec.yaml');
       expect(pubspecFile.existsSync(), isTrue, reason: 'pubspec.yaml must exist');
       final content = pubspecFile.readAsStringSync();
-      final versionMatch = RegExp(r'^version:\s*1\.2\.7(\.[123])?\+(2701|2702|2703|2704)\s*$', multiLine: true);
+      final versionMatch = RegExp(r'^version:\s*1\.2\.7(\.[123])?\+(2701|2702|2703|2704|2705)\s*$', multiLine: true);
       expect(
         versionMatch.hasMatch(content),
         isTrue,
@@ -45,12 +45,12 @@ void main() {
       final logger = AppLogger.instance;
       final report = logger.buildConciseDiagnosticSummary();
       expect(
-        (report.contains('v1.2.7.1') || report.contains('v1.2.7.2') || report.contains('v1.2.7.3') || report.contains('v1.2.7.4')),
+        (report.contains('v1.2.7.1') || report.contains('v1.2.7.2') || report.contains('v1.2.7.3') || report.contains('v1.2.7.4') || report.contains('v1.2.7.5')),
         isTrue,
         reason: 'REQ-VER-001: Diagnostic summary report must include version v1.2.7.1',
       );
       expect(
-        (report.contains('2701') || report.contains('2702') || report.contains('2703') || report.contains('2704') || report.contains('2703') || report.contains('2704')),
+        (report.contains('2701') || report.contains('2702') || report.contains('2703') || report.contains('2704') || report.contains('2705') || report.contains('2703') || report.contains('2704') || report.contains('2705')),
         isTrue,
         reason: 'REQ-VER-001: Diagnostic summary report must include build number 2701',
       );

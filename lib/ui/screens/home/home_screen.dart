@@ -334,7 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.fromLTRB(0, 12, 0, 110),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: _buildDynamicHomeCards(context, profile, activePlatform, mainChar),

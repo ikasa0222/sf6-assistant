@@ -12,32 +12,33 @@ class AppTheme {
     }
   }
 
-  /// Anthropic Claude 暖纸美学主题 (Parchment & Liquid Glass)
+  /// Anthropic Claude 暖纸美学主题 (Parchment & Liquid Glass - Light Aesthetic)
   ///
-  /// 羊皮纸暖调底色 (#141413)、象牙暖暗浮层 (#252523)、赤陶红主色 (#D97757)、
-  /// 典雅衬线标题与苹果液态玻璃质感。
+  /// 羊皮纸温润明亮浅色底 (#FAF7F2)、纯净象牙白浮层卡片 (#FFFFFF)、赤陶红主色 (#D97757)、
+  /// 典雅衬线标题 (Georgia) 与苹果液态玻璃质感悬浮 Dock。
   static final ThemeData _claudeWarmTheme = ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
+    brightness: Brightness.light,
     scaffoldBackgroundColor: Colors.transparent,
     primaryColor: const Color(0xFFD97757),
-    colorScheme: const ColorScheme.dark(
+    cardColor: Colors.white,
+    colorScheme: const ColorScheme.light(
       primary: Color(0xFFD97757), // 赤陶红 Terracotta
       secondary: Color(0xFFD97706), // 琥珀黄 Amber
-      tertiary: Color(0xFF7A9A78), // 森林鼠尾草绿 Sage
-      surface: Color(0xFF252523), // 象牙暖暗 Ivory Dark
-      error: Color(0xFFB53333), // 警示/避坑深红
+      tertiary: Color(0xFF3B7248), // 森林鼠尾草绿 Sage
+      surface: Color(0xFFFFFFFF), // 象牙暖白 Ivory Card
+      error: Color(0xFFC53030), // 警示深红
       onPrimary: Colors.white,
-      onSurface: Color(0xFFF5F4EE), // 浅象牙白
-      onSurfaceVariant: Color(0xFFB0AEA5), // 暖灰
-      outline: Color(0xFF30302E), // 极细暖边框
+      onSurface: Color(0xFF1E1D1B), // 暖深炭黑正文
+      onSurfaceVariant: Color(0xFF635F56), // 暖咖灰辅助字
+      outline: Color(0xFFE5DFC9), // 极细暖奶油边框
     ),
     cardTheme: CardThemeData(
-      color: const Color(0xE6252523), // 象牙暖暗微透
+      color: Colors.white,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFF30302E), width: 1.0),
+        side: const BorderSide(color: Color(0xFFE5DFC9), width: 1.0),
       ),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     ),
@@ -50,48 +51,48 @@ class AppTheme {
         fontSize: 20,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.3,
-        color: Color(0xFFF5F4EE),
+        color: Color(0xFF1E1D1B),
       ),
-      iconTheme: IconThemeData(color: Color(0xFFF5F4EE)),
+      iconTheme: IconThemeData(color: Color(0xFF1E1D1B)),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: Color(0xFF141413),
+      backgroundColor: Color(0xFFFAF7F2),
       selectedItemColor: Color(0xFFD97757),
-      unselectedItemColor: Color(0xFFB0AEA5),
+      unselectedItemColor: Color(0xFF7A756D),
       type: BottomNavigationBarType.fixed,
       elevation: 0,
       selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
       unselectedLabelStyle: TextStyle(fontSize: 11),
     ),
     dividerTheme: const DividerThemeData(
-      color: Color(0xFF30302E),
+      color: Color(0xFFEAE4D5),
       thickness: 1,
       space: 16,
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: const Color(0xFF252523),
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: Color(0xFF30302E), width: 1.0),
+        side: const BorderSide(color: Color(0xFFE5DFC9), width: 1.0),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: const Color(0xFF1C1C1A),
+      fillColor: const Color(0xFFF2ECE1),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFF30302E)),
+        borderSide: const BorderSide(color: Color(0xFFE5DFC9)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFF30302E)),
+        borderSide: const BorderSide(color: Color(0xFFE5DFC9)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: Color(0xFFD97757), width: 1.5),
       ),
-      hintStyle: const TextStyle(color: Color(0xFF78766E), fontSize: 14),
+      hintStyle: const TextStyle(color: Color(0xFF969085), fontSize: 14),
     ),
     textTheme: const TextTheme(
       headlineLarge: TextStyle(fontFamily: 'Georgia', color: Color(0xFFF5F4EE), fontWeight: FontWeight.w600),

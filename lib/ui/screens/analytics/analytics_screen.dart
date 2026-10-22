@@ -139,7 +139,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           body: isLoading
               ? const Center(child: CircularProgressIndicator(color: AppColors.accentNeonCyan))
               : SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.fromLTRB(0, 12, 0, 110),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

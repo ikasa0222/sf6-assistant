@@ -9,6 +9,7 @@ import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
 import 'package:sf6_tracker/ui/widgets/share_battle_card.dart';
 import 'package:sf6_tracker/ui/widgets/share_battle_dialog.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
+import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 import 'package:sf6_tracker/ui/screens/social/player_profile_screen.dart';
 
 class BattleCardItem extends StatefulWidget {
@@ -93,6 +94,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.themeColors;
     final r = widget.record;
     final isWin = r.isWin;
     final oppChar = Sf6Characters.getById(r.opponentCharacterId);
@@ -100,7 +102,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
     final defaultMargin = widget.isEmbedded
         ? const EdgeInsets.symmetric(horizontal: 0, vertical: 4)
         : const EdgeInsets.symmetric(horizontal: 16, vertical: 6);
-    final cardColor = widget.isEmbedded ? AppColors.bgSecondary : AppColors.bgCard;
+    final cardColor = widget.isEmbedded ? colors.bgSecondary : colors.bgCard;
 
     return Container(
       margin: widget.customMargin ?? defaultMargin,
@@ -108,7 +110,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
         color: cardColor,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isWin ? AppColors.winGreen.withOpacity(0.35) : AppColors.loseRed.withOpacity(0.35),
+          color: isWin ? colors.accentTertiary.withOpacity(0.35) : colors.accentError.withOpacity(0.35),
           width: 1,
         ),
       ),
@@ -125,7 +127,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
                     width: 4,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: isWin ? AppColors.winGreen : AppColors.loseRed,
+                      color: isWin ? colors.accentTertiary : colors.accentError,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -163,7 +165,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
                         child: Text(
                           isWin ? 'WIN' : 'LOSE',
                           style: TextStyle(
-                            color: isWin ? AppColors.winGreen : AppColors.loseRed,
+                            color: isWin ? colors.accentTertiary : colors.accentError,
                             fontSize: 11,
                             fontWeight: FontWeight.w900,
                           ),
@@ -172,8 +174,8 @@ class _BattleCardItemState extends State<BattleCardItem> {
                       const SizedBox(height: 2),
                       Text(
                         '${r.playerScore} - ${r.opponentScore}',
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
+                        style: TextStyle(
+                          color: colors.textPrimary,
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
                         ),
@@ -210,8 +212,8 @@ class _BattleCardItemState extends State<BattleCardItem> {
                           r.opponentFighterId.isNotEmpty ? r.opponentFighterId : '未知对手',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
+                          style: TextStyle(
+                            color: colors.textPrimary,
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
@@ -221,8 +223,8 @@ class _BattleCardItemState extends State<BattleCardItem> {
                           children: [
                             Text(
                               oppChar.nameZh,
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
+                              style: TextStyle(
+                                color: colors.textSecondary,
                                 fontSize: 12,
                               ),
                             ),

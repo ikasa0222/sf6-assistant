@@ -299,7 +299,7 @@ class _Sf6AppState extends State<Sf6App> {
             },
             child: Scaffold(
               backgroundColor: isClaudeWarm ? Colors.transparent : null,
-              extendBody: isClaudeWarm,
+              extendBody: true,
               body: Stack(
                 children: [
                   Positioned.fill(
@@ -308,27 +308,15 @@ class _Sf6AppState extends State<Sf6App> {
                       children: navItems.map((item) => item.screen).toList(),
                     ),
                   ),
-                  if (isClaudeWarm)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: _buildClaudeWarmFloatingDock(context, navItems, clampedIndex),
-                    ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: _buildLiquidGlassFloatingDock(context, navItems, clampedIndex, isClaudeWarm),
+                  ),
                 ],
               ),
-              bottomNavigationBar: isClaudeWarm
-                  ? null
-                  : BottomNavigationBar(
-                      currentIndex: clampedIndex,
-                      onTap: (index) => setState(() => _currentIndex = index),
-                      items: navItems
-                          .map((item) => BottomNavigationBarItem(
-                                icon: item.icon,
-                                label: item.label,
-                              ))
-                          .toList(),
-                    ),
+              bottomNavigationBar: null,
             ),
           );
         },
@@ -336,13 +324,54 @@ class _Sf6AppState extends State<Sf6App> {
     );
   }
 
-  Widget _buildClaudeWarmFloatingDock(
+  Widget _buildLiquidGlassFloatingDock(
     BuildContext context,
     List<_NavigationItem> items,
     int currentIndex,
+    bool isClaudeWarm,
   ) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     final effectiveBottom = math.max(14.0, bottomInset);
+
+    // 暖纸美学：象牙白微透温润液态玻璃 + 柔和暖调阴影；电竞朋克：极客暗黑微透液态玻璃 + 霓虹青微光阴影
+    final glassBg = isClaudeWarm
+        ? const Color(0xC7FFFFFF) // 78% 象牙白温润液态玻璃
+        : const Color(0xB80E1424); // 72% 暗黑数码液态玻璃
+    final glassBorder = isClaudeWarm
+        ? const Color(0x60E5DFC9) // 极细暖纸边框
+        : const Color(0x5900E5FF); // 赛博荧光青边框
+    final glassShadows = isClaudeWarm
+        ? [
+            const BoxShadow(
+              color: Color(0x1A402010),
+              blurRadius: 28,
+              spreadRadius: 0,
+              offset: Offset(0, 8),
+            ),
+            BoxShadow(
+              color: const Color(0xFFD97757).withOpacity(0.08),
+              blurRadius: 12,
+              spreadRadius: 1,
+              offset: const Offset(0, -1),
+            ),
+          ]
+        : [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.65),
+              blurRadius: 28,
+              spreadRadius: 0,
+              offset: const Offset(0, 10),
+            ),
+            BoxShadow(
+              color: const Color(0xFF00E5FF).withOpacity(0.18),
+              blurRadius: 18,
+              spreadRadius: 1,
+              offset: const Offset(0, -1),
+            ),
+          ];
+
+    final activeColor = isClaudeWarm ? const Color(0xFFD97757) : const Color(0xFF00E5FF);
+    final inactiveColor = isClaudeWarm ? const Color(0xFF7A756D) : const Color(0xFF6B7280);
 
     return Container(
       color: Colors.transparent,
@@ -355,8 +384,10 @@ class _Sf6AppState extends State<Sf6App> {
       child: LiquidGlassContainer(
         borderRadius: 30,
         blurSigma: 24,
-        backgroundColor: const Color(0x73222220),
-        borderColor: const Color(0x38F0EEE6),
+        backgroundColor: glassBg,
+        borderColor: glassBorder,
+        borderWidth: 1.0,
+        shadows: glassShadows,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -376,8 +407,11 @@ class _Sf6AppState extends State<Sf6App> {
                   padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 4),
                   decoration: BoxDecoration(
                     gradient: isSelected
-                        ? const LinearGradient(
-                            colors: [Color(0x40D97757), Color(0x1CD97757)],
+                        ? LinearGradient(
+                            colors: [
+                              activeColor.withOpacity(isClaudeWarm ? 0.20 : 0.25),
+                              activeColor.withOpacity(isClaudeWarm ? 0.08 : 0.08),
+                            ],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                           )
@@ -385,14 +419,14 @@ class _Sf6AppState extends State<Sf6App> {
                     borderRadius: BorderRadius.circular(20),
                     border: isSelected
                         ? Border.all(
-                            color: const Color(0x73D97757),
+                            color: activeColor.withOpacity(isClaudeWarm ? 0.45 : 0.65),
                             width: 1,
                           )
                         : null,
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: const Color(0xFFD97757).withOpacity(0.18),
+                              color: activeColor.withOpacity(isClaudeWarm ? 0.18 : 0.35),
                               blurRadius: 10,
                               offset: const Offset(0, 2),
                             ),
@@ -405,9 +439,7 @@ class _Sf6AppState extends State<Sf6App> {
                     children: [
                       IconTheme(
                         data: IconThemeData(
-                          color: isSelected
-                              ? const Color(0xFFD97757)
-                              : const Color(0xFF9E9B91),
+                          color: isSelected ? activeColor : inactiveColor,
                           size: 21,
                         ),
                         child: item.icon,
@@ -421,9 +453,7 @@ class _Sf6AppState extends State<Sf6App> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: isSelected
-                                ? const Color(0xFFD97757)
-                                : const Color(0xFF9E9B91),
+                            color: isSelected ? activeColor : inactiveColor,
                             letterSpacing: -0.1,
                           ),
                         ),

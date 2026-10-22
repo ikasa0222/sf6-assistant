@@ -55,10 +55,10 @@ class _MonetAmbientCanvasState extends State<MonetAmbientCanvas>
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // 温暖羊皮纸核心底色 (Parchment: #141413)
+        // 温暖羊皮纸核心浅色底 (Parchment Light: #FAF7F2)
         const Positioned.fill(
           child: ColoredBox(
-            color: Color(0xFF141413),
+            color: Color(0xFFFAF7F2),
           ),
         ),
 

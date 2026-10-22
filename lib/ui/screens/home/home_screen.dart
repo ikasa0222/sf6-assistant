@@ -18,6 +18,7 @@ import 'package:sf6_tracker/ui/widgets/rank_badge.dart';
 import 'package:sf6_tracker/ui/widgets/win_rate_bar.dart';
 import 'package:sf6_tracker/core/utils/app_logger.dart';
 import 'package:sf6_tracker/core/network/capcom_sync_engine.dart';
+import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 import 'package:sf6_tracker/ui/widgets/quick_sync_dialog.dart';
 import 'package:sf6_tracker/ui/screens/auth/login_webview_screen.dart';
 import 'package:sf6_tracker/ui/widgets/ranked_score_chart_card.dart';
@@ -99,22 +100,23 @@ class _HomeScreenState extends State<HomeScreen> {
       return builder();
     } catch (e) {
       AppLogger.instance.warn('HomeScreen', '卡片渲染异常 [$cardName]: $e');
+      final colors = context.themeColors;
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.bgCard,
+          color: colors.bgCard,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderSubtle),
+          border: Border.all(color: colors.borderSubtle),
         ),
         child: Row(
           children: [
-            const Icon(Icons.info_outline, size: 16, color: AppColors.textTertiary),
+            Icon(Icons.info_outline, size: 16, color: colors.textTertiary),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 '$cardName 加载异常，请下拉刷新重试',
-                style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
+                style: TextStyle(color: colors.textTertiary, fontSize: 12),
               ),
             ),
           ],
@@ -125,6 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.themeColors;
     return ListenableBuilder(
       listenable: Listenable.merge([authService, battleLogService]),
       builder: (context, _) {
@@ -141,8 +144,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
         if (activeAccount == null) {
           return Scaffold(
+            backgroundColor: colors.isClaudeWarm ? Colors.transparent : null,
             appBar: AppBar(
-              title: const Text('街霸6助手', style: TextStyle(fontWeight: FontWeight.bold)),
+              backgroundColor: Colors.transparent,
+              title: Text('街霸6助手', style: colors.titleStyle(fontWeight: FontWeight.bold)),
             ),
         body: Center(
           child: SingleChildScrollView(
@@ -154,39 +159,39 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 90,
                   height: 90,
                   decoration: BoxDecoration(
-                    color: AppColors.accentNeonCyan.withOpacity(0.15),
+                    color: colors.accentPrimary.withOpacity(0.15),
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.accentNeonCyan, width: 2),
+                    border: Border.all(color: colors.accentPrimary, width: 2),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.accentNeonCyan.withOpacity(0.3),
+                        color: colors.accentPrimary.withOpacity(0.3),
                         blurRadius: 20,
                         spreadRadius: 2,
                       ),
                     ],
                   ),
-                  child: const Center(
-                    child: Icon(Icons.sports_martial_arts, size: 48, color: AppColors.accentNeonCyan),
+                  child: Center(
+                    child: Icon(Icons.sports_martial_arts, size: 48, color: colors.accentPrimary),
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text(
+                Text(
                   '欢迎使用街霸6助手',
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.bold),
+                  style: colors.titleStyle(color: colors.textPrimary, fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   '绑定你的 Capcom ID 或输入玩家 Short ID\n即可同步全平台战绩、MR 走势与角色对策',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+                  style: TextStyle(color: colors.textSecondary, fontSize: 13, height: 1.5),
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accentNeonCyan,
-                      foregroundColor: Colors.black,
+                      backgroundColor: colors.accentPrimary,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 4,
@@ -225,20 +230,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
+      backgroundColor: colors.isClaudeWarm ? Colors.transparent : null,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: AppColors.accentNeonCyan.withOpacity(0.15),
+                color: colors.accentPrimary.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: AppColors.accentNeonCyan.withOpacity(0.6)),
+                border: Border.all(color: colors.accentPrimary.withOpacity(0.6)),
               ),
               child: Text(
                 activePlatform?.platformType.displayName ?? 'Steam',
-                style: const TextStyle(
-                  color: AppColors.accentNeonCyan,
+                style: TextStyle(
+                  color: colors.accentPrimary,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -250,14 +257,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 activeAccount.displayName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: colors.titleStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.sync, color: AppColors.accentNeonCyan),
+            icon: Icon(Icons.sync, color: colors.accentPrimary),
             onPressed: () {
               if (battleLogService.isBackgroundSyncing) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -283,6 +290,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: RefreshIndicator(
+        color: colors.accentPrimary,
+        backgroundColor: colors.bgCardSolid,
         onRefresh: () async {
           if (battleLogService.isBackgroundSyncing) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -323,8 +332,6 @@ class _HomeScreenState extends State<HomeScreen> {
             }
           }
         },
-        color: AppColors.accentNeonCyan,
-        backgroundColor: AppColors.bgCard,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -426,7 +433,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    widgets.add(const SizedBox(height: 16));
+    widgets.add(SizedBox(height: context.themeColors.isClaudeWarm ? 90 : 20));
     return widgets;
   }
 
@@ -463,22 +470,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final rank = Sf6Rank.fromLpOrMr(lp, mr: mr);
     final neededLp = rank.lpNeeded(lp);
     final progress = rank.progressInTier(lp);
+    final colors = context.themeColors;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(18),
+      decoration: colors.cardDecoration(borderRadius: BorderRadius.circular(18), isHighlighted: true),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -496,8 +493,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: Text(
                             fighterName,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
+                            style: colors.titleStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w900,
                             ),
@@ -505,7 +501,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         if (authService.accounts.length > 1) ...[
                           IconButton(
-                            icon: const Icon(Icons.switch_account, color: AppColors.accentNeonCyan, size: 18),
+                            icon: Icon(Icons.switch_account, color: colors.accentPrimary, size: 18),
                             tooltip: '切换账号 (${authService.accounts.length}个)',
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
@@ -514,7 +510,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(width: 8),
                         ],
                         IconButton(
-                          icon: const Icon(Icons.share, color: AppColors.accentNeonCyan, size: 18),
+                          icon: Icon(Icons.share, color: colors.accentPrimary, size: 18),
                           tooltip: '分享战绩海报',
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
@@ -522,7 +518,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(width: 8),
                         IconButton(
-                          icon: const Icon(Icons.edit, color: AppColors.accentNeonYellow, size: 18),
+                          icon: Icon(Icons.edit, color: colors.accentSecondary, size: 18),
                           tooltip: '修改玩家资料',
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
@@ -536,13 +532,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                           decoration: BoxDecoration(
-                            color: AppColors.bgSecondary,
+                            color: colors.bgSecondary,
                             borderRadius: BorderRadius.circular(3),
                           ),
                           child: Text(
                             profile?.title ?? 'Street Fighter',
-                            style: const TextStyle(
-                              color: AppColors.accentNeonYellow,
+                            style: TextStyle(
+                              color: colors.accentSecondary,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -552,8 +548,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(width: 6),
                           Text(
                             '[${profile.clubName}]',
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
+                            style: TextStyle(
+                              color: colors.textSecondary,
                               fontSize: 11,
                             ),
                           ),
@@ -572,9 +568,9 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.bgSecondary,
+                color: colors.bgSecondary,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.accentNeonCyan.withOpacity(0.2)),
+                border: Border.all(color: colors.accentPrimary.withOpacity(0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -586,7 +582,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           '目标: ${rank.nextRankName}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 11, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: colors.accentPrimary, fontSize: 11, fontWeight: FontWeight.bold),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -594,7 +590,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         rank.tier.index <= RankTier.gold.index
                             ? '还差 $neededLp LP (约 ${(neededLp / 50).ceil()} 场净胜 • 连胜加速)'
                             : '还差 $neededLp LP (约 ${(neededLp / 50).ceil()} 场净胜)',
-                        style: const TextStyle(color: AppColors.accentNeonYellow, fontSize: 11, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: colors.accentSecondary, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -603,8 +599,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(3),
                     child: LinearProgressIndicator(
                       value: progress,
-                      backgroundColor: AppColors.bgInput,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accentNeonCyan),
+                      backgroundColor: colors.bgInput,
+                      valueColor: AlwaysStoppedAnimation<Color>(colors.accentPrimary),
                       minHeight: 5,
                     ),
                   ),
@@ -613,7 +609,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
           const SizedBox(height: 14),
-          const Divider(height: 1),
+          Divider(height: 1, color: colors.divider),
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -621,11 +617,16 @@ class _HomeScreenState extends State<HomeScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('主玩角色', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                  Text('主玩角色', style: TextStyle(color: colors.textTertiary, fontSize: 11)),
                   const SizedBox(height: 2),
                   Text(
                     '${mainChar?.nameZh ?? "特瑞"} (${mainChar?.archetype ?? "突进压制型"})',
-                    style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13),
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      fontFamily: colors.titleFontFamily,
+                    ),
                   ),
                 ],
               ),
@@ -657,38 +658,34 @@ class _HomeScreenState extends State<HomeScreen> {
     final total = battleLogService.recentTotal;
     final winRate = battleLogService.recentWinRate;
     final form = battleLogService.recentForm;
+    final colors = context.themeColors;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSubtle),
-      ),
+      padding: const EdgeInsets.all(18),
+      decoration: colors.cardDecoration(borderRadius: BorderRadius.circular(16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 '近期状态 (最近 20 场)',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
+                style: colors.titleStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               InkWell(
                 onTap: onNavigateToBattleLog,
-                child: const Row(
+                child: Row(
                   children: [
                     Text(
                       '查看战绩库',
-                      style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: colors.accentPrimary, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
-                    Icon(Icons.chevron_right, size: 16, color: AppColors.accentNeonCyan),
+                    Icon(Icons.chevron_right, size: 16, color: colors.accentPrimary),
                   ],
                 ),
               ),
@@ -700,26 +697,28 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Text('近 10 局走势: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                Text('近 10 局走势: ', style: TextStyle(color: colors.textSecondary, fontSize: 12)),
                 const SizedBox(width: 6),
                 Expanded(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: form.map((isWin) {
+                        final winColor = colors.isClaudeWarm ? colors.accentTertiary : AppColors.winGreen;
+                        final loseColor = colors.isClaudeWarm ? colors.accentError : AppColors.loseRed;
                         return Container(
                           margin: const EdgeInsets.only(right: 6),
                           width: 20,
                           height: 20,
                           decoration: BoxDecoration(
-                            color: isWin ? AppColors.winGreen : AppColors.loseRed,
+                            color: isWin ? winColor : loseColor,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Center(
                             child: Text(
                               isWin ? 'W' : 'L',
-                              style: const TextStyle(
-                                color: Colors.black,
+                              style: TextStyle(
+                                color: colors.isClaudeWarm ? Colors.white : Colors.black,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -733,10 +732,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ] else ...[
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('暂无已归档对局，可在官方网页登录同步或手动添加', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text('暂无已归档对局，可在官方网页登录同步或手动添加', style: TextStyle(color: colors.textTertiary, fontSize: 12)),
               ),
             ),
           ],
@@ -750,25 +749,33 @@ class _HomeScreenState extends State<HomeScreen> {
     final totalMatches = profile?.totalMatches ?? 0;
     final streak = profile?.currentStreak ?? 0;
     final maxStreak = profile?.maxStreak ?? 0;
+    final colors = context.themeColors;
+
+    final winColor = colors.isClaudeWarm
+        ? (winRate >= 50.0 ? colors.accentTertiary : colors.accentError)
+        : (winRate >= 50.0 ? AppColors.winGreen : AppColors.loseRed);
+    final totalColor = colors.accentPrimary;
+    final streakColor = colors.accentSecondary;
+    final maxStreakColor = colors.isClaudeWarm ? const Color(0xFFC86D51) : AppColors.accentNeonPink;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
           Expanded(
-            child: _buildStatItem('总胜率', '${winRate.toStringAsFixed(1)}%', winRate >= 50.0 ? AppColors.winGreen : AppColors.loseRed),
+            child: _buildStatItem('总胜率', '${winRate.toStringAsFixed(1)}%', winColor),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: _buildStatItem('总对局', '$totalMatches 场', AppColors.accentNeonCyan),
+            child: _buildStatItem('总对局', '$totalMatches 场', totalColor),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: _buildStatItem('当前连胜', '$streak 连胜', AppColors.accentNeonYellow),
+            child: _buildStatItem('当前连胜', '$streak 连胜', streakColor),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: _buildStatItem('最高连胜', '$maxStreak 场', AppColors.accentNeonPink),
+            child: _buildStatItem('最高连胜', '$maxStreak 场', maxStreakColor),
           ),
         ],
       ),
@@ -776,16 +783,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildStatItem(String label, String value, Color color) {
+    final colors = context.themeColors;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: colors.bgCard,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: colors.borderSubtle),
       ),
       child: Column(
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+          Text(label, style: TextStyle(color: colors.textTertiary, fontSize: 11)),
           const SizedBox(height: 4),
           Text(
             value,
@@ -803,41 +811,44 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRadarCard(RadarStats stats) {
+    final colors = context.themeColors;
+    final cOffense = colors.isClaudeWarm ? colors.accentPrimary : AppColors.accentNeonPink;
+    final cDefense = colors.isClaudeWarm ? const Color(0xFF4A7C59) : AppColors.accentNeonCyan;
+    final cAntiAir = colors.isClaudeWarm ? colors.accentSecondary : AppColors.accentNeonYellow;
+    final cDrive = colors.isClaudeWarm ? const Color(0xFF6B8E23) : AppColors.driveGaugeGreen;
+    final cTech = colors.isClaudeWarm ? const Color(0xFFB85D43) : AppColors.driveImpactMagenta;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSubtle),
-      ),
+      padding: const EdgeInsets.all(18),
+      decoration: colors.cardDecoration(borderRadius: BorderRadius.circular(16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '战斗六维能力评估 (Playstyle)',
-            style: TextStyle(
-              color: AppColors.textPrimary,
+            style: colors.titleStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 12),
-          _buildRadarBar('压制进攻 (Offense)', stats.offense, AppColors.accentNeonPink),
+          _buildRadarBar('压制进攻 (Offense)', stats.offense, cOffense),
           const SizedBox(height: 8),
-          _buildRadarBar('确反防守 (Defense)', stats.defense, AppColors.accentNeonCyan),
+          _buildRadarBar('确反防守 (Defense)', stats.defense, cDefense),
           const SizedBox(height: 8),
-          _buildRadarBar('精准对空 (Anti-Air)', stats.antiAir, AppColors.accentNeonYellow),
+          _buildRadarBar('精准对空 (Anti-Air)', stats.antiAir, cAntiAir),
           const SizedBox(height: 8),
-          _buildRadarBar('斗气管理 (Drive Control)', stats.driveGauge, AppColors.driveGaugeGreen),
+          _buildRadarBar('斗气管理 (Drive Control)', stats.driveGauge, cDrive),
           const SizedBox(height: 8),
-          _buildRadarBar('连段技术 (Technique)', stats.technique, AppColors.driveImpactMagenta),
+          _buildRadarBar('连段技术 (Technique)', stats.technique, cTech),
         ],
       ),
     );
   }
 
   Widget _buildRadarBar(String name, double value, Color color) {
+    final colors = context.themeColors;
     final clampedVal = value.clamp(0.0, 100.0);
     return Row(
       children: [
@@ -847,7 +858,7 @@ class _HomeScreenState extends State<HomeScreen> {
             name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+            style: TextStyle(color: colors.textSecondary, fontSize: 11),
           ),
         ),
         const SizedBox(width: 8),
@@ -856,7 +867,7 @@ class _HomeScreenState extends State<HomeScreen> {
             borderRadius: BorderRadius.circular(3),
             child: LinearProgressIndicator(
               value: clampedVal / 100.0,
-              backgroundColor: AppColors.bgSecondary,
+              backgroundColor: colors.bgSecondary,
               valueColor: AlwaysStoppedAnimation<Color>(color),
               minHeight: 6,
             ),
@@ -876,6 +887,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showQuickBindDialog(BuildContext context) {
+    final colors = context.themeColors;
     final controller = TextEditingController(text: '');
     final nameController = TextEditingController();
     final lpController = TextEditingController(text: '18000');
@@ -888,13 +900,13 @@ class _HomeScreenState extends State<HomeScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: AppColors.bgCard,
+              backgroundColor: colors.bgCardSolid,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Row(
+              title: Row(
                 children: [
-                  Icon(Icons.person_add, color: AppColors.accentNeonCyan),
-                  SizedBox(width: 8),
-                  Text('绑定玩家 Short ID / 链接', style: TextStyle(color: AppColors.textPrimary, fontSize: 16)),
+                  Icon(Icons.person_add, color: colors.accentPrimary),
+                  const SizedBox(width: 8),
+                  Text('绑定玩家 Short ID / 链接', style: colors.titleStyle(color: colors.textPrimary, fontSize: 16)),
                 ],
               ),
               content: SingleChildScrollView(
@@ -902,9 +914,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       '输入 10 位 Short ID 或直接粘贴个人主页 URL：',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      style: TextStyle(color: colors.textSecondary, fontSize: 12),
                     ),
                     const SizedBox(height: 10),
                     TextField(
@@ -956,7 +968,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    const Text('选择游玩平台：', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    Text('选择游玩平台：', style: TextStyle(color: colors.textSecondary, fontSize: 12)),
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 8,
@@ -966,10 +978,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           label: Text(p.displayName),
                           selected: isSelected,
                           onSelected: (_) => setDialogState(() => selectedPlatform = p),
-                          selectedColor: AppColors.accentNeonCyan.withOpacity(0.3),
-                          backgroundColor: AppColors.bgSecondary,
+                          selectedColor: colors.accentPrimary.withOpacity(0.3),
+                          backgroundColor: colors.bgSecondary,
                           labelStyle: TextStyle(
-                            color: isSelected ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                            color: isSelected ? colors.accentPrimary : colors.textSecondary,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                             fontSize: 12,
                           ),
@@ -982,10 +994,10 @@ class _HomeScreenState extends State<HomeScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('取消', style: TextStyle(color: AppColors.textSecondary)),
+                  child: Text('取消', style: TextStyle(color: colors.textSecondary)),
                 ),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
+                  style: ElevatedButton.styleFrom(backgroundColor: colors.accentPrimary),
                   onPressed: () async {
                     String input = controller.text.trim();
                     final reg = RegExp(r'(\d{8,12})');
@@ -1013,7 +1025,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
                     }
                   },
-                  child: const Text('确认绑定', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                  child: const Text('确认绑定', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -1024,6 +1036,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showEditProfileDialog(BuildContext context) {
+    final colors = context.themeColors;
     final activePlat = authService.activePlatform;
     final nameController = TextEditingController(text: activePlat?.fighterId ?? 'SF6_Player');
     final shortIdController = TextEditingController(text: activePlat?.shortId ?? '');
@@ -1043,13 +1056,13 @@ class _HomeScreenState extends State<HomeScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: AppColors.bgCard,
+              backgroundColor: colors.bgCardSolid,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Row(
+              title: Row(
                 children: [
-                  Icon(Icons.edit, color: AppColors.accentNeonCyan),
-                  SizedBox(width: 8),
-                  Text('修改玩家资料与主用角色', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+                  Icon(Icons.edit, color: colors.accentPrimary),
+                  const SizedBox(width: 8),
+                  Text('修改玩家资料与主用角色', style: colors.titleStyle(color: colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               ),
               content: SingleChildScrollView(
@@ -1059,34 +1072,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     TextField(
                       controller: nameController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: '玩家昵称 (Fighter ID)',
-                        prefixIcon: Icon(Icons.person, size: 20, color: AppColors.accentNeonCyan),
+                        prefixIcon: Icon(Icons.person, size: 20, color: colors.accentPrimary),
                       ),
                     ),
                     const SizedBox(height: 10),
                     TextField(
                       controller: shortIdController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Short ID (个人主页 10 位识别码)',
-                        prefixIcon: Icon(Icons.tag, size: 20, color: AppColors.accentNeonYellow),
+                        prefixIcon: Icon(Icons.tag, size: 20, color: colors.accentSecondary),
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text('选择主玩角色 (Main Character)：', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text('选择主玩角色 (Main Character)：', style: TextStyle(color: colors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.bgSecondary,
+                        color: colors.bgSecondary,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.borderSubtle),
+                        border: Border.all(color: colors.borderSubtle),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: selectedMainCharId,
                           isExpanded: true,
-                          dropdownColor: AppColors.bgCard,
+                          dropdownColor: colors.bgCardSolid,
                           items: Sf6Characters.all.map((c) {
                             return DropdownMenuItem<String>(
                               value: c.id,
@@ -1094,14 +1107,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   CharacterAvatar(characterId: c.id, size: 26, showBorder: false),
                                   const SizedBox(width: 8),
-                                  Text(c.nameZh, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold)),
+                                  Text(c.nameZh, style: TextStyle(color: colors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold)),
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
                                       '(${c.archetype})',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: AppColors.textTertiary, fontSize: 10),
+                                      style: TextStyle(color: colors.textTertiary, fontSize: 10),
                                     ),
                                   ),
                                 ],
@@ -1145,7 +1158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    const Text('选择游玩平台：', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text('选择游玩平台：', style: TextStyle(color: colors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 8,
@@ -1155,10 +1168,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           label: Text(p.displayName),
                           selected: isSelected,
                           onSelected: (_) => setDialogState(() => selectedPlatform = p),
-                          selectedColor: AppColors.accentNeonCyan.withOpacity(0.3),
-                          backgroundColor: AppColors.bgSecondary,
+                          selectedColor: colors.accentPrimary.withOpacity(0.3),
+                          backgroundColor: colors.bgSecondary,
                           labelStyle: TextStyle(
-                            color: isSelected ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                            color: isSelected ? colors.accentPrimary : colors.textSecondary,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                             fontSize: 12,
                           ),
@@ -1171,10 +1184,10 @@ class _HomeScreenState extends State<HomeScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('取消', style: TextStyle(color: AppColors.textSecondary)),
+                  child: Text('取消', style: TextStyle(color: colors.textSecondary)),
                 ),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
+                  style: ElevatedButton.styleFrom(backgroundColor: colors.accentPrimary),
                   onPressed: () async {
                     final newName = nameController.text.trim().isNotEmpty ? nameController.text.trim() : (activePlat?.fighterId ?? 'SF6_Player');
                     final newSid = shortIdController.text.trim().isNotEmpty ? shortIdController.text.trim() : (activePlat?.shortId ?? '');
@@ -1223,6 +1236,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final usages = rawUsages.where((u) => u.lp > 0 || u.mr > 0).toList();
     if (usages.isEmpty) return const SizedBox.shrink();
 
+    final colors = context.themeColors;
+
     final currentMainCharId = (authService.activePlatform?.mainCharId.isNotEmpty == true
             ? authService.activePlatform!.mainCharId
             : (profile?.mainCharacterId ?? ''))
@@ -1244,26 +1259,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSubtle),
-      ),
+      padding: const EdgeInsets.all(18),
+      decoration: colors.cardDecoration(borderRadius: BorderRadius.circular(16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.military_tech, color: AppColors.accentNeonCyan, size: 18),
-                  SizedBox(width: 6),
+                  Icon(Icons.military_tech, color: colors.accentPrimary, size: 18),
+                  const SizedBox(width: 6),
                   Text(
                     '各角色独立段位与积分榜',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
+                    style: colors.titleStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1272,7 +1282,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Text(
                 '共 ${usages.length} 位已排位角色',
-                style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                style: TextStyle(color: colors.textTertiary, fontSize: 11),
               ),
             ],
           ),
@@ -1301,25 +1311,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
-                      backgroundColor: AppColors.bgCard,
+                      backgroundColor: colors.bgCardSolid,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       title: Row(
                         children: [
                           CharacterAvatar(characterId: char.id, size: 28),
                           const SizedBox(width: 8),
-                          const Text('设为当前主玩角色？', style: TextStyle(color: AppColors.textPrimary, fontSize: 16)),
+                          Text('设为当前主玩角色？', style: TextStyle(color: colors.textPrimary, fontSize: 16)),
                         ],
                       ),
                       content: Text(
                         '是否将主用角色切换为「${char.nameZh}」，并同步更新主页积分为 ${u.lp} LP (${u.mr > 0 ? "$u.mr MR" : "大师未定"})？',
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+                        style: TextStyle(color: colors.textSecondary, fontSize: 13, height: 1.5),
                       ),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消', style: TextStyle(color: AppColors.textSecondary))),
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('取消', style: TextStyle(color: colors.textSecondary))),
                         ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
+                          style: ElevatedButton.styleFrom(backgroundColor: colors.accentPrimary),
                           onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('立即切换', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                          child: const Text('立即切换', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
@@ -1346,7 +1356,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('已切换主用角色为：${char.nameZh} (${u.lp} LP)'), backgroundColor: AppColors.winGreen),
+                        SnackBar(content: Text('已切换主用角色为：${char.nameZh} (${u.lp} LP)'), backgroundColor: colors.isClaudeWarm ? colors.accentTertiary : AppColors.winGreen),
                       );
                     }
                   }
@@ -1355,9 +1365,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   margin: const EdgeInsets.symmetric(vertical: 4),
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                   decoration: BoxDecoration(
-                    color: isCurrent ? AppColors.accentNeonCyan.withOpacity(0.08) : AppColors.bgSecondary.withOpacity(0.4),
+                    color: isCurrent ? colors.accentPrimary.withOpacity(0.10) : colors.bgSecondary.withOpacity(0.4),
                     borderRadius: BorderRadius.circular(10),
-                    border: isCurrent ? Border.all(color: AppColors.accentNeonCyan.withOpacity(0.4)) : Border.all(color: AppColors.borderSubtle.withOpacity(0.3)),
+                    border: isCurrent ? Border.all(color: colors.accentPrimary.withOpacity(0.5)) : Border.all(color: colors.borderSubtle.withOpacity(0.5)),
                   ),
                   child: Row(
                     children: [
@@ -1372,10 +1382,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 Text(
                                   char.nameZh,
-                                  style: const TextStyle(
-                                    color: AppColors.textPrimary,
+                                  style: TextStyle(
+                                    color: colors.textPrimary,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
+                                    fontFamily: colors.titleFontFamily,
                                   ),
                                 ),
                                 if (isCurrent) ...[
@@ -1383,13 +1394,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: AppColors.accentNeonCyan.withOpacity(0.2),
+                                      color: colors.accentPrimary.withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
-                                    child: const Text(
+                                    child: Text(
                                       '当前主玩',
                                       style: TextStyle(
-                                        color: AppColors.accentNeonCyan,
+                                        color: colors.accentPrimary,
                                         fontSize: 10,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -1407,7 +1418,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               displayMatches > 0
                                   ? '$displayMatches 场对战  •  ${displayWinRate.toStringAsFixed(1)}% 胜率'
                                   : '已定级  •  ${u.mr > 0 ? "${u.mr} MR" : "${u.lp} LP"}',
-                              style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                              style: TextStyle(color: colors.textTertiary, fontSize: 11),
                             ),
                           ],
                         ),
@@ -1432,17 +1443,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppColors.bgSecondary.withOpacity(0.3),
+                  color: colors.bgSecondary.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.borderSubtle.withOpacity(0.3)),
+                  border: Border.all(color: colors.borderSubtle.withOpacity(0.3)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       _isLadderExpanded ? '收起角色榜单' : '展开查看其余 ${sortedUsages.length - 3} 位角色',
-                      style: const TextStyle(
-                        color: AppColors.accentNeonCyan,
+                      style: TextStyle(
+                        color: colors.accentPrimary,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1451,7 +1462,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icon(
                       _isLadderExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                       size: 16,
-                      color: AppColors.accentNeonCyan,
+                      color: colors.accentPrimary,
                     ),
                   ],
                 ),
@@ -1466,29 +1477,25 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildPlayTimeCard(PlayTimeModel pt) {
     final displayItems = _isPlayTimeExpanded ? pt.items : pt.topModes;
     final hasItems = pt.items.isNotEmpty;
+    final colors = context.themeColors;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSubtle),
-      ),
+      padding: const EdgeInsets.all(18),
+      decoration: colors.cardDecoration(borderRadius: BorderRadius.circular(16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.pie_chart_outline, color: AppColors.accentNeonCyan, size: 18),
-                  SizedBox(width: 8),
+                  Icon(Icons.pie_chart_outline, color: colors.accentPrimary, size: 18),
+                  const SizedBox(width: 8),
                   Text(
                     '最爱内容 / 游玩时长',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
+                    style: colors.titleStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1499,14 +1506,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppColors.accentNeonYellow.withOpacity(0.15),
+                    color: colors.accentSecondary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: AppColors.accentNeonYellow.withOpacity(0.5)),
+                    border: Border.all(color: colors.accentSecondary.withOpacity(0.5)),
                   ),
                   child: Text(
                     '总时长: ${pt.formattedTotalDuration}',
-                    style: const TextStyle(
-                      color: AppColors.accentNeonYellow,
+                    style: TextStyle(
+                      color: colors.accentSecondary,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1516,14 +1523,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppColors.accentNeonYellow.withOpacity(0.15),
+                    color: colors.accentSecondary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: AppColors.accentNeonYellow.withOpacity(0.5)),
+                    border: Border.all(color: colors.accentSecondary.withOpacity(0.5)),
                   ),
                   child: Text(
                     '总时长: ${pt.total}',
-                    style: const TextStyle(
-                      color: AppColors.accentNeonYellow,
+                    style: TextStyle(
+                      color: colors.accentSecondary,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1533,14 +1540,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppColors.bgSecondary,
+                    color: colors.bgSecondary,
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: AppColors.borderSubtle),
+                    border: Border.all(color: colors.borderSubtle),
                   ),
-                  child: const Text(
+                  child: Text(
                     '下拉刷新同步官方时长',
                     style: TextStyle(
-                      color: AppColors.textTertiary,
+                      color: colors.textTertiary,
                       fontSize: 11,
                     ),
                   ),
@@ -1554,12 +1561,12 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(vertical: 14),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppColors.bgSecondary.withOpacity(0.4),
+                color: colors.bgSecondary.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
+              child: Text(
                 '暂无官方游玩时长记录，下拉即可同步 Buckler 档案',
-                style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
+                style: TextStyle(color: colors.textTertiary, fontSize: 12),
               ),
             ),
           ] else ...[
@@ -1613,8 +1620,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: Text(
                             item.name,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
+                            style: TextStyle(
+                              color: colors.textPrimary,
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1622,8 +1629,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         Text(
                           item.formattedDuration,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
+                          style: TextStyle(
+                            color: colors.textPrimary,
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1632,13 +1639,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                           decoration: BoxDecoration(
-                            color: AppColors.bgSecondary,
+                            color: colors.bgSecondary,
                             borderRadius: BorderRadius.circular(3),
                           ),
                           child: Text(
                             '${item.percentage}%',
-                            style: const TextStyle(
-                              color: AppColors.textTertiary,
+                            style: TextStyle(
+                              color: colors.textTertiary,
                               fontSize: 11,
                             ),
                           ),
@@ -1658,12 +1665,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           _isPlayTimeExpanded ? '收起更多模式' : '查看全部 ${pt.items.length} 个模式',
-                          style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 11),
+                          style: TextStyle(color: colors.accentPrimary, fontSize: 11),
                         ),
                         Icon(
                           _isPlayTimeExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                           size: 14,
-                          color: AppColors.accentNeonCyan,
+                          color: colors.accentPrimary,
                         ),
                       ],
                     ),
@@ -1679,12 +1686,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 childAspectRatio: 2.1,
                 children: [
-                  _buildPlayTimeTile('排位赛', pt.ranked, AppColors.accentNeonCyan),
-                  _buildPlayTimeTile('比赛间对战', pt.customRoom, AppColors.accentNeonPink),
-                  _buildPlayTimeTile('休闲赛', pt.casual, AppColors.winGreen),
-                  _buildPlayTimeTile('格斗中心', pt.battleHub, AppColors.accentNeonYellow),
-                  _buildPlayTimeTile('练习模式', pt.training, AppColors.textSecondary),
-                  _buildPlayTimeTile('环球游历', pt.worldTour, AppColors.textTertiary),
+                  _buildPlayTimeTile('排位赛', pt.ranked, colors.accentPrimary),
+                  _buildPlayTimeTile('比赛间对战', pt.customRoom, colors.isClaudeWarm ? const Color(0xFFC86D51) : AppColors.accentNeonPink),
+                  _buildPlayTimeTile('休闲赛', pt.casual, colors.isClaudeWarm ? colors.accentTertiary : AppColors.winGreen),
+                  _buildPlayTimeTile('格斗中心', pt.battleHub, colors.accentSecondary),
+                  _buildPlayTimeTile('练习模式', pt.training, colors.textSecondary),
+                  _buildPlayTimeTile('环球游历', pt.worldTour, colors.textTertiary),
                 ],
               ),
             ],
@@ -1695,17 +1702,17 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.bgSecondary.withOpacity(0.5),
+                  color: colors.bgSecondary.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.borderSubtle.withOpacity(0.3)),
+                  border: Border.all(color: colors.borderSubtle.withOpacity(0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       '官方各模式生涯对局数',
                       style: TextStyle(
-                        color: AppColors.textTertiary,
+                        color: colors.textTertiary,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1713,10 +1720,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        _buildMatchCountItem('排位赛', pt.rankedMatches, AppColors.accentNeonCyan),
-                        _buildMatchCountItem('比赛间', pt.customRoomMatches, AppColors.accentNeonPink),
-                        _buildMatchCountItem('休闲赛', pt.casualMatches, AppColors.winGreen),
-                        _buildMatchCountItem('格斗中心', pt.battleHubMatches, AppColors.accentNeonYellow),
+                        _buildMatchCountItem('排位赛', pt.rankedMatches, colors.accentPrimary),
+                        _buildMatchCountItem('比赛间', pt.customRoomMatches, colors.isClaudeWarm ? const Color(0xFFC86D51) : AppColors.accentNeonPink),
+                        _buildMatchCountItem('休闲赛', pt.casualMatches, colors.isClaudeWarm ? colors.accentTertiary : AppColors.winGreen),
+                        _buildMatchCountItem('格斗中心', pt.battleHubMatches, colors.accentSecondary),
                       ],
                     ),
                   ],
@@ -1730,6 +1737,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMatchCountItem(String title, int count, Color color) {
+    final colors = context.themeColors;
     return Expanded(
       child: Column(
         children: [
@@ -1740,8 +1748,8 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 2),
           Text(
             '$count 场',
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: colors.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w900,
             ),
@@ -1752,12 +1760,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPlayTimeTile(String title, String duration, Color color) {
+    final colors = context.themeColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.bgSecondary.withOpacity(0.5),
+        color: colors.bgSecondary.withOpacity(0.5),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.borderSubtle.withOpacity(0.4)),
+        border: Border.all(color: colors.borderSubtle.withOpacity(0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1774,8 +1783,8 @@ class _HomeScreenState extends State<HomeScreen> {
             duration,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: colors.textPrimary,
               fontSize: 12,
               fontWeight: FontWeight.w900,
             ),
@@ -1786,6 +1795,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showAccountSwitchSheet(BuildContext context) {
+    final colors = context.themeColors;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1798,12 +1808,12 @@ class _HomeScreenState extends State<HomeScreen> {
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF141622),
+            color: colors.bgCardSolid,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.accentNeonCyan, width: 1.5),
+            border: Border.all(color: colors.accentPrimary, width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: AppColors.accentNeonCyan.withOpacity(0.25),
+                color: colors.accentPrimary.withOpacity(0.25),
                 blurRadius: 16,
                 spreadRadius: 2,
               ),
@@ -1816,14 +1826,14 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.switch_account, color: AppColors.accentNeonCyan, size: 20),
-                      SizedBox(width: 8),
+                      Icon(Icons.switch_account, color: colors.accentPrimary, size: 20),
+                      const SizedBox(width: 8),
                       Text(
                         '切换玩家账号',
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
+                        style: colors.titleStyle(
+                          color: colors.textPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
@@ -1831,7 +1841,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textSecondary, size: 20),
+                    icon: Icon(Icons.close, color: colors.textSecondary, size: 20),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     onPressed: () => Navigator.pop(ctx),
@@ -1839,7 +1849,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              const Divider(color: AppColors.borderSubtle),
+              Divider(color: colors.borderSubtle),
               const SizedBox(height: 8),
               ConstrainedBox(
                 constraints: BoxConstraints(
@@ -1888,10 +1898,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: isActive ? AppColors.accentNeonCyan.withOpacity(0.12) : AppColors.bgSecondary,
+                          color: isActive ? colors.accentPrimary.withOpacity(0.12) : colors.bgSecondary,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: isActive ? AppColors.accentNeonCyan : AppColors.borderSubtle,
+                            color: isActive ? colors.accentPrimary : colors.borderSubtle,
                             width: isActive ? 1.5 : 1,
                           ),
                         ),
@@ -1911,9 +1921,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
-                                            color: isActive ? AppColors.accentNeonCyan : AppColors.textPrimary,
+                                            color: isActive ? colors.accentPrimary : colors.textPrimary,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 14,
+                                            fontFamily: colors.titleFontFamily,
                                           ),
                                         ),
                                       ),
@@ -1922,12 +1933,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                                           decoration: BoxDecoration(
-                                            color: AppColors.accentNeonCyan,
+                                            color: colors.accentPrimary,
                                             borderRadius: BorderRadius.circular(4),
                                           ),
                                           child: const Text(
                                             '当前使用',
-                                            style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+                                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                       ],
@@ -1936,15 +1947,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                   const SizedBox(height: 2),
                                   Text(
                                     'Short ID: $sid  •  ${plat?.platformType.displayName ?? "Steam"}  •  ${mr > 0 ? "$mr MR" : "$lp LP"}',
-                                    style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                                    style: TextStyle(color: colors.textTertiary, fontSize: 11),
                                   ),
                                 ],
                               ),
                             ),
                             if (isActive)
-                              const Icon(Icons.check_circle, color: AppColors.accentNeonCyan, size: 20)
+                              Icon(Icons.check_circle, color: colors.accentPrimary, size: 20)
                             else
-                              const Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 18),
+                              Icon(Icons.chevron_right, color: colors.textTertiary, size: 18),
                           ],
                         ),
                       ),
@@ -1957,10 +1968,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      icon: const Icon(Icons.add, size: 16, color: AppColors.accentNeonYellow),
-                      label: const Text('添加/绑定新账号', style: TextStyle(color: AppColors.accentNeonYellow, fontSize: 12, fontWeight: FontWeight.bold)),
+                      icon: Icon(Icons.add, size: 16, color: colors.accentSecondary),
+                      label: Text('添加/绑定新账号', style: TextStyle(color: colors.accentSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.accentNeonYellow),
+                        side: BorderSide(color: colors.accentSecondary),
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
@@ -1988,6 +1999,7 @@ class _HomeScreenState extends State<HomeScreen> {
     int mr,
     Sf6Rank rank,
   ) {
+    final colors = context.themeColors;
     final fighterName = profile?.fighterId ?? platform?.fighterId ?? 'SF6 Challenger';
     final sid = profile?.shortId ?? platform?.shortId ?? '';
     final club = profile?.clubName ?? platform?.clubName ?? '';
@@ -2003,12 +2015,12 @@ class _HomeScreenState extends State<HomeScreen> {
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF141622),
+            color: colors.bgCardSolid,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.accentNeonCyan, width: 1.5),
+            border: Border.all(color: colors.accentPrimary, width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: AppColors.accentNeonCyan.withOpacity(0.3),
+                color: colors.accentPrimary.withOpacity(0.3),
                 blurRadius: 20,
                 spreadRadius: 2,
               ),
@@ -2020,23 +2032,23 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.flash_on, color: AppColors.accentNeonYellow, size: 20),
-                      SizedBox(width: 6),
+                      Icon(Icons.flash_on, color: colors.accentSecondary, size: 20),
+                      const SizedBox(width: 6),
                       Text(
                         'STREET FIGHTER 6 CARD',
-                        style: TextStyle(color: AppColors.accentNeonYellow, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1.2),
+                        style: TextStyle(color: colors.accentSecondary, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1.2),
                       ),
                     ],
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textSecondary, size: 20),
+                    icon: Icon(Icons.close, color: colors.textSecondary, size: 20),
                     onPressed: () => Navigator.pop(ctx),
                   ),
                 ],
               ),
-              const Divider(color: AppColors.borderSubtle),
+              Divider(color: colors.borderSubtle),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -2048,12 +2060,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           fighterName,
-                          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                          style: colors.titleStyle(color: colors.textPrimary, fontSize: 20, fontWeight: FontWeight.w900),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'ID: $sid  •  俱乐部: [$club]',
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                          style: TextStyle(color: colors.textSecondary, fontSize: 11),
                         ),
                         const SizedBox(height: 8),
                         RankBadge(lp: lp, mr: mr),
@@ -2066,7 +2078,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.bgSecondary,
+                  color: colors.bgSecondary,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -2074,23 +2086,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Column(
                       children: [
-                        const Text('官方段位', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                        Text('官方段位', style: TextStyle(color: colors.textTertiary, fontSize: 11)),
                         const SizedBox(height: 4),
                         Text(rank.displayName, style: TextStyle(color: rank.color, fontWeight: FontWeight.bold, fontSize: 14)),
                       ],
                     ),
                     Column(
                       children: [
-                        const Text('当前积分', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                        Text('当前积分', style: TextStyle(color: colors.textTertiary, fontSize: 11)),
                         const SizedBox(height: 4),
-                        Text('$lp LP', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text('$lp LP', style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
                       ],
                     ),
                     Column(
                       children: [
-                        const Text('排位胜率', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                        Text('排位胜率', style: TextStyle(color: colors.textTertiary, fontSize: 11)),
                         const SizedBox(height: 4),
-                        Text('${winRate.toStringAsFixed(1)}%', style: const TextStyle(color: AppColors.winGreen, fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text('${winRate.toStringAsFixed(1)}%', style: TextStyle(color: colors.isClaudeWarm ? colors.accentTertiary : AppColors.winGreen, fontWeight: FontWeight.bold, fontSize: 14)),
                       ],
                     ),
                   ],
@@ -2100,9 +2112,9 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: const Icon(Icons.copy, color: Colors.black),
-                  label: const Text('复制文字战绩名片 (可直接发送到群聊)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
+                  icon: const Icon(Icons.copy, color: Colors.white),
+                  label: const Text('复制文字战绩名片 (可直接发送到群聊)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(backgroundColor: colors.accentPrimary),
                   onPressed: () {
                     final text = '【街霸6 玩家战绩名片】\n'
                         '玩家昵称: $fighterName\n'

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/core/constants/ranks.dart';
+import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 import 'package:sf6_tracker/models/battle_record.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
 import 'package:sf6_tracker/services/battle_log_service.dart';
@@ -87,13 +88,11 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
           sliced = charRanked;
         }
 
+        final colors = context.themeColors;
+
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.bgCard,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.borderSubtle),
-          ),
+          decoration: colors.cardDecoration(borderRadius: BorderRadius.circular(16)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -103,28 +102,27 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.show_chart, color: AppColors.accentNeonCyan, size: 18),
-                        SizedBox(width: 8),
-                        const Text(
+                        Icon(Icons.show_chart, color: colors.accentPrimary, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
                           '排位分数走势',
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.bold,
+                          style: colors.titleStyle(
                             fontSize: 14,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
-                    _buildHorizonSelector(),
+                    _buildHorizonSelector(colors),
                   ],
                 ),
               ),
 
               // Character Capsule Selector (Horizontal)
               if (allCharIdsList.length > 1) ...[
-                _buildCharacterSelector(allCharIdsList, charRanked),
+                _buildCharacterSelector(allCharIdsList, charRanked, colors),
                 const SizedBox(height: 8),
               ],
 
@@ -132,8 +130,8 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 8, 16, 14),
                 child: sliced.length < 2
-                    ? _buildEmptyPlaceholder()
-                    : _buildChart(sliced),
+                    ? _buildEmptyPlaceholder(colors)
+                    : _buildChart(sliced, colors),
               ),
             ],
           ),
@@ -142,7 +140,7 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
     );
   }
 
-  Widget _buildHorizonSelector() {
+  Widget _buildHorizonSelector(AppThemeColors colors) {
     String label;
     if (_selectedHorizon == 20) {
       label = '近20场';
@@ -160,39 +158,39 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
           _selectedHorizon = val;
         });
       },
-      color: AppColors.bgCard,
+      color: colors.bgCardSolid,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        side: const BorderSide(color: AppColors.borderSubtle),
+        side: BorderSide(color: colors.borderSubtle),
       ),
-      itemBuilder: (context) => const [
+      itemBuilder: (context) => [
         PopupMenuItem<int>(
           value: 20,
-          child: Text('近20场', style: TextStyle(color: AppColors.textPrimary, fontSize: 12)),
+          child: Text('近20场', style: TextStyle(color: colors.textPrimary, fontSize: 12)),
         ),
         PopupMenuItem<int>(
           value: 100,
-          child: Text('近100场', style: TextStyle(color: AppColors.textPrimary, fontSize: 12)),
+          child: Text('近100场', style: TextStyle(color: colors.textPrimary, fontSize: 12)),
         ),
         PopupMenuItem<int>(
           value: 0,
-          child: Text('全部', style: TextStyle(color: AppColors.textPrimary, fontSize: 12)),
+          child: Text('全部', style: TextStyle(color: colors.textPrimary, fontSize: 12)),
         ),
       ],
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.bgCardHighlight,
+          color: colors.bgSecondary,
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: AppColors.borderSubtle),
+          border: Border.all(color: colors.borderSubtle),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               '$label ▾',
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: colors.textSecondary,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
@@ -203,7 +201,7 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
     );
   }
 
-  Widget _buildCharacterSelector(List<String> characterIds, List<BattleRecord> currentRecords) {
+  Widget _buildCharacterSelector(List<String> characterIds, List<BattleRecord> currentRecords, AppThemeColors colors) {
     return SizedBox(
       height: 34,
       child: ListView.separated(
@@ -222,10 +220,10 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.accentNeonCyan.withOpacity(0.15) : AppColors.bgSecondary,
+                color: isSelected ? colors.accentPrimary.withOpacity(0.18) : colors.bgSecondary,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isSelected ? AppColors.accentNeonCyan : AppColors.borderSubtle,
+                  color: isSelected ? colors.accentPrimary : colors.borderSubtle,
                 ),
               ),
               child: Row(
@@ -236,7 +234,8 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
                   Text(
                     char.nameZh,
                     style: TextStyle(
-                      color: isSelected ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                      fontFamily: colors.titleFontFamily,
+                      color: isSelected ? colors.accentPrimary : colors.textSecondary,
                       fontSize: 11,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
@@ -250,13 +249,13 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
     );
   }
 
-  Widget _buildEmptyPlaceholder() {
+  Widget _buildEmptyPlaceholder(AppThemeColors colors) {
     final char = Sf6Characters.getById(_selectedCharacterId ?? 'ryu');
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.bgSecondary.withOpacity(0.5),
+        color: colors.bgSecondary.withOpacity(0.5),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -270,18 +269,17 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
           Text(
             '【${char.nameZh}】暂无排位赛记录',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: colors.titleStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             '请在《街霸6》中进行 2 场以上排位赛，同步后即可生成走势图',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: colors.textSecondary,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -291,7 +289,7 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
     );
   }
 
-  Widget _buildChart(List<BattleRecord> records) {
+  Widget _buildChart(List<BattleRecord> records, AppThemeColors colors) {
     final latestRecord = records.last;
     final isMaster = (latestRecord.playerCurrentMr ?? 0) > 0;
     final unit = isMaster ? 'MR' : 'LP';
@@ -330,13 +328,17 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: isMaster ? AppColors.rankMaster.withOpacity(0.15) : AppColors.accentNeonCyan.withOpacity(0.15),
+                color: isMaster ? AppColors.rankMaster.withOpacity(0.15) : colors.accentPrimary.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: isMaster ? AppColors.rankMaster.withOpacity(0.4) : colors.accentPrimary.withOpacity(0.4),
+                  width: 0.8,
+                ),
               ),
               child: Text(
                 isMaster ? '大师排位 (Master League)' : '积分天梯 (LP League)',
                 style: TextStyle(
-                  color: isMaster ? AppColors.rankMaster : AppColors.accentNeonCyan,
+                  color: isMaster ? AppColors.rankMaster : colors.accentPrimary,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),
@@ -346,12 +348,12 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
               children: [
                 Text(
                   'MAX: ${maxScore.toInt()} $unit',
-                  style: const TextStyle(color: AppColors.winGreen, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: colors.accentTertiary, fontSize: 10, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   'MIN: ${minScore.toInt()} $unit',
-                  style: const TextStyle(color: AppColors.loseRed, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: colors.accentError, fontSize: 10, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -499,26 +501,28 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
                   isCurved: true,
                   curveSmoothness: 0.2,
                   preventCurveOverShooting: true,
-                  gradient: const LinearGradient(
-                    colors: [AppColors.accentNeonCyan, AppColors.brandPurple],
+                  gradient: LinearGradient(
+                    colors: colors.isClaudeWarm
+                        ? const [Color(0xFFD97757), Color(0xFFD97706)]
+                        : const [AppColors.accentNeonCyan, AppColors.brandPurple],
                   ),
                   barWidth: 2.5,
                   isStrokeCapRound: true,
                   dotData: FlDotData(
                     show: spots.length <= 25,
                     getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                      radius: 3,
-                      color: AppColors.accentNeonCyan,
+                      radius: 3.5,
+                      color: colors.accentPrimary,
                       strokeWidth: 1.5,
-                      strokeColor: Colors.black,
+                      strokeColor: colors.bgPrimary,
                     ),
                   ),
                   belowBarData: BarAreaData(
                     show: true,
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.accentNeonCyan.withOpacity(0.35),
-                        AppColors.brandPurple.withOpacity(0.0),
+                        colors.accentPrimary.withOpacity(0.32),
+                        colors.accentPrimary.withOpacity(0.0),
                       ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,

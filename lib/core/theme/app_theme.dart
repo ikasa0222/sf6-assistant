@@ -7,10 +7,6 @@ class AppTheme {
     switch (mode) {
       case AppThemeMode.claudeWarm:
         return _claudeWarmTheme;
-      case AppThemeMode.streetNeon:
-        return _streetNeonTheme;
-      case AppThemeMode.materialYou:
-        return _materialYouTheme;
       case AppThemeMode.esportsDark:
         return _esportsDarkTheme;
     }

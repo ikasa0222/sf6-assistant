@@ -37,8 +37,7 @@ class _MovelistScreenState extends State<MovelistScreen> {
     final char = Sf6Characters.getById(widget.characterId);
 
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      appBar: AppBar(
+            appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(

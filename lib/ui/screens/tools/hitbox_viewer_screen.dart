@@ -57,8 +57,7 @@ class _HitboxViewerScreenState extends State<HitboxViewerScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      appBar: AppBar(
+            appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(

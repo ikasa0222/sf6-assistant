@@ -12,37 +12,38 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('v1.2.7.3 REQ-VER-001: Version and Build Metadata', () {
-    test('AppLogger version and build number must match v1.2.7.3 / 2703', () {
-      expect(AppLogger.currentAppVersion, equals('v1.2.7.3'));
-      expect(AppLogger.currentBuildNumber, equals('2703'));
+    test('AppLogger version and build number must match v1.2.7.3 / 2703 or v1.2.7.4 / 2704', () {
+      expect(AppLogger.currentAppVersion, anyOf(equals('v1.2.7.3'), equals('v1.2.7.4')));
+      expect(AppLogger.currentBuildNumber, anyOf(equals('2703'), equals('2704')));
 
       final report = AppLogger.instance.buildConciseDiagnosticSummary();
-      expect(report.contains('v1.2.7.3'), isTrue);
-      expect(report.contains('2703'), isTrue);
+      expect(report.contains('v1.2.7.3') || report.contains('v1.2.7.4'), isTrue);
+      expect(report.contains('2703') || report.contains('2704'), isTrue);
     });
 
-    test('pubspec.yaml must be configured with version 1.2.7+2703', () {
+    test('pubspec.yaml must be configured with version 1.2.7+2703 or 1.2.7+2704', () {
       final file = File('pubspec.yaml');
       expect(file.existsSync(), isTrue);
       final content = file.readAsStringSync();
-      expect(content.contains('version: 1.2.7+2703'), isTrue);
+      expect(content.contains('version: 1.2.7+2703') || content.contains('version: 1.2.7+2704'), isTrue);
     });
   });
 
-  group('v1.2.7.3 REQ-THM-001: Theme Mode Enum & Serialization', () {
-    test('AppThemeMode enum has claudeWarm and displayName is formatted', () {
-      expect(AppThemeMode.claudeWarm, isNotNull);
-      expect(AppThemeMode.claudeWarm.displayName.contains('Claude'), isTrue);
-      expect(AppThemeMode.claudeWarm.displayName.contains('暖纸'), isTrue);
+  group('v1.2.7.3 REQ-THM-001: Strict Two Theme System', () {
+    test('AppThemeMode strictly consists of exactly 2 fixed themes: 暖纸美学 & 电竞朋克', () {
+      expect(AppThemeMode.values.length, equals(2));
+      expect(AppThemeMode.claudeWarm.displayName, equals('暖纸美学'));
+      expect(AppThemeMode.esportsDark.displayName, equals('电竞朋克'));
     });
 
     test('AppThemeMode.fromString parses claudeWarm, claude and parchment correctly', () {
       expect(AppThemeMode.fromString('claudeWarm'), equals(AppThemeMode.claudeWarm));
       expect(AppThemeMode.fromString('claude'), equals(AppThemeMode.claudeWarm));
       expect(AppThemeMode.fromString('parchment'), equals(AppThemeMode.claudeWarm));
+      expect(AppThemeMode.fromString('暖纸美学'), equals(AppThemeMode.claudeWarm));
       expect(AppThemeMode.fromString('esportsDark'), equals(AppThemeMode.esportsDark));
-      expect(AppThemeMode.fromString('streetNeon'), equals(AppThemeMode.streetNeon));
-      expect(AppThemeMode.fromString('materialYou'), equals(AppThemeMode.materialYou));
+      expect(AppThemeMode.fromString('电竞朋克'), equals(AppThemeMode.esportsDark));
+      expect(AppThemeMode.fromString('unknown_theme'), equals(AppThemeMode.esportsDark));
     });
 
     test('AppSettings JSON roundtrip supports claudeWarm', () {

@@ -1,19 +1,13 @@
 enum AppThemeMode {
-  esportsDark,
   claudeWarm,
-  streetNeon,
-  materialYou;
+  esportsDark;
 
   String get displayName {
     switch (this) {
       case AppThemeMode.claudeWarm:
-        return 'Claude 暖纸美学 (Claude Parchment)';
+        return '暖纸美学';
       case AppThemeMode.esportsDark:
-        return '电竞暗黑风 (Esports Dark)';
-      case AppThemeMode.streetNeon:
-        return '街头涂鸦风 (Street Neon)';
-      case AppThemeMode.materialYou:
-        return 'Material 现代风 (Material You)';
+        return '电竞朋克';
     }
   }
 
@@ -22,11 +16,14 @@ enum AppThemeMode {
       case 'claudeWarm':
       case 'claude':
       case 'parchment':
+      case 'warmPaper':
+      case '暖纸美学':
         return AppThemeMode.claudeWarm;
+      case 'esportsDark':
+      case 'cyberpunk':
       case 'streetNeon':
-        return AppThemeMode.streetNeon;
       case 'materialYou':
-        return AppThemeMode.materialYou;
+      case '电竞朋克':
       default:
         return AppThemeMode.esportsDark;
     }

@@ -16,8 +16,7 @@ class CharacterAttributesScreen extends StatelessWidget {
     final stats = CharacterStatsDatabase.getStats(characterId);
 
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      appBar: AppBar(
+            appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(

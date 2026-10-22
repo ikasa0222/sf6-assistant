@@ -19,7 +19,6 @@ import 'package:sf6_tracker/ui/screens/home/home_screen.dart';
 import 'package:sf6_tracker/ui/screens/battle_log/battle_log_screen.dart';
 import 'package:sf6_tracker/ui/screens/analytics/analytics_screen.dart';
 import 'package:sf6_tracker/ui/screens/social/social_screen.dart';
-import 'package:sf6_tracker/ui/screens/tools/tools_screen.dart';
 import 'package:sf6_tracker/ui/screens/settings/settings_screen.dart';
 import 'package:sf6_tracker/services/update_service.dart';
 import 'package:sf6_tracker/core/utils/app_logger.dart';
@@ -245,18 +244,6 @@ class _Sf6AppState extends State<Sf6App> {
             statsService: _statsService,
           ),
         ),
-      if (_settings.showFrameData || _settings.showMatchupNotes)
-        _NavigationItem(
-          label: '工具',
-          icon: const Icon(Icons.construction),
-          screen: ToolsScreen(
-            frameDataService: _frameDataService,
-            notesService: _notesService,
-            comboService: _comboService,
-            authService: _authService,
-            battleLogService: _battleLogService,
-          ),
-        ),
       _NavigationItem(
         label: '设置',
         icon: const Icon(Icons.settings),
@@ -312,12 +299,26 @@ class _Sf6AppState extends State<Sf6App> {
             },
             child: Scaffold(
               backgroundColor: isClaudeWarm ? Colors.transparent : null,
-              body: IndexedStack(
-                index: clampedIndex,
-                children: navItems.map((item) => item.screen).toList(),
+              extendBody: isClaudeWarm,
+              body: Stack(
+                children: [
+                  Positioned.fill(
+                    child: IndexedStack(
+                      index: clampedIndex,
+                      children: navItems.map((item) => item.screen).toList(),
+                    ),
+                  ),
+                  if (isClaudeWarm)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: _buildClaudeWarmFloatingDock(context, navItems, clampedIndex),
+                    ),
+                ],
               ),
               bottomNavigationBar: isClaudeWarm
-                  ? _buildClaudeWarmFloatingDock(context, navItems, clampedIndex)
+                  ? null
                   : BottomNavigationBar(
                       currentIndex: clampedIndex,
                       onTap: (index) => setState(() => _currentIndex = index),
@@ -343,89 +344,96 @@ class _Sf6AppState extends State<Sf6App> {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     final effectiveBottom = math.max(14.0, bottomInset);
 
-    return SafeArea(
-      top: false,
-      left: false,
-      right: false,
-      bottom: false,
-      child: Container(
-        color: Colors.transparent,
-        padding: EdgeInsets.only(
-          left: 14,
-          right: 14,
-          bottom: effectiveBottom,
-          top: 4,
-        ),
-        child: LiquidGlassContainer(
-          borderRadius: 24,
-          blurSigma: 16,
-          backgroundColor: const Color(0xD9252523),
-          borderColor: const Color(0x3DF0EEE6),
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(items.length, (index) {
-              final item = items[index];
-              final isSelected = index == currentIndex;
-              return Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() => _currentIndex = index);
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOutCubic,
-                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFFD97757).withOpacity(0.18)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
-                      border: isSelected
-                          ? Border.all(
-                              color: const Color(0xFFD97757).withOpacity(0.35),
-                              width: 1,
-                            )
-                          : null,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconTheme(
-                          data: IconThemeData(
+    return Container(
+      color: Colors.transparent,
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        bottom: effectiveBottom,
+        top: 6,
+      ),
+      child: LiquidGlassContainer(
+        borderRadius: 30,
+        blurSigma: 24,
+        backgroundColor: const Color(0x73222220),
+        borderColor: const Color(0x38F0EEE6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(items.length, (index) {
+            final item = items[index];
+            final isSelected = index == currentIndex;
+            return Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _currentIndex = index);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 4),
+                  decoration: BoxDecoration(
+                    gradient: isSelected
+                        ? const LinearGradient(
+                            colors: [Color(0x40D97757), Color(0x1CD97757)],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          )
+                        : null,
+                    borderRadius: BorderRadius.circular(20),
+                    border: isSelected
+                        ? Border.all(
+                            color: const Color(0x73D97757),
+                            width: 1,
+                          )
+                        : null,
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFFD97757).withOpacity(0.18),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconTheme(
+                        data: IconThemeData(
+                          color: isSelected
+                              ? const Color(0xFFD97757)
+                              : const Color(0xFF9E9B91),
+                          size: 21,
+                        ),
+                        child: item.icon,
+                      ),
+                      const SizedBox(height: 3),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          item.label,
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                             color: isSelected
                                 ? const Color(0xFFD97757)
-                                : const Color(0xFFB0AEA5),
-                            size: 20,
-                          ),
-                          child: item.icon,
-                        ),
-                        const SizedBox(height: 3),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            item.label,
-                            maxLines: 1,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                              color: isSelected
-                                  ? const Color(0xFFD97757)
-                                  : const Color(0xFFB0AEA5),
-                              letterSpacing: 0.2,
-                            ),
+                                : const Color(0xFF9E9B91),
+                            letterSpacing: -0.1,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            }),
-          ),
+              ),
+            );
+          }),
         ),
       ),
     );

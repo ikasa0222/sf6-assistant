@@ -362,11 +362,17 @@ class SettingsScreen extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
                   child: Row(
                     children: [
-                      const Icon(Icons.palette_outlined, color: AppColors.accentNeonCyan, size: 18),
+                      Icon(
+                        Icons.palette_outlined,
+                        color: settings.themeMode == AppThemeMode.claudeWarm
+                            ? const Color(0xFFD97757)
+                            : AppColors.accentNeonCyan,
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(
-                          '选择应用设计系统与视觉美学',
+                          '选择应用设计系统与视觉风格',
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.bold,
@@ -383,7 +389,7 @@ class SettingsScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          settings.themeMode == AppThemeMode.claudeWarm ? '全新上线' : '当前生效',
+                          settings.themeMode == AppThemeMode.claudeWarm ? '全新推荐' : '当前生效',
                           style: TextStyle(
                             color: settings.themeMode == AppThemeMode.claudeWarm
                                 ? const Color(0xFFD97757)
@@ -398,8 +404,8 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 _buildThemeOptionTile(
                   mode: AppThemeMode.claudeWarm,
-                  title: 'Anthropic Claude 暖纸美学 (Claude Warm)',
-                  subtitle: '暖调羊皮纸底色 + 莫奈流动呼吸背景 + 苹果液态玻璃悬浮 Dock + 典雅衬线标题',
+                  title: '暖纸美学',
+                  subtitle: 'Anthropic 暖纸底色 · 莫奈流动呼吸背景 · 苹果液态玻璃悬浮 Dock · 典雅衬线标题',
                   colorPalette: [
                     const Color(0xFF141413),
                     const Color(0xFF252523),
@@ -407,43 +413,20 @@ class SettingsScreen extends StatelessWidget {
                     const Color(0xFF7A9A78),
                     const Color(0xFFD97706),
                   ],
-                  badgeText: '推荐 · 全新设计',
+                  badgeText: '全新设计',
                   badgeColor: const Color(0xFFD97757),
                 ),
                 const Divider(height: 1),
                 _buildThemeOptionTile(
                   mode: AppThemeMode.esportsDark,
-                  title: '电竞暗黑风 (Esports Dark)',
-                  subtitle: '沉浸式经典电竞暗黑底色 + 荧光青粉高对比度双色霓虹',
+                  title: '电竞朋克',
+                  subtitle: '沉浸式经典电竞暗黑底色 · 荧光青粉高对比度双色霓虹 · 竞技无衬线风',
                   colorPalette: [
                     AppColors.bgPrimary,
                     AppColors.bgCard,
                     AppColors.accentNeonCyan,
                     AppColors.accentNeonPink,
-                  ],
-                ),
-                const Divider(height: 1),
-                _buildThemeOptionTile(
-                  mode: AppThemeMode.streetNeon,
-                  title: '街头涂鸦风 (Street Neon)',
-                  subtitle: '街霸 6 标志性街头格斗喷漆涂鸦与动感霓虹紫调',
-                  colorPalette: [
-                    const Color(0xFF100E17),
-                    const Color(0xFF7C4DFF),
-                    const Color(0xFFFF5252),
-                    const Color(0xFFFFD700),
-                  ],
-                ),
-                const Divider(height: 1),
-                _buildThemeOptionTile(
-                  mode: AppThemeMode.materialYou,
-                  title: 'Material 现代风 (Material You)',
-                  subtitle: 'Material 3 规范自适应色彩，纯净中性卡片与标准交互',
-                  colorPalette: [
-                    const Color(0xFF1C1B1F),
-                    const Color(0xFF4F378B),
-                    const Color(0xFF6750A4),
-                    const Color(0xFFE6E1E5),
+                    AppColors.accentNeonYellow,
                   ],
                 ),
               ],
@@ -463,16 +446,6 @@ class SettingsScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                SwitchListTile(
-                  title: const Text('官方全角色帧数表', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
-                  subtitle: const Text('离线速查全角色发生帧数、防御硬直差与伤害', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
-                  value: settings.showFrameData,
-                  activeColor: AppColors.accentNeonCyan,
-                  onChanged: (val) {
-                    onUpdateSettings(settings.copyWith(showFrameData: val));
-                  },
-                ),
-                const Divider(height: 1),
                 SwitchListTile(
                   title: const Text('对战对策与心得笔记', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
                   subtitle: const Text('支持为特定角色和对手记录实战对策', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
@@ -557,32 +530,6 @@ class SettingsScreen extends StatelessWidget {
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('已清空本地临时缓存。')),
-                    );
-                  },
-                ),
-                const Divider(height: 1),
-                FutureBuilder<Map<String, dynamic>>(
-                  future: MediaCacheService.instance.getCacheStats(),
-                  builder: (context, snapshot) {
-                    final stats = snapshot.data ?? {'count': 0, 'sizeBytes': 0, 'formattedSize': '0.0 MB'};
-                    final count = stats['count'] ?? 0;
-                    final formattedSize = stats['formattedSize'] ?? '0.0 MB';
-                    return ListTile(
-                      leading: const Icon(Icons.image, color: AppColors.accentNeonCyan),
-                      title: const Text('碰撞框动图沙盒缓存', style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.bold)),
-                      subtitle: Text('已缓存 ' + count.toString() + ' 个招式动图 (' + formattedSize.toString() + ')，支持离线秒开', style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
-                      trailing: TextButton(
-                        onPressed: () async {
-                          await MediaCacheService.instance.clearCache();
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('已清空碰撞框动图缓存，释放磁盘空间。')),
-                            );
-                            (context as Element).markNeedsBuild();
-                          }
-                        },
-                        child: const Text('清除缓存', style: TextStyle(color: AppColors.loseRed, fontSize: 12)),
-                      ),
                     );
                   },
                 ),

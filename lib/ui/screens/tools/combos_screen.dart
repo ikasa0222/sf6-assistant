@@ -35,8 +35,7 @@ class _CombosScreenState extends State<CombosScreen> {
     final char = Sf6Characters.getById(widget.characterId);
 
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      appBar: AppBar(
+            appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(

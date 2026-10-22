@@ -406,15 +406,16 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                         label: Text(
                           c.nameZh + (matchCount > 0 ? ' ($matchCount)' : ''),
                           style: TextStyle(
-                            color: isSelected ? AppColors.accentNeonCyan : (matchCount > 0 ? AppColors.textPrimary : AppColors.textTertiary),
+                            color: isSelected ? colors.accentPrimary : (matchCount > 0 ? colors.textPrimary : colors.textSecondary),
                             fontWeight: isSelected || matchCount > 0 ? FontWeight.bold : FontWeight.normal,
                             fontSize: 11,
                           ),
                         ),
                         selected: isSelected,
                         onSelected: (_) => setState(() => _selectedCharacterId = c.id),
-                        selectedColor: AppColors.accentNeonCyan.withOpacity(0.25),
-                        backgroundColor: AppColors.bgCard,
+                        selectedColor: colors.accentPrimary.withOpacity(0.18),
+                        backgroundColor: colors.bgCard,
+                        side: BorderSide(color: isSelected ? colors.accentPrimary : colors.borderSubtle),
                       ),
                     );
                   }),

@@ -52,11 +52,11 @@ void main() {
     });
 
     test('REQ-FIX-003: Version and build metadata must be synchronized to v1.2.7.2 / 2702', () {
-      expect(AppLogger.currentAppVersion, anyOf(equals('v1.2.7.2'), anyOf(equals('v1.2.7.3'), anyOf(equals('v1.2.7.4'), anyOf(equals('v1.2.7.5'), equals('v1.2.7.6'))))));
-      expect(AppLogger.currentBuildNumber, anyOf(equals('2702'), anyOf(equals('2703'), anyOf(equals('2704'), anyOf(equals('2705'), equals('2706'))))));
+      expect(AppLogger.currentAppVersion, anyOf(equals('v1.2.7.2'), anyOf(equals('v1.2.7.3'), anyOf(equals('v1.2.7.4'), anyOf(equals('v1.2.7.5'), anyOf(equals('v1.2.7.6'), equals('v1.2.8')))))));
+      expect(AppLogger.currentBuildNumber, anyOf(equals('2702'), anyOf(equals('2703'), anyOf(equals('2704'), anyOf(equals('2705'), anyOf(equals('2706'), equals('2800')))))));
 
       final pubspec = File('pubspec.yaml').readAsStringSync();
-      expect((pubspec.contains('version: 1.2.7+2702') || pubspec.contains('version: 1.2.7+2703') || pubspec.contains('version: 1.2.7+2704') || pubspec.contains('version: 1.2.7+2705') || pubspec.contains('version: 1.2.7+2706')), isTrue);
+      expect((pubspec.contains('version: 1.2.7+2702') || pubspec.contains('version: 1.2.7+2703') || pubspec.contains('version: 1.2.7+2704') || pubspec.contains('version: 1.2.7+2705') || pubspec.contains('version: 1.2.7+2706') || pubspec.contains('version: 1.2.8+2800')), isTrue);
     });
   });
 }

@@ -18,7 +18,7 @@ void main() {
   group('REQ-VER-001: Version and Build Metadata (v1.2.6.3 / 2603 or newer)', () {
     test('AppLogger.currentAppVersion must equal v1.2.6.3 or newer v1.2.6.4/v1.2.6.5/v1.2.7.0/v1.2.7.1', () {
       expect(
-        AppLogger.currentAppVersion == 'v1.2.6.3' || AppLogger.currentAppVersion == 'v1.2.6.4' || AppLogger.currentAppVersion == 'v1.2.6.5' || AppLogger.currentAppVersion == 'v1.2.7.0' || AppLogger.currentAppVersion == 'v1.2.7.1' || AppLogger.currentAppVersion == 'v1.2.7.2' || AppLogger.currentAppVersion == 'v1.2.7.3' || AppLogger.currentAppVersion == 'v1.2.7.4' || AppLogger.currentAppVersion == 'v1.2.7.5' || AppLogger.currentAppVersion == 'v1.2.7.6',
+        AppLogger.currentAppVersion == 'v1.2.6.3' || AppLogger.currentAppVersion == 'v1.2.6.4' || AppLogger.currentAppVersion == 'v1.2.6.5' || AppLogger.currentAppVersion == 'v1.2.7.0' || AppLogger.currentAppVersion == 'v1.2.7.1' || AppLogger.currentAppVersion == 'v1.2.8' || AppLogger.currentAppVersion == 'v1.2.8' || AppLogger.currentAppVersion == 'v1.2.7.2' || AppLogger.currentAppVersion == 'v1.2.7.3' || AppLogger.currentAppVersion == 'v1.2.7.4' || AppLogger.currentAppVersion == 'v1.2.7.5' || AppLogger.currentAppVersion == 'v1.2.8' || AppLogger.currentAppVersion == 'v1.2.8' || AppLogger.currentAppVersion == 'v1.2.7.6' || AppLogger.currentAppVersion == 'v1.2.8' || AppLogger.currentAppVersion == 'v1.2.8',
         isTrue,
         reason: 'REQ-VER-001: AppLogger.currentAppVersion must be at least v1.2.6.3',
       );
@@ -26,7 +26,7 @@ void main() {
 
     test('AppLogger.currentBuildNumber must equal 2603 or newer 2604/2605/2700/2701', () {
       expect(
-        AppLogger.currentBuildNumber == '2603' || AppLogger.currentBuildNumber == '2604' || AppLogger.currentBuildNumber == '2605' || AppLogger.currentBuildNumber == '2700' || AppLogger.currentBuildNumber == '2701' || AppLogger.currentBuildNumber == '2702' || AppLogger.currentBuildNumber == '2703' || AppLogger.currentBuildNumber == '2704' || AppLogger.currentBuildNumber == '2705' || AppLogger.currentBuildNumber == '2706',
+        AppLogger.currentBuildNumber == '2603' || AppLogger.currentBuildNumber == '2604' || AppLogger.currentBuildNumber == '2605' || AppLogger.currentBuildNumber == '2700' || AppLogger.currentBuildNumber == '2701' || AppLogger.currentBuildNumber == '2702' || AppLogger.currentBuildNumber == '2703' || AppLogger.currentBuildNumber == '2704' || AppLogger.currentBuildNumber == '2705' || AppLogger.currentBuildNumber == '2706' || AppLogger.currentBuildNumber == '2800',
         isTrue,
         reason: 'REQ-VER-001: AppLogger.currentBuildNumber must be at least 2603',
       );
@@ -36,7 +36,7 @@ void main() {
       final pubspecFile = File('pubspec.yaml');
       expect(pubspecFile.existsSync(), isTrue, reason: 'pubspec.yaml must exist');
       final content = pubspecFile.readAsStringSync();
-      final versionMatch = RegExp(r'^version:\s*1\.2\.[67](\.[0-9]+)?\+(260[1-9]|270[0-9])\s*$', multiLine: true);
+      final versionMatch = RegExp(r'^version:\s*1\.2\.[678](\.[0-9]+)?\+(260[1-9]|270[0-9]|280[0-9])\s*$', multiLine: true);
       expect(
         versionMatch.hasMatch(content),
         isTrue,
@@ -48,12 +48,12 @@ void main() {
       final logger = AppLogger.instance;
       final report = logger.buildConciseDiagnosticSummary();
       expect(
-        report.contains('v1.2.6.3') || report.contains('v1.2.6.4') || report.contains('v1.2.6.5') || report.contains('v1.2.7.0') || (report.contains('v1.2.7.1') || report.contains('v1.2.7.2') || report.contains('v1.2.7.3') || report.contains('v1.2.7.4') || report.contains('v1.2.7.5') || report.contains('v1.2.7.6')),
+        report.contains('v1.2.6.3') || report.contains('v1.2.6.4') || report.contains('v1.2.6.5') || report.contains('v1.2.7.0') || (report.contains('v1.2.7.1') || report.contains('v1.2.7.2') || report.contains('v1.2.7.3') || report.contains('v1.2.7.4') || report.contains('v1.2.7.5') || report.contains('v1.2.7.6') || report.contains('v1.2.8')),
         isTrue,
         reason: 'REQ-VER-001: Diagnostic summary report must include target version',
       );
       expect(
-        report.contains('2603') || report.contains('2604') || report.contains('2605') || report.contains('2700') || (report.contains('2701') || report.contains('2702') || report.contains('2703') || report.contains('2704') || report.contains('2705') || report.contains('2706') || report.contains('2703') || report.contains('2704') || report.contains('2705') || report.contains('2706')),
+        report.contains('2603') || report.contains('2604') || report.contains('2605') || report.contains('2700') || (report.contains('2701') || report.contains('2702') || report.contains('2703') || report.contains('2704') || report.contains('2705') || report.contains('2706') || report.contains('2800') || report.contains('2703') || report.contains('2704') || report.contains('2705') || report.contains('2706') || report.contains('2800')),
         isTrue,
         reason: 'REQ-VER-001: Diagnostic summary report must include target build number',
       );

@@ -1,3 +1,4 @@
+import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -257,17 +258,24 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+    final colors = context.themeColors;
+    final isClaudeWarm = colors.isClaudeWarm;
     final rank = Sf6Rank.fromLpOrMr(widget.lp, mr: widget.mr);
     final char = Sf6Characters.getById(widget.mainCharacterId);
 
     return Scaffold(
+      backgroundColor: isClaudeWarm ? Colors.transparent : null,
       appBar: AppBar(
-        title: const Text('格斗家个人资料', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: IconThemeData(color: colors.textPrimary),
+        title: Text('格斗家个人资料', style: colors.titleStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         actions: [
           IconButton(
             icon: Icon(
               _isFollowed ? Icons.star : Icons.star_border,
-              color: _isFollowed ? AppColors.accentNeonYellow : AppColors.textSecondary,
+              color: _isFollowed ? colors.accentSecondary : colors.textSecondary,
               size: 24,
             ),
             tooltip: _isFollowed ? '取消特别关注' : '特别关注 (置顶好友列表)',
@@ -311,8 +319,9 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: context.themeColors.bgCard,
         borderRadius: BorderRadius.circular(14),
+        boxShadow: context.themeColors.isClaudeWarm ? const [BoxShadow(color: Color(0x0A402010), blurRadius: 8, offset: Offset(0, 2))] : null,
         border: Border.all(
           color: _isFollowed ? AppColors.accentNeonYellow.withOpacity(0.6) : AppColors.borderSubtle,
           width: _isFollowed ? 1.5 : 1.0,
@@ -469,8 +478,9 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: context.themeColors.bgCard,
         borderRadius: BorderRadius.circular(14),
+        boxShadow: context.themeColors.isClaudeWarm ? const [BoxShadow(color: Color(0x0A402010), blurRadius: 8, offset: Offset(0, 2))] : null,
         border: Border.all(color: AppColors.borderSubtle),
       ),
       child: Column(
@@ -698,8 +708,9 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: context.themeColors.bgCard,
         borderRadius: BorderRadius.circular(14),
+        boxShadow: context.themeColors.isClaudeWarm ? const [BoxShadow(color: Color(0x0A402010), blurRadius: 8, offset: Offset(0, 2))] : null,
         border: Border.all(color: AppColors.borderSubtle),
       ),
       child: Column(
@@ -879,8 +890,9 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
   Widget _buildMatchHistorySection() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: context.themeColors.bgCard,
         borderRadius: BorderRadius.circular(14),
+        boxShadow: context.themeColors.isClaudeWarm ? const [BoxShadow(color: Color(0x0A402010), blurRadius: 8, offset: Offset(0, 2))] : null,
         border: Border.all(color: AppColors.borderSubtle),
       ),
       child: Column(

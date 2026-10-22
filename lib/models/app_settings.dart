@@ -43,7 +43,7 @@ class AppSettings {
   final bool useMockDataIfOffline;
 
   const AppSettings({
-    this.themeMode = AppThemeMode.esportsDark,
+    this.themeMode = AppThemeMode.claudeWarm,
     this.showMatchupAnalytics = true,
     this.showFriendsClub = true,
     this.showFrameData = true,
@@ -95,7 +95,7 @@ class AppSettings {
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
-    themeMode: AppThemeMode.fromString(json['themeMode'] ?? 'esportsDark'),
+    themeMode: AppThemeMode.fromString(json['themeMode'] ?? 'claudeWarm'),
     showMatchupAnalytics: json['showMatchupAnalytics'] ?? true,
     showFriendsClub: json['showFriendsClub'] ?? true,
     showFrameData: json['showFrameData'] ?? true,

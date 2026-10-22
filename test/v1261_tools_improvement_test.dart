@@ -22,7 +22,7 @@ void main() {
   group('REQ-VER-001: Application Version and Build Metadata', () {
     test('AppLogger.currentAppVersion must be strictly updated to v1.2.6.1 or higher', () {
       expect(
-        AppLogger.currentAppVersion.startsWith('v1.2.6') || AppLogger.currentAppVersion.startsWith('v1.2.7'),
+        AppLogger.currentAppVersion.startsWith('v1.2.6') || AppLogger.currentAppVersion.startsWith('v1.2.7') || AppLogger.currentAppVersion.startsWith('v1.2.8'),
         isTrue,
         reason: 'REQ-VER-001: AppLogger.currentAppVersion must be v1.2.6.1 or higher target version',
       );
@@ -32,7 +32,7 @@ void main() {
       final pubspecFile = File('pubspec.yaml');
       expect(pubspecFile.existsSync(), isTrue, reason: 'pubspec.yaml must exist');
       final content = pubspecFile.readAsStringSync();
-      final versionMatch = RegExp(r'^version:\s*1\.2\.[67](\.[0-9]+)?\+(260[1-9]|270[0-9])\s*$', multiLine: true);
+      final versionMatch = RegExp(r'^version:\s*1\.2\.[678](\.[0-9]+)?\+(260[1-9]|270[0-9]|280[0-9])\s*$', multiLine: true);
       expect(
         versionMatch.hasMatch(content),
         isTrue,
@@ -44,12 +44,12 @@ void main() {
       final logger = AppLogger.instance;
       final report = logger.buildConciseDiagnosticSummary();
       expect(
-        report.contains('v1.2.6') || report.contains('v1.2.7'),
+        report.contains('v1.2.6') || report.contains('v1.2.7') || report.contains('v1.2.8') || report.contains('v1.2.8'),
         isTrue,
         reason: 'REQ-VER-001: Diagnostic report must include version',
       );
       expect(
-        report.contains('2601') || report.contains('2602') || report.contains('2603') || report.contains('2604') || report.contains('2605') || report.contains('2700') || (report.contains('2701') || report.contains('2702') || report.contains('2703') || report.contains('2704') || report.contains('2705') || report.contains('2706') || report.contains('2703') || report.contains('2704') || report.contains('2705') || report.contains('2706')),
+        report.contains('2601') || report.contains('2602') || report.contains('2603') || report.contains('2604') || report.contains('2605') || report.contains('2700') || (report.contains('2701') || report.contains('2702') || report.contains('2703') || report.contains('2704') || report.contains('2705') || report.contains('2706') || report.contains('2800') || report.contains('2703') || report.contains('2704') || report.contains('2705') || report.contains('2706') || report.contains('2800')),
         isTrue,
         reason: 'REQ-VER-001: Diagnostic report must include build number',
       );

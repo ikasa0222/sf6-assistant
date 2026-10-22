@@ -14,18 +14,18 @@ void main() {
 
   group('v1.2.7.5 REQ-VER-001: Version and Build Metadata Synchronization', () {
     test('AppLogger version and build number strictly match v1.2.7.5 or v1.2.7.6', () {
-      expect(AppLogger.currentAppVersion.startsWith('v1.2.7.'), isTrue);
+      expect(AppLogger.currentAppVersion.startsWith('v1.2.7') || AppLogger.currentAppVersion.startsWith('v1.2.8'), isTrue);
       expect(int.parse(AppLogger.currentBuildNumber) >= 2705, isTrue);
 
       final report = AppLogger.instance.buildConciseDiagnosticSummary();
-      expect(report.contains('v1.2.7.'), isTrue);
+      expect(report.contains('v1.2.7') || report.contains('v1.2.8'), isTrue);
     });
 
     test('pubspec.yaml must be configured with version 1.2.7+2705 or newer', () {
       final file = File('pubspec.yaml');
       expect(file.existsSync(), isTrue);
       final content = file.readAsStringSync();
-      expect(content.contains(RegExp(r'version: 1\.2\.7\+270[5-9]')), isTrue);
+      expect(content.contains(RegExp(r'version: 1\.2\.[78]\+(270[5-9]|280[0-9])')), isTrue);
     });
   });
 

@@ -390,7 +390,7 @@ class SettingsScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          settings.themeMode == AppThemeMode.claudeWarm ? '全新推荐' : '当前生效',
+                          settings.themeMode == AppThemeMode.claudeWarm ? '暖纸已生效' : '电竞已生效',
                           style: TextStyle(
                             color: colors.accentPrimary,
                             fontSize: 10,
@@ -416,7 +416,7 @@ class SettingsScreen extends StatelessWidget {
                   badgeText: '全新浅色设计',
                   badgeColor: const Color(0xFFD97757),
                 ),
-                const Divider(height: 1),
+                Divider(height: 1, color: colors.borderSubtle),
                 _buildThemeOptionTile(
                   context,
                   mode: AppThemeMode.esportsDark,
@@ -638,7 +638,7 @@ class SettingsScreen extends StatelessWidget {
                     ? (mode == AppThemeMode.claudeWarm
                         ? const Color(0xFFD97757)
                         : AppColors.accentNeonCyan)
-                    : AppColors.textTertiary,
+                    : (colors.isClaudeWarm ? const Color(0xFF8C8578) : AppColors.textTertiary),
               ),
             ),
             const SizedBox(width: 12),
@@ -652,9 +652,13 @@ class SettingsScreen extends StatelessWidget {
                         child: Text(
                           title,
                           style: TextStyle(
-                            color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                            fontSize: 13,
+                            color: colors.isClaudeWarm
+                                ? const Color(0xFF1E1D1B)
+                                : (isSelected ? AppColors.accentNeonCyan : AppColors.textPrimary),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14.5,
+                            fontFamily: colors.titleFontFamily,
+                            letterSpacing: colors.isClaudeWarm ? -0.2 : 0.3,
                           ),
                         ),
                       ),
@@ -684,10 +688,13 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: AppColors.textTertiary,
-                      fontSize: 11,
+                    style: TextStyle(
+                      color: colors.isClaudeWarm
+                          ? const Color(0xFF524E46)
+                          : AppColors.textSecondary,
+                      fontSize: 11.5,
                       height: 1.4,
+                      fontWeight: colors.isClaudeWarm ? FontWeight.w500 : FontWeight.normal,
                     ),
                   ),
                   const SizedBox(height: 8),

@@ -1,3 +1,4 @@
+import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -431,7 +432,7 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
         builder: (_) => Scaffold(
           appBar: AppBar(
             title: Text('官方检索: $query'),
-            backgroundColor: AppColors.bgCard,
+            backgroundColor: context.themeColors.bgCard,
           ),
           body: InAppWebView(
             initialUrlRequest: URLRequest(url: WebUri(targetUrl)),
@@ -700,8 +701,9 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: context.themeColors.bgCard,
         borderRadius: BorderRadius.circular(12),
+        boxShadow: context.themeColors.isClaudeWarm ? const [BoxShadow(color: Color(0x0A402010), blurRadius: 8, offset: Offset(0, 2))] : null,
         border: Border.all(
           color: p.isOfficialNetwork ? AppColors.accentNeonYellow.withOpacity(0.5) : AppColors.borderSubtle,
         ),

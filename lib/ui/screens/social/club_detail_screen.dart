@@ -3,6 +3,7 @@ import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/core/constants/ranks.dart';
 import 'package:sf6_tracker/core/storage/secure_storage.dart';
+import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 import 'package:sf6_tracker/models/club_model.dart';
 import 'package:sf6_tracker/models/friend_model.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
@@ -70,6 +71,8 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.themeColors;
+    final isClaudeWarm = colors.isClaudeWarm;
     final club = widget.club;
 
     // Filter members
@@ -100,10 +103,14 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
     final onlineCount = club.members.where((m) => m.isOnline).length;
 
     return Scaffold(
+      backgroundColor: isClaudeWarm ? Colors.transparent : null,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: IconThemeData(color: colors.textPrimary),
         title: Text(
           '[${club.tag.isNotEmpty ? club.tag : "CLUB"}] ${club.clubName}',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          style: colors.titleStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         actions: [
           if (club.isMainClub)
@@ -111,14 +118,14 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
               margin: const EdgeInsets.only(right: 14),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: AppColors.accentNeonYellow.withOpacity(0.18),
+                color: colors.accentSecondary.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: AppColors.accentNeonYellow, width: 0.8),
+                border: Border.all(color: colors.accentSecondary, width: 0.8),
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
                   '主战队',
-                  style: TextStyle(color: AppColors.accentNeonYellow, fontSize: 11, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: colors.accentSecondary, fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -129,19 +136,19 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
           // 1. Search Bar & Online Switcher
           Container(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            color: AppColors.bgSecondary.withOpacity(0.5),
+            color: isClaudeWarm ? Colors.transparent : AppColors.bgSecondary.withOpacity(0.5),
             child: Column(
               children: [
                 TextField(
                   controller: _searchController,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                  style: TextStyle(color: colors.textPrimary, fontSize: 13),
                   decoration: InputDecoration(
                     hintText: '搜索成员昵称或 Short ID...',
-                    hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
-                    prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.textSecondary),
+                    hintStyle: TextStyle(color: colors.textTertiary, fontSize: 12),
+                    prefixIcon: Icon(Icons.search, size: 18, color: colors.textSecondary),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, size: 16, color: AppColors.textTertiary),
+                            icon: Icon(Icons.clear, size: 16, color: colors.textTertiary),
                             onPressed: () {
                               _searchController.clear();
                               setState(() => _searchQuery = '');
@@ -149,19 +156,19 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                           )
                         : null,
                     filled: true,
-                    fillColor: AppColors.bgCard,
+                    fillColor: colors.bgCard,
                     contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AppColors.borderSubtle),
+                      borderSide: BorderSide(color: colors.borderSubtle),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AppColors.borderSubtle),
+                      borderSide: BorderSide(color: colors.borderSubtle),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AppColors.accentNeonCyan),
+                      borderSide: BorderSide(color: colors.accentPrimary),
                     ),
                   ),
                   onChanged: (val) => setState(() => _searchQuery = val.trim()),
@@ -173,10 +180,13 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                       label: Text('全部成员 (${club.members.length})'),
                       selected: !_onlyOnline,
                       onSelected: (_) => setState(() => _onlyOnline = false),
-                      selectedColor: AppColors.accentNeonCyan.withOpacity(0.25),
-                      backgroundColor: AppColors.bgCard,
+                      selectedColor: colors.accentPrimary.withOpacity(0.18),
+                      backgroundColor: colors.bgCard,
+                      side: BorderSide(
+                        color: !_onlyOnline ? colors.accentPrimary : colors.borderSubtle,
+                      ),
                       labelStyle: TextStyle(
-                        color: !_onlyOnline ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                        color: !_onlyOnline ? colors.accentPrimary : colors.textSecondary,
                         fontWeight: !_onlyOnline ? FontWeight.bold : FontWeight.normal,
                         fontSize: 11.5,
                       ),
@@ -186,10 +196,13 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                       label: Text('仅看在线 ($onlineCount)'),
                       selected: _onlyOnline,
                       onSelected: (_) => setState(() => _onlyOnline = true),
-                      selectedColor: AppColors.winGreen.withOpacity(0.25),
-                      backgroundColor: AppColors.bgCard,
+                      selectedColor: colors.accentTertiary.withOpacity(0.18),
+                      backgroundColor: colors.bgCard,
+                      side: BorderSide(
+                        color: _onlyOnline ? colors.accentTertiary : colors.borderSubtle,
+                      ),
                       labelStyle: TextStyle(
-                        color: _onlyOnline ? AppColors.winGreen : AppColors.textSecondary,
+                        color: _onlyOnline ? colors.accentTertiary : colors.textSecondary,
                         fontWeight: _onlyOnline ? FontWeight.bold : FontWeight.normal,
                         fontSize: 11.5,
                       ),
@@ -209,11 +222,11 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.people_outline, size: 48, color: AppColors.textTertiary),
+                          Icon(Icons.people_outline, size: 48, color: colors.textTertiary),
                           const SizedBox(height: 8),
                           Text(
                             _searchQuery.isNotEmpty ? '未找到符合条件的成员' : '战队暂无成员数据',
-                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                            style: TextStyle(color: colors.textSecondary, fontSize: 13),
                           ),
                         ],
                       ),
@@ -256,14 +269,17 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: AppColors.bgCard,
+                            color: colors.bgCard,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: isFollowed
-                                  ? AppColors.accentNeonYellow.withOpacity(0.6)
-                                  : (m.isOnline ? AppColors.accentNeonCyan.withOpacity(0.3) : AppColors.borderSubtle),
+                                  ? colors.accentSecondary.withOpacity(0.8)
+                                  : (m.isOnline ? colors.accentPrimary.withOpacity(0.4) : colors.borderSubtle),
                               width: isFollowed ? 1.4 : 1.0,
                             ),
+                            boxShadow: isClaudeWarm
+                                ? const [BoxShadow(color: Color(0x0A402010), blurRadius: 8, offset: Offset(0, 2))]
+                                : null,
                           ),
                           child: Row(
                             children: [
@@ -280,8 +296,8 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                                             m.fighterId.isNotEmpty ? m.fighterId : '格斗家_${m.shortId}',
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: AppColors.textPrimary,
+                                            style: TextStyle(
+                                              color: colors.textPrimary,
                                               fontSize: 13,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -289,19 +305,19 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                                         ),
                                         if (isFollowed) ...[
                                           const SizedBox(width: 4),
-                                          const Icon(Icons.star, size: 14, color: AppColors.accentNeonYellow),
+                                          Icon(Icons.star, size: 14, color: colors.accentSecondary),
                                         ],
                                         if (isLeader) ...[
                                           const SizedBox(width: 6),
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                                             decoration: BoxDecoration(
-                                              color: AppColors.accentNeonYellow.withOpacity(0.18),
+                                              color: colors.accentSecondary.withOpacity(0.18),
                                               borderRadius: BorderRadius.circular(4),
                                             ),
                                             child: Text(
                                               m.role.isNotEmpty ? m.role : '会长',
-                                              style: const TextStyle(color: AppColors.accentNeonYellow, fontSize: 9.5, fontWeight: FontWeight.bold),
+                                              style: TextStyle(color: colors.accentSecondary, fontSize: 9.5, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ],
@@ -314,7 +330,7 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                                           width: 6,
                                           height: 6,
                                           decoration: BoxDecoration(
-                                            color: m.isOnline ? AppColors.winGreen : AppColors.textTertiary,
+                                            color: m.isOnline ? colors.accentTertiary : colors.textTertiary,
                                             shape: BoxShape.circle,
                                           ),
                                         ),
@@ -322,7 +338,7 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                                         Text(
                                           m.statusText,
                                           style: TextStyle(
-                                            color: m.isOnline ? AppColors.winGreen : AppColors.textTertiary,
+                                            color: m.isOnline ? colors.accentTertiary : colors.textTertiary,
                                             fontSize: 10.5,
                                             fontWeight: m.isOnline ? FontWeight.bold : FontWeight.normal,
                                           ),
@@ -330,7 +346,7 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                                         const SizedBox(width: 6),
                                         Text(
                                           char.nameZh,
-                                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 10.5),
+                                          style: TextStyle(color: colors.textSecondary, fontSize: 10.5),
                                         ),
                                       ],
                                     ),
@@ -344,8 +360,8 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                                   const SizedBox(height: 2),
                                   Text(
                                     m.mr > 0 ? '${m.mr} MR' : '${m.lp} LP',
-                                    style: const TextStyle(
-                                      color: AppColors.accentNeonCyan,
+                                    style: TextStyle(
+                                      color: isClaudeWarm ? colors.textPrimary : colors.accentPrimary,
                                       fontSize: 11,
                                       fontWeight: FontWeight.w900,
                                     ),
@@ -356,7 +372,7 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                               IconButton(
                                 icon: Icon(
                                   isFollowed ? Icons.star : Icons.star_border,
-                                  color: isFollowed ? AppColors.accentNeonYellow : AppColors.textTertiary,
+                                  color: isFollowed ? colors.accentSecondary : colors.textTertiary,
                                   size: 20,
                                 ),
                                 tooltip: isFollowed ? '取消特别关注' : '特别关注 (置顶并在好友列表中显示)',
@@ -384,14 +400,14 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
                                         content: Text(nowFollowed
                                             ? '已关注 ${m.fighterId.isNotEmpty ? m.fighterId : "成员"}，将在俱乐部与好友列表置顶展示'
                                             : '已取消关注 ${m.fighterId.isNotEmpty ? m.fighterId : "成员"}'),
-                                        backgroundColor: nowFollowed ? AppColors.winGreen : AppColors.bgSecondary,
+                                        backgroundColor: nowFollowed ? colors.accentTertiary : colors.bgCardSolid,
                                         duration: const Duration(seconds: 2),
                                       ),
                                     );
                                   }
                                 },
                               ),
-                              const Icon(Icons.chevron_right, size: 16, color: AppColors.textTertiary),
+                              Icon(Icons.chevron_right, size: 16, color: colors.textTertiary),
                             ],
                           ),
                         ),

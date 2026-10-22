@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
+import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 
 class MrTrendChart extends StatelessWidget {
   final List<int> mrPoints;
@@ -14,13 +15,15 @@ class MrTrendChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.themeColors;
+
     if (mrPoints.isEmpty) {
       return SizedBox(
         height: height,
-        child: const Center(
+        child: Center(
           child: Text(
             '暂无 MR 变动数据',
-            style: TextStyle(color: AppColors.textTertiary),
+            style: TextStyle(color: colors.textTertiary),
           ),
         ),
       );
@@ -30,14 +33,11 @@ class MrTrendChart extends StatelessWidget {
     final maxMr = mrPoints.reduce(max);
     final currentMr = mrPoints.last;
     final diff = currentMr - mrPoints.first;
+    final diffColor = diff >= 0 ? colors.accentTertiary : colors.accentError;
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderSubtle),
-      ),
+      decoration: colors.cardDecoration(borderRadius: BorderRadius.circular(12)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -47,10 +47,10 @@ class MrTrendChart extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'MR 积分历史走势',
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: colors.textSecondary,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -60,8 +60,8 @@ class MrTrendChart extends StatelessWidget {
                     children: [
                       Text(
                         '$currentMr MR',
-                        style: const TextStyle(
-                          color: AppColors.rankMaster,
+                        style: TextStyle(
+                          color: colors.accentSecondary,
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
                         ),
@@ -70,13 +70,13 @@ class MrTrendChart extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: (diff >= 0 ? AppColors.winGreen : AppColors.loseRed).withOpacity(0.15),
+                          color: diffColor.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           '${diff >= 0 ? '+' : ''}$diff',
                           style: TextStyle(
-                            color: diff >= 0 ? AppColors.winGreen : AppColors.loseRed,
+                            color: diffColor,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
@@ -91,11 +91,11 @@ class MrTrendChart extends StatelessWidget {
                 children: [
                   Text(
                     '峰值: $maxMr',
-                    style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                    style: TextStyle(color: colors.textTertiary, fontSize: 11),
                   ),
                   Text(
                     '谷底: $minMr',
-                    style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                    style: TextStyle(color: colors.textTertiary, fontSize: 11),
                   ),
                 ],
               ),
@@ -106,7 +106,13 @@ class MrTrendChart extends StatelessWidget {
             height: height - 80,
             width: double.infinity,
             child: CustomPaint(
-              painter: _MrChartPainter(points: mrPoints, minVal: minMr, maxVal: maxMr),
+              painter: _MrChartPainter(
+                points: mrPoints,
+                minVal: minMr,
+                maxVal: maxMr,
+                lineColor: colors.accentPrimary,
+                isClaudeWarm: colors.isClaudeWarm,
+              ),
             ),
           ),
         ],
@@ -119,11 +125,15 @@ class _MrChartPainter extends CustomPainter {
   final List<int> points;
   final int minVal;
   final int maxVal;
+  final Color lineColor;
+  final bool isClaudeWarm;
 
   _MrChartPainter({
     required this.points,
     required this.minVal,
     required this.maxVal,
+    required this.lineColor,
+    required this.isClaudeWarm,
   });
 
   @override
@@ -163,8 +173,8 @@ class _MrChartPainter extends CustomPainter {
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
-        AppColors.accentNeonCyan.withOpacity(0.35),
-        AppColors.accentNeonCyan.withOpacity(0.0),
+        lineColor.withOpacity(0.35),
+        lineColor.withOpacity(0.0),
       ],
     );
     final fillPaint = Paint()
@@ -172,19 +182,19 @@ class _MrChartPainter extends CustomPainter {
     canvas.drawPath(fillPath, fillPaint);
 
     final linePaint = Paint()
-      ..color = AppColors.accentNeonCyan
+      ..color = lineColor
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke;
     canvas.drawPath(path, linePaint);
 
     final last = getOffset(points.length - 1);
     final glowPaint = Paint()
-      ..color = AppColors.accentNeonCyan.withOpacity(0.4)
+      ..color = lineColor.withOpacity(0.4)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(last, 6, glowPaint);
 
     final dotPaint = Paint()
-      ..color = Colors.white
+      ..color = isClaudeWarm ? lineColor : Colors.white
       ..style = PaintingStyle.fill;
     canvas.drawCircle(last, 3, dotPaint);
   }

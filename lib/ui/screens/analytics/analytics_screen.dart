@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
+import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 import 'package:sf6_tracker/models/battle_record.dart';
 import 'package:sf6_tracker/models/matchup_stat.dart';
 import 'package:sf6_tracker/core/network/capcom_sync_engine.dart';
@@ -32,6 +33,8 @@ class AnalyticsScreen extends StatefulWidget {
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   bool _isSyncing = false;
+  bool _isGridExpanded = false;
+  String _charSortMode = 'matches'; // 'matches' or 'default'
 
   @override
   void initState() {
@@ -105,6 +108,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.themeColors;
+
     return ListenableBuilder(
       listenable: widget.statsService,
       builder: (context, _) {
@@ -120,57 +125,67 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             .toList();
 
         return Scaffold(
+          backgroundColor: colors.isClaudeWarm ? Colors.transparent : null,
           appBar: AppBar(
-            title: const Text('深度数据与克制分析', style: TextStyle(fontWeight: FontWeight.bold)),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            iconTheme: IconThemeData(color: colors.textPrimary),
+            title: Text(
+              '深度数据与克制分析',
+              style: colors.titleStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             actions: [
               IconButton(
                 icon: _isSyncing
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accentNeonCyan),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: colors.accentPrimary),
                       )
-                    : const Icon(Icons.refresh, color: AppColors.accentNeonCyan),
+                    : Icon(Icons.refresh, color: colors.accentPrimary),
                 onPressed: _handleRefresh,
                 tooltip: '从官方拉取最新对局并重新分析',
               ),
             ],
           ),
           body: isLoading
-              ? const Center(child: CircularProgressIndicator(color: AppColors.accentNeonCyan))
+              ? Center(child: CircularProgressIndicator(color: colors.accentPrimary))
               : SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(0, 12, 0, 110),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 1. My Character Selector Banner
-                      _buildMyCharacterSelector(platform, selectedMyChar),
+                      _buildMyCharacterSelector(platform, selectedMyChar, colors),
                       const SizedBox(height: 6),
 
-                      // 1.1 Battle Mode Filter Bar (Always visible right under character selector!)
-                      _buildBattleTypeFilterBar(platform),
+                      // 1.1 Battle Mode Filter Bar
+                      _buildBattleTypeFilterBar(platform, colors),
                       const SizedBox(height: 6),
 
-                      // 1.2 Data Source Switcher (Shown when in 全部模式 to toggle between official career and recent matches)
+                      // 1.2 Data Source Switcher
                       if (widget.statsService.selectedBattleType == null) ...[
-                        _buildDataSourceSelector(platform),
+                        _buildDataSourceSelector(platform, colors),
                         const SizedBox(height: 8),
                       ] else ...[
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                           child: Text(
                             '当前模式分析来源于本地实战记录 (${stats.length} 个角色对策)',
-                            style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                            style: TextStyle(color: colors.textSecondary, fontSize: 11),
                           ),
                         ),
                         const SizedBox(height: 8),
                       ],
 
                       // 2. Summary stats for selected character
-                      _buildSummaryStatsCard(),
+                      _buildSummaryStatsCard(colors),
                       const SizedBox(height: 14),
 
-                      // 3. MR Rating Trend Chart (only if master rated matches exist)
+                      // 3. MR Rating Trend Chart
                       if (mrPoints.length >= 2) ...[
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -181,7 +196,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
                       // 4. Best & Worst Matchup Highlights
                       if (stats.isNotEmpty) ...[
-                        _buildHighlights(stats),
+                        _buildHighlights(stats, colors),
                         const SizedBox(height: 16),
                       ],
 
@@ -195,15 +210,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                               selectedMyChar == 'all'
                                   ? '全角色面对各对手胜率表'
                                   : '使用 ${Sf6Characters.getById(selectedMyChar).nameZh} 面对各对手胜率',
-                              style: const TextStyle(
-                                color: AppColors.textPrimary,
+                              style: colors.titleStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
                               '共 ${stats.length} 名对手',
-                              style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
+                              style: TextStyle(color: colors.textSecondary, fontSize: 12),
                             ),
                           ],
                         ),
@@ -214,19 +228,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         Container(
                           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: AppColors.bgCard,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.borderSubtle),
-                          ),
-                          child: const Center(
+                          decoration: colors.cardDecoration(borderRadius: BorderRadius.circular(12)),
+                          child: Center(
                             child: Column(
                               children: [
-                                Icon(Icons.bar_chart, color: AppColors.textTertiary, size: 40),
-                                SizedBox(height: 10),
-                                Text('暂无该角色的实战对局记录', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-                                SizedBox(height: 4),
-                                Text('在官方网页登录同步或手动添加战绩后，将自动生成对战克制与胜率分析', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+                                Icon(Icons.bar_chart, color: colors.textTertiary, size: 40),
+                                const SizedBox(height: 10),
+                                Text(
+                                  '暂无该角色的实战对局记录',
+                                  style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '在官方网页登录同步或手动添加战绩后，将自动生成对战克制与胜率分析',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                                ),
                               ],
                             ),
                           ),
@@ -241,7 +258,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         itemCount: stats.length,
                         itemBuilder: (context, index) {
                           final item = stats[index];
-                          return _buildMatchupItem(item);
+                          return _buildMatchupItem(item, colors);
                         },
                       ),
                     ],
@@ -252,10 +269,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  bool _isGridExpanded = false;
-  String _charSortMode = 'matches'; // 'matches' or 'default'
-
-  Widget _buildMyCharacterSelector(dynamic platform, String selectedMyChar) {
+  Widget _buildMyCharacterSelector(dynamic platform, String selectedMyChar, AppThemeColors colors) {
     final counts = widget.statsService.myCharacterCounts;
 
     final sortedChars = List<Sf6Character>.from(Sf6Characters.all);
@@ -269,7 +283,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
 
     return Container(
-      color: AppColors.bgSecondary,
+      color: colors.isClaudeWarm ? colors.bgSecondary.withOpacity(0.5) : AppColors.bgSecondary,
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,12 +292,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                const Icon(Icons.person_pin, size: 16, color: AppColors.accentNeonCyan),
+                Icon(Icons.person_pin, size: 16, color: colors.accentPrimary),
                 const SizedBox(width: 6),
-                const Expanded(
+                Expanded(
                   child: Text(
                     '我方角色',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: colors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
                 InkWell(
@@ -295,9 +309,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppColors.bgCard,
+                      color: colors.bgCard,
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: AppColors.borderSubtle),
+                      border: Border.all(color: colors.borderSubtle),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -305,12 +319,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         Icon(
                           _charSortMode == 'matches' ? Icons.sort : Icons.sort_by_alpha,
                           size: 12,
-                          color: AppColors.accentNeonYellow,
+                          color: colors.accentSecondary,
                         ),
                         const SizedBox(width: 3),
                         Text(
                           _charSortMode == 'matches' ? '按场次' : '默认序',
-                          style: const TextStyle(color: AppColors.accentNeonYellow, fontSize: 10, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: colors.accentSecondary, fontSize: 10, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -322,18 +336,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     decoration: BoxDecoration(
-                      color: _isGridExpanded ? AppColors.accentNeonCyan.withOpacity(0.2) : AppColors.bgCard,
+                      color: _isGridExpanded ? colors.accentPrimary.withOpacity(0.2) : colors.bgCard,
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: _isGridExpanded ? AppColors.accentNeonCyan : AppColors.borderSubtle),
+                      border: Border.all(color: _isGridExpanded ? colors.accentPrimary : colors.borderSubtle),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(_isGridExpanded ? Icons.view_carousel : Icons.grid_view, size: 12, color: AppColors.accentNeonCyan),
+                        Icon(_isGridExpanded ? Icons.view_carousel : Icons.grid_view, size: 12, color: colors.accentPrimary),
                         const SizedBox(width: 3),
                         Text(
                           _isGridExpanded ? '收起' : '展开',
-                          style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 10, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: colors.accentPrimary, fontSize: 10, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -359,10 +373,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         widget.statsService.selectMyCharacter('all', shortId: platform.shortId, platform: platform.platformType.code);
                       }
                     },
-                    selectedColor: AppColors.accentNeonCyan.withOpacity(0.25),
-                    backgroundColor: AppColors.bgCard,
+                    selectedColor: colors.accentPrimary.withOpacity(0.18),
+                    backgroundColor: colors.bgCard,
+                    side: BorderSide(
+                      color: selectedMyChar == 'all' ? colors.accentPrimary : colors.borderSubtle,
+                    ),
                     labelStyle: TextStyle(
-                      color: selectedMyChar == 'all' ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                      color: selectedMyChar == 'all' ? colors.accentPrimary : colors.textSecondary,
                       fontWeight: selectedMyChar == 'all' ? FontWeight.bold : FontWeight.normal,
                       fontSize: 11,
                     ),
@@ -375,7 +392,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       label: Text(
                         c.nameZh + (matchCount > 0 ? ' ($matchCount局)' : ''),
                         style: TextStyle(
-                          color: isSelected ? AppColors.accentNeonCyan : (matchCount > 0 ? AppColors.textPrimary : AppColors.textTertiary),
+                          color: isSelected ? colors.accentPrimary : (matchCount > 0 ? colors.textPrimary : colors.textTertiary),
                           fontWeight: isSelected || matchCount > 0 ? FontWeight.bold : FontWeight.normal,
                           fontSize: 11,
                         ),
@@ -386,8 +403,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           widget.statsService.selectMyCharacter(c.id, shortId: platform.shortId, platform: platform.platformType.code);
                         }
                       },
-                      selectedColor: AppColors.accentNeonCyan.withOpacity(0.25),
-                      backgroundColor: AppColors.bgCard,
+                      selectedColor: colors.accentPrimary.withOpacity(0.18),
+                      backgroundColor: colors.bgCard,
+                      side: BorderSide(
+                        color: isSelected ? colors.accentPrimary : colors.borderSubtle,
+                      ),
                     );
                   }),
                 ],
@@ -410,10 +430,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           widget.statsService.selectMyCharacter('all', shortId: platform.shortId, platform: platform.platformType.code);
                         }
                       },
-                      selectedColor: AppColors.accentNeonCyan.withOpacity(0.25),
-                      backgroundColor: AppColors.bgCard,
+                      selectedColor: colors.accentPrimary.withOpacity(0.18),
+                      backgroundColor: colors.bgCard,
+                      side: BorderSide(
+                        color: selectedMyChar == 'all' ? colors.accentPrimary : colors.borderSubtle,
+                      ),
                       labelStyle: TextStyle(
-                        color: selectedMyChar == 'all' ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                        color: selectedMyChar == 'all' ? colors.accentPrimary : colors.textSecondary,
                         fontWeight: selectedMyChar == 'all' ? FontWeight.bold : FontWeight.normal,
                         fontSize: 12,
                       ),
@@ -433,10 +456,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             widget.statsService.selectMyCharacter(c.id, shortId: platform.shortId, platform: platform.platformType.code);
                           }
                         },
-                        selectedColor: AppColors.accentNeonCyan.withOpacity(0.25),
-                        backgroundColor: AppColors.bgCard,
+                        selectedColor: colors.accentPrimary.withOpacity(0.18),
+                        backgroundColor: colors.bgCard,
+                        side: BorderSide(
+                          color: isSelected ? colors.accentPrimary : colors.borderSubtle,
+                        ),
                         labelStyle: TextStyle(
-                          color: isSelected ? AppColors.accentNeonCyan : (matchCount > 0 ? AppColors.textPrimary : AppColors.textSecondary),
+                          color: isSelected ? colors.accentPrimary : (matchCount > 0 ? colors.textPrimary : colors.textSecondary),
                           fontWeight: isSelected || matchCount > 0 ? FontWeight.bold : FontWeight.normal,
                           fontSize: 12,
                         ),
@@ -451,40 +477,43 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildSummaryStatsCard() {
+  Widget _buildSummaryStatsCard(AppThemeColors colors) {
     final total = widget.statsService.totalMatches;
     final wins = widget.statsService.totalWins;
     final winRate = widget.statsService.overallWinRate;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderSubtle),
-      ),
+      padding: const EdgeInsets.all(14),
+      decoration: colors.cardDecoration(borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
-          Expanded(child: _buildMiniStat('筛选场次', '$total 局', AppColors.textPrimary)),
-          Expanded(child: _buildMiniStat('胜 / 负', '$wins 胜 / ${total - wins} 负', AppColors.accentNeonCyan)),
-          Expanded(child: _buildMiniStat('综合胜率', '${winRate.toStringAsFixed(1)}%', winRate >= 50.0 ? AppColors.winGreen : AppColors.loseRed)),
+          Expanded(child: _buildMiniStat('筛选场次', '$total 局', colors.textPrimary, colors)),
+          Expanded(child: _buildMiniStat('胜 / 负', '$wins 胜 / ${total - wins} 负', colors.accentPrimary, colors)),
+          Expanded(
+            child: _buildMiniStat(
+              '综合胜率',
+              '${winRate.toStringAsFixed(1)}%',
+              winRate >= 50.0 ? colors.accentTertiary : colors.accentError,
+              colors,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMiniStat(String label, String value, Color valColor) {
+  Widget _buildMiniStat(String label, String value, Color valColor, AppThemeColors colors) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+        Text(label, style: TextStyle(color: colors.textSecondary, fontSize: 11)),
         const SizedBox(height: 4),
         Text(value, style: TextStyle(color: valColor, fontWeight: FontWeight.bold, fontSize: 13)),
       ],
     );
   }
 
-  Widget _buildHighlights(List<MatchupStat> stats) {
+  Widget _buildHighlights(List<MatchupStat> stats, AppThemeColors colors) {
     final best = widget.statsService.bestMatchups;
     final worst = widget.statsService.worstMatchups;
 
@@ -496,8 +525,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             child: _buildHighlightCard(
               title: '优势对局 (Best Matchup)',
               items: best,
-              color: AppColors.winGreen,
+              color: colors.accentTertiary,
               icon: Icons.trending_up,
+              colors: colors,
             ),
           ),
           const SizedBox(width: 10),
@@ -505,8 +535,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             child: _buildHighlightCard(
               title: '苦战对局 (Worst Matchup)',
               items: worst,
-              color: AppColors.loseRed,
+              color: colors.accentError,
               icon: Icons.trending_down,
+              colors: colors,
             ),
           ),
         ],
@@ -519,12 +550,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     required List<MatchupStat> items,
     required Color color,
     required IconData icon,
+    required AppThemeColors colors,
   }) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(12),
+      decoration: colors.cardDecoration(borderRadius: BorderRadius.circular(12)).copyWith(
         border: Border.all(color: color.withOpacity(0.4)),
       ),
       child: Column(
@@ -548,7 +578,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ),
           const SizedBox(height: 8),
           if (items.isEmpty)
-            const Text('暂无足够场次数据', style: TextStyle(color: AppColors.textTertiary, fontSize: 11))
+            Text('暂无足够场次数据', style: TextStyle(color: colors.textTertiary, fontSize: 11))
           else
             ...items.map((stat) {
               final char = Sf6Characters.getById(stat.characterId);
@@ -561,7 +591,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     Expanded(
                       child: Text(
                         char.nameZh,
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: colors.titleFontFamily,
+                        ),
                       ),
                     ),
                     Text(
@@ -577,17 +612,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildMatchupItem(MatchupStat item) {
+  Widget _buildMatchupItem(MatchupStat item, AppThemeColors colors) {
     final char = Sf6Characters.getById(item.characterId);
+    final winRateColor = item.winRate >= 50.0 ? colors.accentTertiary : colors.accentError;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderSubtle),
-      ),
+      decoration: colors.cardDecoration(borderRadius: BorderRadius.circular(10)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -603,17 +635,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       children: [
                         Text(
                           '${char.nameZh} (${char.nameEn})',
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
+                          style: TextStyle(
+                            color: colors.textPrimary,
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
+                            fontFamily: colors.titleFontFamily,
                           ),
                         ),
                         const Spacer(),
                         Text(
                           '${item.winRate.toStringAsFixed(1)}%',
                           style: TextStyle(
-                            color: item.winRate >= 50.0 ? AppColors.winGreen : AppColors.loseRed,
+                            color: winRateColor,
                             fontWeight: FontWeight.w900,
                             fontSize: 14,
                           ),
@@ -623,7 +656,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     const SizedBox(height: 2),
                     Text(
                       '总对局: ${item.totalMatches}场  (${item.wins}胜 / ${item.losses}负)',
-                      style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                      style: TextStyle(color: colors.textSecondary, fontSize: 11),
                     ),
                   ],
                 ),
@@ -641,18 +674,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Text('近 5 场走势: ', style: TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+                Text('近 5 场走势: ', style: TextStyle(color: colors.textSecondary, fontSize: 10)),
                 ...item.recentForm.map((isWin) {
                   return Container(
                     margin: const EdgeInsets.only(left: 4),
                     padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                     decoration: BoxDecoration(
-                      color: isWin ? AppColors.winGreen : AppColors.loseRed,
+                      color: isWin ? colors.accentTertiary : colors.accentError,
                       borderRadius: BorderRadius.circular(3),
                     ),
-                    child: Text(
-                      isWin ? 'W' : 'L',
-                      style: const TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.w900),
+                    child: const Text(
+                      'W',
+                      style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
                     ),
                   );
                 }),
@@ -660,12 +693,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppColors.bgSecondary,
+                    color: colors.bgSecondary,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     char.archetype,
-                    style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 10),
+                    style: TextStyle(color: colors.accentPrimary, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -676,7 +709,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildBattleTypeFilterBar(dynamic platform) {
+  Widget _buildBattleTypeFilterBar(dynamic platform, AppThemeColors colors) {
     final currentType = widget.statsService.selectedBattleType;
 
     return SingleChildScrollView(
@@ -684,21 +717,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          _buildTypeFilterChip('全部模式', null, currentType == null, platform),
+          _buildTypeFilterChip('全部模式', null, currentType == null, platform, colors),
           const SizedBox(width: 8),
-          _buildTypeFilterChip('排位赛', BattleType.ranked, currentType == BattleType.ranked, platform),
+          _buildTypeFilterChip('排位赛', BattleType.ranked, currentType == BattleType.ranked, platform, colors),
           const SizedBox(width: 8),
-          _buildTypeFilterChip('休闲赛', BattleType.casual, currentType == BattleType.casual, platform),
+          _buildTypeFilterChip('休闲赛', BattleType.casual, currentType == BattleType.casual, platform, colors),
           const SizedBox(width: 8),
-          _buildTypeFilterChip('比赛间对战', BattleType.customRoom, currentType == BattleType.customRoom, platform),
+          _buildTypeFilterChip('比赛间对战', BattleType.customRoom, currentType == BattleType.customRoom, platform, colors),
           const SizedBox(width: 8),
-          _buildTypeFilterChip('格斗中心对战', BattleType.battleHub, currentType == BattleType.battleHub, platform),
+          _buildTypeFilterChip('格斗中心对战', BattleType.battleHub, currentType == BattleType.battleHub, platform, colors),
         ],
       ),
     );
   }
 
-  Widget _buildTypeFilterChip(String label, BattleType? type, bool isSelected, dynamic platform) {
+  Widget _buildTypeFilterChip(String label, BattleType? type, bool isSelected, dynamic platform, AppThemeColors colors) {
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
@@ -711,26 +744,25 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           );
         }
       },
-      selectedColor: AppColors.accentNeonCyan.withOpacity(0.25),
-      backgroundColor: AppColors.bgSecondary,
+      selectedColor: colors.accentPrimary.withOpacity(0.18),
+      backgroundColor: colors.bgCard,
+      side: BorderSide(
+        color: isSelected ? colors.accentPrimary : colors.borderSubtle,
+      ),
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.accentNeonCyan : AppColors.textSecondary,
+        color: isSelected ? colors.accentPrimary : colors.textSecondary,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         fontSize: 11,
       ),
     );
   }
 
-  Widget _buildDataSourceSelector(dynamic platform) {
+  Widget _buildDataSourceSelector(dynamic platform, AppThemeColors colors) {
     final useOfficial = widget.statsService.useOfficialStats;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderSubtle),
-      ),
+      decoration: colors.cardDecoration(borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
           Expanded(
@@ -744,19 +776,19 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                 decoration: BoxDecoration(
-                  color: useOfficial ? AppColors.accentNeonCyan.withOpacity(0.2) : Colors.transparent,
+                  color: useOfficial ? colors.accentPrimary.withOpacity(0.18) : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
-                  border: useOfficial ? Border.all(color: AppColors.accentNeonCyan) : null,
+                  border: useOfficial ? Border.all(color: colors.accentPrimary) : null,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.public, size: 14, color: useOfficial ? AppColors.accentNeonCyan : AppColors.textTertiary),
+                    Icon(Icons.public, size: 14, color: useOfficial ? colors.accentPrimary : colors.textSecondary),
                     const SizedBox(width: 6),
                     Text(
                       '全部对局 (全生涯)',
                       style: TextStyle(
-                        color: useOfficial ? AppColors.accentNeonCyan : AppColors.textTertiary,
+                        color: useOfficial ? colors.accentPrimary : colors.textSecondary,
                         fontWeight: useOfficial ? FontWeight.bold : FontWeight.normal,
                         fontSize: 12,
                       ),
@@ -778,19 +810,19 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                 decoration: BoxDecoration(
-                  color: !useOfficial ? AppColors.accentNeonYellow.withOpacity(0.2) : Colors.transparent,
+                  color: !useOfficial ? colors.accentSecondary.withOpacity(0.18) : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
-                  border: !useOfficial ? Border.all(color: AppColors.accentNeonYellow) : null,
+                  border: !useOfficial ? Border.all(color: colors.accentSecondary) : null,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.history, size: 14, color: !useOfficial ? AppColors.accentNeonYellow : AppColors.textTertiary),
+                    Icon(Icons.history, size: 14, color: !useOfficial ? colors.accentSecondary : colors.textSecondary),
                     const SizedBox(width: 6),
                     Text(
                       '近100场对局',
                       style: TextStyle(
-                        color: !useOfficial ? AppColors.accentNeonYellow : AppColors.textTertiary,
+                        color: !useOfficial ? colors.accentSecondary : colors.textSecondary,
                         fontWeight: !useOfficial ? FontWeight.bold : FontWeight.normal,
                         fontSize: 12,
                       ),

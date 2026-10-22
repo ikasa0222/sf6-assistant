@@ -201,6 +201,29 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
     );
   }
 
+  Color _getChartRankColor(Sf6Rank rank) {
+    switch (rank.tier) {
+      case RankTier.legend:
+        return const Color(0xFFC62828);
+      case RankTier.master:
+        return const Color(0xFFC67C00);
+      case RankTier.diamond:
+        return const Color(0xFF0277BD);
+      case RankTier.platinum:
+        return const Color(0xFF00838F);
+      case RankTier.gold:
+        return const Color(0xFFB78103);
+      case RankTier.silver:
+        return const Color(0xFF455A64);
+      case RankTier.bronze:
+        return const Color(0xFF6D4C41);
+      case RankTier.iron:
+        return const Color(0xFF4E342E);
+      case RankTier.rookie:
+        return const Color(0xFF616161);
+    }
+  }
+
   Widget _buildCharacterSelector(List<String> characterIds, List<BattleRecord> currentRecords, AppThemeColors colors) {
     return SizedBox(
       height: 34,
@@ -375,15 +398,15 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
                 drawVerticalLine: false,
                 horizontalInterval: isMaster ? 50 : max(100.0, (maxY - minY) / 4),
                 getDrawingHorizontalLine: (value) => FlLine(
-                  color: AppColors.borderSubtle.withOpacity(0.3),
+                  color: colors.borderSubtle.withOpacity(colors.isClaudeWarm ? 0.6 : 0.3),
                   strokeWidth: 1,
                 ),
               ),
               borderData: FlBorderData(
                 show: true,
                 border: Border(
-                  bottom: BorderSide(color: AppColors.borderSubtle.withOpacity(0.5)),
-                  left: BorderSide(color: AppColors.borderSubtle.withOpacity(0.5)),
+                  bottom: BorderSide(color: colors.borderSubtle.withOpacity(colors.isClaudeWarm ? 0.8 : 0.5)),
+                  left: BorderSide(color: colors.borderSubtle.withOpacity(colors.isClaudeWarm ? 0.8 : 0.5)),
                 ),
               ),
               extraLinesData: ExtraLinesData(
@@ -456,7 +479,7 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
               lineTouchData: LineTouchData(
                 handleBuiltInTouches: true,
                 touchTooltipData: LineTouchTooltipData(
-                  tooltipBgColor: AppColors.bgSecondary.withOpacity(0.95),
+                  tooltipBgColor: colors.bgCardSolid.withOpacity(0.95),
                   tooltipRoundedRadius: 8,
                   getTooltipItems: (touchedSpots) {
                     return touchedSpots.map((spot) {

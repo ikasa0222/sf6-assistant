@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/core/storage/secure_storage.dart';
+import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 import 'package:sf6_tracker/models/friend_model.dart';
 import 'package:sf6_tracker/models/club_model.dart';
 import 'package:sf6_tracker/models/account_profile.dart';
@@ -103,6 +104,8 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.themeColors;
+
     return ListenableBuilder(
       listenable: widget.socialService,
       builder: (context, _) {
@@ -112,12 +115,22 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
         final onlineFriends = widget.socialService.onlineFriendsCount;
 
         return Scaffold(
+          backgroundColor: colors.isClaudeWarm ? Colors.transparent : null,
           appBar: AppBar(
-            title: const Text('好友与战队', style: TextStyle(fontWeight: FontWeight.bold)),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            iconTheme: IconThemeData(color: colors.textPrimary),
+            title: Text(
+              '好友与战队',
+              style: colors.titleStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             actions: [
               IconButton(
                 tooltip: '全网搜索玩家 (名字/用户码)',
-                icon: const Icon(Icons.search, color: AppColors.accentNeonCyan),
+                icon: Icon(Icons.search, color: colors.accentPrimary),
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -132,15 +145,15 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
               ),
               IconButton(
                 tooltip: '同步刷新社交数据',
-                icon: const Icon(Icons.sync, color: AppColors.accentNeonCyan),
+                icon: Icon(Icons.sync, color: colors.accentPrimary),
                 onPressed: _handleRefresh,
               ),
             ],
             bottom: TabBar(
               controller: _tabController,
-              indicatorColor: AppColors.accentNeonCyan,
-              labelColor: AppColors.accentNeonCyan,
-              unselectedLabelColor: AppColors.textSecondary,
+              indicatorColor: colors.accentPrimary,
+              labelColor: colors.accentPrimary,
+              unselectedLabelColor: colors.textSecondary,
               tabs: [
                 Tab(text: '好友列表 ($onlineFriends 在线)'),
                 Tab(
@@ -154,12 +167,12 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
             ),
           ),
           body: isLoading
-              ? const Center(child: CircularProgressIndicator(color: AppColors.accentNeonCyan))
+              ? Center(child: CircularProgressIndicator(color: colors.accentPrimary))
               : TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildFriendsTab(friends),
-                    _buildClubsTab(clubs),
+                    _buildFriendsTab(friends, colors),
+                    _buildClubsTab(clubs, colors),
                   ],
                 ),
         );
@@ -167,8 +180,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildFriendsTab(List<FriendModel> friends) {
-    // 1. Merge official friends with locally followed players (e.g. from clubs)
+  Widget _buildFriendsTab(List<FriendModel> friends, AppThemeColors colors) {
     final Map<String, FriendModel> mergedMap = {};
     for (final f in friends) {
       final key = f.shortId.isNotEmpty ? f.shortId : f.fighterId.toLowerCase();
@@ -184,8 +196,8 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
 
     if (allFriends.isEmpty) {
       return RefreshIndicator(
-        color: AppColors.accentNeonCyan,
-        backgroundColor: AppColors.bgCard,
+        color: colors.accentPrimary,
+        backgroundColor: colors.bgCardSolid,
         onRefresh: _handleRefresh,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -193,20 +205,20 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
             height: MediaQuery.of(context).size.height * 0.7,
             alignment: Alignment.center,
             padding: const EdgeInsets.all(24),
-            child: const Column(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.people_outline, size: 56, color: AppColors.textTertiary),
-                SizedBox(height: 12),
+                Icon(Icons.people_outline, size: 56, color: colors.textTertiary),
+                const SizedBox(height: 12),
                 Text(
                   '暂无已同步或关注的好友',
-                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 15),
+                  style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.bold, fontSize: 15),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
                   '在卡普空官方关注好友、或在战队俱乐部中星标关注成员，即可在此直接查看与置顶显示',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  style: TextStyle(color: colors.textSecondary, fontSize: 12),
                 ),
               ],
             ),
@@ -230,8 +242,8 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
     final displayedFriends = _filterOnlyOnlineFriends ? onlineFriends : sortedFriends;
 
     return RefreshIndicator(
-      color: AppColors.accentNeonCyan,
-      backgroundColor: AppColors.bgCard,
+      color: colors.accentPrimary,
+      backgroundColor: colors.bgCardSolid,
       onRefresh: _handleRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -249,17 +261,17 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: !_filterOnlyOnlineFriends ? AppColors.accentNeonCyan.withOpacity(0.18) : AppColors.bgSecondary,
+                        color: !_filterOnlyOnlineFriends ? colors.accentPrimary.withOpacity(0.18) : colors.bgCard,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: !_filterOnlyOnlineFriends ? AppColors.accentNeonCyan : AppColors.borderSubtle,
+                          color: !_filterOnlyOnlineFriends ? colors.accentPrimary : colors.borderSubtle,
                         ),
                       ),
                       child: Center(
                         child: Text(
                           '全部好友 (${friends.length})',
                           style: TextStyle(
-                            color: !_filterOnlyOnlineFriends ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                            color: !_filterOnlyOnlineFriends ? colors.accentPrimary : colors.textSecondary,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
@@ -276,10 +288,10 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: _filterOnlyOnlineFriends ? AppColors.winGreen.withOpacity(0.18) : AppColors.bgSecondary,
+                        color: _filterOnlyOnlineFriends ? colors.accentTertiary.withOpacity(0.18) : colors.bgCard,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: _filterOnlyOnlineFriends ? AppColors.winGreen : AppColors.borderSubtle,
+                          color: _filterOnlyOnlineFriends ? colors.accentTertiary : colors.borderSubtle,
                         ),
                       ),
                       child: Center(
@@ -290,7 +302,9 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                               width: 7,
                               height: 7,
                               decoration: BoxDecoration(
-                                color: onlineFriends.isNotEmpty ? AppColors.winGreen : AppColors.textTertiary,
+                                color: _filterOnlyOnlineFriends
+                                    ? colors.accentTertiary
+                                    : (onlineFriends.isNotEmpty ? colors.accentTertiary : colors.textTertiary),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -298,7 +312,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                             Text(
                               '仅看在线 (${onlineFriends.length})',
                               style: TextStyle(
-                                color: _filterOnlyOnlineFriends ? AppColors.winGreen : AppColors.textSecondary,
+                                color: _filterOnlyOnlineFriends ? colors.accentTertiary : colors.textSecondary,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
                               ),
@@ -316,33 +330,16 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
           ...displayedFriends.map((friend) {
             final isFollowed = _isPlayerFollowed(friend);
             final statusColor = friend.isOnline
-                ? (friend.statusText.contains('排位')
-                    ? AppColors.winGreen
-                    : (friend.statusText.contains('格斗中心')
-                        ? AppColors.accentNeonPink
-                        : (friend.statusText.contains('训练') || friend.statusText.contains('练习')
-                            ? AppColors.accentNeonYellow
-                            : (friend.statusText.contains('休闲')
-                                ? AppColors.accentNeonCyan
-                                : AppColors.winGreen))))
-                : AppColors.textTertiary;
+                ? colors.accentTertiary
+                : colors.textTertiary;
 
             return Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.bgCard,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isFollowed
-                      ? AppColors.accentNeonYellow.withOpacity(0.65)
-                      : (friend.isOnline ? statusColor.withOpacity(0.35) : AppColors.borderSubtle),
-                  width: isFollowed ? 1.4 : 1.0,
-                ),
-              ),
+              decoration: colors.cardDecoration(borderRadius: BorderRadius.circular(12)),
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -362,7 +359,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                     ).then((_) => _loadFollowed());
                   },
                   child: Padding(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(12),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -378,7 +375,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                                 decoration: BoxDecoration(
                                   color: statusColor,
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: AppColors.bgCard, width: 1.5),
+                                  border: Border.all(color: colors.bgCard, width: 1.5),
                                 ),
                               ),
                             ),
@@ -397,39 +394,44 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                                       friend.fighterId,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: AppColors.textPrimary,
+                                      style: TextStyle(
+                                        color: colors.textPrimary,
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
+                                        fontFamily: colors.titleFontFamily,
                                       ),
                                     ),
                                   ),
                                   if (isFollowed) ...[
                                     const SizedBox(width: 4),
-                                    const Icon(Icons.star, size: 14, color: AppColors.accentNeonYellow),
+                                    Icon(Icons.star, size: 14, color: colors.accentSecondary),
                                   ],
                                   const SizedBox(width: 6),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                                     decoration: BoxDecoration(
-                                      color: AppColors.bgSecondary,
-                                      borderRadius: BorderRadius.circular(3),
+                                      color: colors.bgSecondary,
+                                      borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
                                       _formatPlatform(friend.platform),
-                                      style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 9, fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                        color: colors.accentPrimary,
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              // Line 2: Status + Character Name
+                              const SizedBox(height: 5),
+                              // Line 2: Online Status & Character
                               Row(
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: statusColor.withOpacity(0.15),
+                                      color: statusColor.withOpacity(0.12),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Row(
@@ -458,7 +460,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                                   const SizedBox(width: 8),
                                   Text(
                                     Sf6Characters.getById(friend.mainCharacterId).nameZh,
-                                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                    style: TextStyle(color: colors.textSecondary, fontSize: 11),
                                   ),
                                 ],
                               ),
@@ -467,9 +469,9 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                               if (friend.lp > 0 || friend.mr > 0)
                                 RankBadge(lp: friend.lp, mr: friend.mr, showPoints: true, scale: 0.8)
                               else
-                                const Text(
+                                Text(
                                   '未定级  •  0 LP',
-                                  style: TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                                  style: TextStyle(color: colors.textTertiary, fontSize: 11),
                                 ),
                             ],
                           ),
@@ -477,7 +479,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                         IconButton(
                           icon: Icon(
                             isFollowed ? Icons.star : Icons.star_border,
-                            color: isFollowed ? AppColors.accentNeonYellow : AppColors.textTertiary,
+                            color: isFollowed ? colors.accentSecondary : colors.textTertiary,
                             size: 20,
                           ),
                           tooltip: isFollowed ? '取消特别关注' : '特别关注 (置顶显示)',
@@ -493,7 +495,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                                   content: Text(nowFollowed
                                       ? '已将 ${friend.fighterId} 添加为特别关注并置顶'
                                       : '已取消特别关注 ${friend.fighterId}'),
-                                  backgroundColor: nowFollowed ? AppColors.winGreen : AppColors.bgSecondary,
+                                  backgroundColor: nowFollowed ? colors.accentTertiary : colors.bgSecondary,
                                   duration: const Duration(seconds: 2),
                                 ),
                               );
@@ -501,7 +503,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                           },
                         ),
                         const SizedBox(width: 2),
-                        const Icon(Icons.chevron_right, size: 18, color: AppColors.textTertiary),
+                        Icon(Icons.chevron_right, size: 18, color: colors.textTertiary),
                       ],
                     ),
                   ),
@@ -514,11 +516,11 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildClubsTab(List<ClubModel> clubs) {
+  Widget _buildClubsTab(List<ClubModel> clubs, AppThemeColors colors) {
     if (clubs.isEmpty) {
       return RefreshIndicator(
-        color: AppColors.accentNeonCyan,
-        backgroundColor: AppColors.bgCard,
+        color: colors.accentPrimary,
+        backgroundColor: colors.bgCardSolid,
         onRefresh: _handleRefresh,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -529,21 +531,24 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.shield_outlined, size: 56, color: AppColors.textTertiary),
+                Icon(Icons.shield_outlined, size: 56, color: colors.textTertiary),
                 const SizedBox(height: 12),
-                const Text(
+                Text(
                   '暂未加入任何战队俱乐部',
-                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 15),
+                  style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.bold, fontSize: 15),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   '在卡普空官方加入战队后，点击下方一键同步即可直接在此显示战队与成员列表',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  style: TextStyle(color: colors.textSecondary, fontSize: 12),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan, foregroundColor: Colors.black),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.accentPrimary,
+                    foregroundColor: Colors.white,
+                  ),
                   icon: const Icon(Icons.sync, size: 18),
                   label: const Text('一键同步战队信息', style: TextStyle(fontWeight: FontWeight.bold)),
                   onPressed: _handleRefresh,
@@ -556,8 +561,8 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
     }
 
     return RefreshIndicator(
-      color: AppColors.accentNeonCyan,
-      backgroundColor: AppColors.bgCard,
+      color: colors.accentPrimary,
+      backgroundColor: colors.bgCardSolid,
       onRefresh: _handleRefresh,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -571,21 +576,7 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
 
           return Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.bgCard,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isPrimary ? AppColors.accentNeonPink.withOpacity(0.5) : AppColors.borderSubtle,
-                width: isPrimary ? 1.5 : 1.0,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: (isPrimary ? AppColors.accentNeonPink : Colors.black).withOpacity(0.15),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+            decoration: colors.cardDecoration(borderRadius: BorderRadius.circular(16)),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
@@ -620,10 +611,10 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                                 width: 52,
                                 height: 52,
                                 decoration: BoxDecoration(
-                                  color: AppColors.bgSecondary,
+                                  color: colors.bgSecondary,
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: isPrimary ? AppColors.accentNeonPink : AppColors.accentNeonCyan,
+                                    color: isPrimary ? colors.accentSecondary : colors.accentPrimary,
                                     width: 1.5,
                                   ),
                                 ),
@@ -632,12 +623,12 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                                   width: 52,
                                   height: 52,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => _buildClubTagBadge(club, isPrimary),
+                                  errorBuilder: (_, __, ___) => _buildClubTagBadge(club, isPrimary, colors),
                                 ),
                               ),
                             ),
                           ] else ...[
-                            _buildClubTagBadge(club, isPrimary),
+                            _buildClubTagBadge(club, isPrimary, colors),
                           ],
                           const SizedBox(width: 12),
                           Expanded(
@@ -651,10 +642,11 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                                         club.clubName,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: AppColors.textPrimary,
+                                        style: TextStyle(
+                                          color: colors.textPrimary,
                                           fontSize: 17,
                                           fontWeight: FontWeight.bold,
+                                          fontFamily: colors.titleFontFamily,
                                         ),
                                       ),
                                     ),
@@ -663,14 +655,14 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: AppColors.accentNeonYellow.withOpacity(0.2),
+                                          color: colors.accentSecondary.withOpacity(0.18),
                                           borderRadius: BorderRadius.circular(4),
-                                          border: Border.all(color: AppColors.accentNeonYellow.withOpacity(0.6)),
+                                          border: Border.all(color: colors.accentSecondary.withOpacity(0.6)),
                                         ),
-                                        child: const Text(
+                                        child: Text(
                                           '主战队',
                                           style: TextStyle(
-                                            color: AppColors.accentNeonYellow,
+                                            color: colors.accentSecondary,
                                             fontSize: 10,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -680,14 +672,14 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: AppColors.accentNeonCyan.withOpacity(0.15),
+                                          color: colors.accentPrimary.withOpacity(0.15),
                                           borderRadius: BorderRadius.circular(4),
-                                          border: Border.all(color: AppColors.accentNeonCyan.withOpacity(0.5)),
+                                          border: Border.all(color: colors.accentPrimary.withOpacity(0.5)),
                                         ),
                                         child: Text(
                                           '战队 ${index + 1}',
-                                          style: const TextStyle(
-                                            color: AppColors.accentNeonCyan,
+                                          style: TextStyle(
+                                            color: colors.accentPrimary,
                                             fontSize: 10,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -699,30 +691,30 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                                 const SizedBox(height: 4),
                                 Text(
                                   '[${club.tag.isNotEmpty ? club.tag : "CLUB"}]  •  ID: ${club.clubId.isNotEmpty ? club.clubId : "保密"}',
-                                  style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                                  style: TextStyle(color: colors.textTertiary, fontSize: 11),
                                 ),
                               ],
                             ),
                           ),
-                          const Icon(Icons.chevron_right, color: AppColors.accentNeonCyan, size: 22),
+                          Icon(Icons.chevron_right, color: colors.accentPrimary, size: 22),
                         ],
                       ),
                       const SizedBox(height: 12),
 
-                      // Leader row - separated line to prevent overflow
+                      // Leader row
                       if (club.leaderFighterId.isNotEmpty) ...[
                         Row(
                           children: [
-                            const Icon(Icons.stars, size: 14, color: AppColors.accentNeonYellow),
+                            Icon(Icons.stars, size: 14, color: colors.accentSecondary),
                             const SizedBox(width: 5),
-                            const Text('会长: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                            Text('会长: ', style: TextStyle(color: colors.textSecondary, fontSize: 12)),
                             Expanded(
                               child: Text(
                                 club.leaderFighterId,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.accentNeonYellow,
+                                style: TextStyle(
+                                  color: colors.accentSecondary,
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -736,11 +728,11 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                       // Stats row
                       Row(
                         children: [
-                          _buildClubStatItem('总成员', '${club.memberCount}/${club.maxMemberCount} 人', AppColors.accentNeonCyan),
+                          _buildClubStatItem('总成员', '${club.memberCount}/${club.maxMemberCount} 人', colors.accentPrimary, colors),
                           const SizedBox(width: 8),
-                          _buildClubStatItem('在线活跃', '$displayOnline 人在线', displayOnline > 0 ? AppColors.winGreen : AppColors.textTertiary),
+                          _buildClubStatItem('在线活跃', '$displayOnline 人在线', displayOnline > 0 ? colors.accentTertiary : colors.textTertiary, colors),
                           const SizedBox(width: 8),
-                          _buildClubStatItem('月度积分', '${club.totalMonthlyPoints} pt', AppColors.accentNeonYellow),
+                          _buildClubStatItem('月度积分', '${club.totalMonthlyPoints} pt', colors.accentSecondary, colors),
                         ],
                       ),
 
@@ -754,13 +746,13 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                             return Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppColors.bgSecondary,
+                                color: colors.bgSecondary,
                                 borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: AppColors.borderSubtle),
+                                border: Border.all(color: colors.borderSubtle),
                               ),
                               child: Text(
                                 '# $tag',
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
+                                style: TextStyle(color: colors.textSecondary, fontSize: 10),
                               ),
                             );
                           }).toList(),
@@ -774,19 +766,19 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                           width: double.infinity,
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.bgSecondary.withOpacity(0.7),
+                            color: colors.bgSecondary.withOpacity(0.7),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.campaign, size: 14, color: AppColors.accentNeonYellow),
+                              Icon(Icons.campaign, size: 14, color: colors.accentSecondary),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
                                   club.notice,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                  style: TextStyle(color: colors.textSecondary, fontSize: 11),
                                 ),
                               ),
                             ],
@@ -795,16 +787,16 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
                       ],
 
                       const SizedBox(height: 10),
-                      const Divider(height: 1),
+                      Divider(height: 1, color: colors.borderSubtle),
                       const SizedBox(height: 8),
-                      const Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
                             '点击进入二级页面查看完整成员列表与切磋',
-                            style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 11, fontWeight: FontWeight.w600),
+                            style: TextStyle(color: colors.accentPrimary, fontSize: 11, fontWeight: FontWeight.w600),
                           ),
-                          Icon(Icons.arrow_forward, size: 13, color: AppColors.accentNeonCyan),
+                          Icon(Icons.arrow_forward, size: 13, color: colors.accentPrimary),
                         ],
                       ),
                     ],
@@ -818,18 +810,19 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildClubTagBadge(ClubModel club, bool isPrimary) {
+  Widget _buildClubTagBadge(ClubModel club, bool isPrimary, AppThemeColors colors) {
+    final badgeColor = isPrimary ? colors.accentSecondary : colors.accentPrimary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: (isPrimary ? AppColors.accentNeonPink : AppColors.accentNeonCyan).withOpacity(0.2),
+        color: badgeColor.withOpacity(0.18),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: isPrimary ? AppColors.accentNeonPink : AppColors.accentNeonCyan, width: 1.5),
+        border: Border.all(color: badgeColor, width: 1.5),
       ),
       child: Text(
         '[${club.tag.isNotEmpty ? club.tag : "CLUB"}]',
         style: TextStyle(
-          color: isPrimary ? AppColors.accentNeonPink : AppColors.accentNeonCyan,
+          color: badgeColor,
           fontWeight: FontWeight.w900,
           fontSize: 13,
         ),
@@ -837,17 +830,17 @@ class _SocialScreenState extends State<SocialScreen> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildClubStatItem(String label, String value, Color color) {
+  Widget _buildClubStatItem(String label, String value, Color color, AppThemeColors colors) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
         decoration: BoxDecoration(
-          color: AppColors.bgSecondary,
+          color: colors.bgSecondary,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
           children: [
-            Text(label, style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+            Text(label, style: TextStyle(color: colors.textTertiary, fontSize: 10)),
             const SizedBox(height: 2),
             Text(
               value,

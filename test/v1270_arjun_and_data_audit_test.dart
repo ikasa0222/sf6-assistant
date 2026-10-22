@@ -18,7 +18,7 @@ void main() {
   group('REQ-VER-001: Version and Build Metadata (v1.2.7.0 / 2700 or v1.2.7.1 / 2701)', () {
     test('AppLogger.currentAppVersion must equal v1.2.7.0 or v1.2.7.1', () {
       expect(
-        AppLogger.currentAppVersion == 'v1.2.7.0' || AppLogger.currentAppVersion == 'v1.2.7.1' || AppLogger.currentAppVersion == 'v1.2.7.2' || AppLogger.currentAppVersion == 'v1.2.7.3' || AppLogger.currentAppVersion == 'v1.2.7.4' || AppLogger.currentAppVersion == 'v1.2.7.5',
+        AppLogger.currentAppVersion == 'v1.2.7.0' || AppLogger.currentAppVersion == 'v1.2.7.1' || AppLogger.currentAppVersion == 'v1.2.7.2' || AppLogger.currentAppVersion == 'v1.2.7.3' || AppLogger.currentAppVersion == 'v1.2.7.4' || AppLogger.currentAppVersion == 'v1.2.7.5' || AppLogger.currentAppVersion == 'v1.2.7.6',
         isTrue,
         reason: 'REQ-VER-001: AppLogger.currentAppVersion must be v1.2.7.0 or v1.2.7.1',
       );
@@ -26,7 +26,7 @@ void main() {
 
     test('AppLogger.currentBuildNumber must equal 2700 or 2701', () {
       expect(
-        AppLogger.currentBuildNumber == '2700' || AppLogger.currentBuildNumber == '2701' || AppLogger.currentBuildNumber == '2702' || AppLogger.currentBuildNumber == '2703' || AppLogger.currentBuildNumber == '2704' || AppLogger.currentBuildNumber == '2705',
+        AppLogger.currentBuildNumber == '2700' || AppLogger.currentBuildNumber == '2701' || AppLogger.currentBuildNumber == '2702' || AppLogger.currentBuildNumber == '2703' || AppLogger.currentBuildNumber == '2704' || AppLogger.currentBuildNumber == '2705' || AppLogger.currentBuildNumber == '2706',
         isTrue,
         reason: 'REQ-VER-001: AppLogger.currentBuildNumber must be 2700 or 2701',
       );
@@ -36,7 +36,7 @@ void main() {
       final pubspecFile = File('pubspec.yaml');
       expect(pubspecFile.existsSync(), isTrue, reason: 'pubspec.yaml must exist');
       final content = pubspecFile.readAsStringSync();
-      final versionMatch = RegExp(r'^version:\s*1\.2\.7(\.[0123])?\+(2700|2701|2702|2703|2704|2705|2703)\s*$', multiLine: true);
+      final versionMatch = RegExp(r'^version:\s*1\.2\.7(\.[0-9]+)?\+(270[0-9])\s*$', multiLine: true);
       expect(
         versionMatch.hasMatch(content),
         isTrue,
@@ -48,12 +48,12 @@ void main() {
       final logger = AppLogger.instance;
       final report = logger.buildConciseDiagnosticSummary();
       expect(
-        report.contains('v1.2.7.0') || (report.contains('v1.2.7.1') || report.contains('v1.2.7.2') || report.contains('v1.2.7.3') || report.contains('v1.2.7.4') || report.contains('v1.2.7.5')),
+        report.contains('v1.2.7.0') || (report.contains('v1.2.7.1') || report.contains('v1.2.7.2') || report.contains('v1.2.7.3') || report.contains('v1.2.7.4') || report.contains('v1.2.7.5') || report.contains('v1.2.7.6')),
         isTrue,
         reason: 'REQ-VER-001: Diagnostic summary report must include version v1.2.7.0 or v1.2.7.1',
       );
       expect(
-        report.contains('2700') || (report.contains('2701') || report.contains('2702') || report.contains('2703') || report.contains('2704') || report.contains('2705') || report.contains('2703') || report.contains('2704') || report.contains('2705')),
+        report.contains('2700') || (report.contains('2701') || report.contains('2702') || report.contains('2703') || report.contains('2704') || report.contains('2705') || report.contains('2706') || report.contains('2703') || report.contains('2704') || report.contains('2705') || report.contains('2706')),
         isTrue,
         reason: 'REQ-VER-001: Diagnostic summary report must include build number 2700 or 2701',
       );

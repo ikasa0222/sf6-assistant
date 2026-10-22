@@ -153,33 +153,28 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: Row(
                   children: [
-                    _buildModeFilterChip('全部模式', null),
+                    _buildModeFilterChip('全部模式', null, colors),
                     const SizedBox(width: 8),
-                    _buildModeFilterChip('排位赛', BattleType.ranked),
+                    _buildModeFilterChip('排位赛', BattleType.ranked, colors),
                     const SizedBox(width: 8),
-                    _buildModeFilterChip('休闲赛', BattleType.casual),
+                    _buildModeFilterChip('休闲赛', BattleType.casual, colors),
                     const SizedBox(width: 8),
-                    _buildModeFilterChip('比赛间对战', BattleType.customRoom),
+                    _buildModeFilterChip('比赛间对战', BattleType.customRoom, colors),
                     const SizedBox(width: 8),
-                    _buildModeFilterChip('格斗中心对战', BattleType.battleHub),
+                    _buildModeFilterChip('格斗中心对战', BattleType.battleHub, colors),
                   ],
                 ),
               ),
 
               // Character Filter Bar (Matches AnalyticsScreen design)
-              _buildCharacterFilterBar(charCounts),
+              _buildCharacterFilterBar(charCounts, colors),
 
               // Summary Stats Bar
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: colors.bgCard,
+                decoration: colors.cardDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: colors.borderSubtle),
-                  boxShadow: colors.isClaudeWarm
-                      ? const [BoxShadow(color: Color(0x0A402010), blurRadius: 8, offset: Offset(0, 2))]
-                      : null,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -199,12 +194,12 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
               // Records List
               Expanded(
                 child: isLoading
-                    ? const Center(child: CircularProgressIndicator(color: AppColors.accentNeonCyan))
+                    ? Center(child: CircularProgressIndicator(color: colors.accentPrimary))
                     : filteredRecords.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Text(
                               '暂无符合条件的战绩记录',
-                              style: TextStyle(color: AppColors.textTertiary),
+                              style: TextStyle(color: colors.textSecondary),
                             ),
                           )
                         : RefreshIndicator(
@@ -232,26 +227,26 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
     );
   }
 
-  Widget _buildModeFilterChip(String label, BattleType? type) {
+  Widget _buildModeFilterChip(String label, BattleType? type, AppThemeColors colors) {
     final isSelected = _selectedFilter == type;
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
       onSelected: (_) => setState(() => _selectedFilter = type),
-      selectedColor: AppColors.accentNeonCyan.withOpacity(0.25),
-      backgroundColor: AppColors.bgCard,
+      selectedColor: colors.accentPrimary.withOpacity(0.18),
+      backgroundColor: colors.bgCard,
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.accentNeonCyan : AppColors.textSecondary,
+        color: isSelected ? colors.accentPrimary : colors.textSecondary,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         fontSize: 12,
       ),
       side: BorderSide(
-        color: isSelected ? AppColors.accentNeonCyan : AppColors.borderSubtle,
+        color: isSelected ? colors.accentPrimary : colors.borderSubtle,
       ),
     );
   }
 
-  Widget _buildCharacterFilterBar(Map<String, int> charCounts) {
+  Widget _buildCharacterFilterBar(Map<String, int> charCounts, AppThemeColors colors) {
     final sortedChars = List<Sf6Character>.from(Sf6Characters.all);
     if (_charSortMode == 'matches') {
       sortedChars.sort((a, b) {
@@ -263,7 +258,7 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
     }
 
     return Container(
-      color: AppColors.bgSecondary,
+      color: colors.isClaudeWarm ? Colors.transparent : AppColors.bgSecondary,
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,12 +267,12 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                const Icon(Icons.person_pin, size: 16, color: AppColors.accentNeonCyan),
+                Icon(Icons.person_pin, size: 16, color: colors.accentPrimary),
                 const SizedBox(width: 6),
-                const Expanded(
+                Expanded(
                   child: Text(
                     '我方角色筛选',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: colors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
                 InkWell(
@@ -289,9 +284,9 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppColors.bgCard,
+                      color: colors.bgCard,
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: AppColors.borderSubtle),
+                      border: Border.all(color: colors.borderSubtle),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -299,12 +294,12 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                         Icon(
                           _charSortMode == 'matches' ? Icons.sort : Icons.sort_by_alpha,
                           size: 12,
-                          color: AppColors.accentNeonYellow,
+                          color: colors.accentSecondary,
                         ),
                         const SizedBox(width: 3),
                         Text(
                           _charSortMode == 'matches' ? '按场次' : '默认序',
-                          style: const TextStyle(color: AppColors.accentNeonYellow, fontSize: 10, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: colors.accentSecondary, fontSize: 10, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -316,18 +311,18 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     decoration: BoxDecoration(
-                      color: _isCharGridExpanded ? AppColors.accentNeonCyan.withOpacity(0.2) : AppColors.bgCard,
+                      color: _isCharGridExpanded ? colors.accentPrimary.withOpacity(0.18) : colors.bgCard,
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: _isCharGridExpanded ? AppColors.accentNeonCyan : AppColors.borderSubtle),
+                      border: Border.all(color: _isCharGridExpanded ? colors.accentPrimary : colors.borderSubtle),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(_isCharGridExpanded ? Icons.view_carousel : Icons.grid_view, size: 12, color: AppColors.accentNeonCyan),
+                        Icon(_isCharGridExpanded ? Icons.view_carousel : Icons.grid_view, size: 12, color: colors.accentPrimary),
                         const SizedBox(width: 3),
                         Text(
                           _isCharGridExpanded ? '收起' : '展开',
-                          style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 10, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: colors.accentPrimary, fontSize: 10, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -348,10 +343,11 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                     label: const Text('全部角色综合'),
                     selected: _selectedCharacterId == 'all',
                     onSelected: (_) => setState(() => _selectedCharacterId = 'all'),
-                    selectedColor: AppColors.accentNeonCyan.withOpacity(0.25),
-                    backgroundColor: AppColors.bgCard,
+                    selectedColor: colors.accentPrimary.withOpacity(0.18),
+                    backgroundColor: colors.bgCard,
+                    side: BorderSide(color: _selectedCharacterId == 'all' ? colors.accentPrimary : colors.borderSubtle),
                     labelStyle: TextStyle(
-                      color: _selectedCharacterId == 'all' ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                      color: _selectedCharacterId == 'all' ? colors.accentPrimary : colors.textSecondary,
                       fontWeight: _selectedCharacterId == 'all' ? FontWeight.bold : FontWeight.normal,
                       fontSize: 11,
                     ),
@@ -364,15 +360,16 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                       label: Text(
                         c.nameZh + (matchCount > 0 ? ' ($matchCount)' : ''),
                         style: TextStyle(
-                          color: isSelected ? AppColors.accentNeonCyan : (matchCount > 0 ? AppColors.textPrimary : AppColors.textTertiary),
+                          color: isSelected ? colors.accentPrimary : (matchCount > 0 ? colors.textPrimary : colors.textSecondary),
                           fontWeight: isSelected || matchCount > 0 ? FontWeight.bold : FontWeight.normal,
                           fontSize: 11,
                         ),
                       ),
                       selected: isSelected,
                       onSelected: (_) => setState(() => _selectedCharacterId = c.id),
-                      selectedColor: AppColors.accentNeonCyan.withOpacity(0.25),
-                      backgroundColor: AppColors.bgCard,
+                      selectedColor: colors.accentPrimary.withOpacity(0.18),
+                      backgroundColor: colors.bgCard,
+                      side: BorderSide(color: isSelected ? colors.accentPrimary : colors.borderSubtle),
                     );
                   }),
                 ],
@@ -389,10 +386,11 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                     label: const Text('全部角色综合'),
                     selected: _selectedCharacterId == 'all',
                     onSelected: (_) => setState(() => _selectedCharacterId = 'all'),
-                    selectedColor: AppColors.accentNeonCyan.withOpacity(0.25),
-                    backgroundColor: AppColors.bgCard,
+                    selectedColor: colors.accentPrimary.withOpacity(0.18),
+                    backgroundColor: colors.bgCard,
+                    side: BorderSide(color: _selectedCharacterId == 'all' ? colors.accentPrimary : colors.borderSubtle),
                     labelStyle: TextStyle(
-                      color: _selectedCharacterId == 'all' ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                      color: _selectedCharacterId == 'all' ? colors.accentPrimary : colors.textSecondary,
                       fontWeight: _selectedCharacterId == 'all' ? FontWeight.bold : FontWeight.normal,
                       fontSize: 11,
                     ),
@@ -439,40 +437,55 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
   }
 
   void _showAddNoteDialog(BuildContext context, BattleRecord record) {
-    final titleController = TextEditingController(text: '对战  对策');
+    final colors = context.themeColors;
+    final titleController = TextEditingController(text: '对战对策心得');
     final contentController = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (ctx) {
         return AlertDialog(
-          backgroundColor: AppColors.bgCard,
-          title: const Text('添加对策心得笔记', style: TextStyle(color: AppColors.textPrimary, fontSize: 16)),
+          backgroundColor: colors.bgCardSolid,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            '添加对策心得笔记',
+            style: TextStyle(color: colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: titleController,
-                decoration: const InputDecoration(labelText: '笔记标题'),
+                style: TextStyle(color: colors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: '笔记标题',
+                  labelStyle: TextStyle(color: colors.textSecondary),
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: contentController,
                 maxLines: 4,
-                decoration: const InputDecoration(
+                style: TextStyle(color: colors.textPrimary),
+                decoration: InputDecoration(
                   labelText: '心得对策内容',
+                  labelStyle: TextStyle(color: colors.textSecondary),
                   hintText: '如：该对手起身喜欢凹升龙，注意诱导防守确反...',
+                  hintStyle: TextStyle(color: colors.textTertiary),
                 ),
               ),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('取消', style: TextStyle(color: AppColors.textTertiary)),
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('取消', style: TextStyle(color: colors.textSecondary)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colors.accentPrimary,
+                foregroundColor: Colors.white,
+              ),
               onPressed: () async {
                 if (titleController.text.isNotEmpty) {
                   final note = PlayerNote(
@@ -486,14 +499,14 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
                   );
                   await widget.notesService.addOrUpdateNote(note);
                   if (context.mounted) {
-                    Navigator.pop(context);
+                    Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('对策心得已保存至工具箱！')),
                     );
                   }
                 }
               },
-              child: const Text('保存', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              child: const Text('保存', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         );

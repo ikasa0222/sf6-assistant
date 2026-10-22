@@ -48,26 +48,27 @@ class _BattleCardItemState extends State<BattleCardItem> {
   }
 
   void _showReplayGuideDialog(BuildContext context) {
+    final colors = context.themeColors;
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        backgroundColor: AppColors.bgCard,
+        backgroundColor: colors.bgCardSolid,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.ondemand_video, color: AppColors.accentNeonCyan, size: 20),
-            SizedBox(width: 8),
+            Icon(Icons.ondemand_video, color: colors.accentPrimary, size: 20),
+            const SizedBox(width: 8),
             Text(
               '回放使用指南',
               style: TextStyle(
-                color: AppColors.textPrimary,
+                color: colors.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
-        content: const SingleChildScrollView(
+        content: SingleChildScrollView(
           child: Text(
             '【街霸6 游戏内录像回放指引】\n\n'
             '1. 启动《街头霸王 6》主机或 PC 客户端；\n'
@@ -76,7 +77,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
             '4. 选择【录像搜索】并在代码框粘贴或输入您复制的 12 位录像代码；\n'
             '5. 点击确认即可立即观看该场对局的完整逐帧录像与按键输入！',
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: colors.textSecondary,
               fontSize: 12,
               height: 1.6,
             ),
@@ -85,7 +86,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(),
-            child: const Text('我知道了', style: TextStyle(color: AppColors.accentNeonCyan)),
+            child: Text('我知道了', style: TextStyle(color: colors.accentPrimary)),
           ),
         ],
       ),
@@ -469,21 +470,21 @@ class _BattleCardItemState extends State<BattleCardItem> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppColors.bgInput,
+                            color: colors.bgSecondary,
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: AppColors.borderSubtle),
+                            border: Border.all(color: colors.borderSubtle),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.videocam, size: 14, color: AppColors.accentNeonCyan),
+                              Icon(Icons.videocam, size: 14, color: colors.accentPrimary),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
                                   r.replayCode.isNotEmpty ? r.replayCode : '无录像代码',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: AppColors.textPrimary,
+                                  style: TextStyle(
+                                    color: colors.textPrimary,
                                     fontSize: 12,
                                     fontFamily: 'monospace',
                                   ),
@@ -523,8 +524,8 @@ class _BattleCardItemState extends State<BattleCardItem> {
                       IconButton.filledTonal(
                         icon: const Icon(Icons.share, size: 18),
                         style: IconButton.styleFrom(
-                          backgroundColor: AppColors.bgSecondary,
-                          foregroundColor: AppColors.accentNeonCyan,
+                          backgroundColor: colors.bgSecondary,
+                          foregroundColor: colors.accentPrimary,
                         ),
                         onPressed: widget.onShare ?? () => _showShareDialog(context, r),
                         tooltip: '生成战报长图',
@@ -532,8 +533,8 @@ class _BattleCardItemState extends State<BattleCardItem> {
                       IconButton.filledTonal(
                         icon: const Icon(Icons.edit_note, size: 18),
                         style: IconButton.styleFrom(
-                          backgroundColor: AppColors.bgSecondary,
-                          foregroundColor: AppColors.accentNeonYellow,
+                          backgroundColor: colors.bgSecondary,
+                          foregroundColor: colors.accentSecondary,
                         ),
                         onPressed: widget.onAddNote,
                         tooltip: '添加对战笔记',

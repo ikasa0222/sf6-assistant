@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sf6_tracker/core/constants/app_colors.dart';
+import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 
 class WinRateBar extends StatelessWidget {
   final double winRate;
@@ -19,8 +20,11 @@ class WinRateBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.themeColors;
     final rate = (winRate / 100.0).clamp(0.0, 1.0);
     final losses = total - wins;
+    final winColor = colors.accentTertiary;
+    final loseColor = colors.accentError;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,8 +37,8 @@ class WinRateBar extends StatelessWidget {
                 children: [
                   Text(
                     '${winRate.toStringAsFixed(1)}%',
-                    style: const TextStyle(
-                      color: AppColors.winGreen,
+                    style: TextStyle(
+                      color: winColor,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -43,8 +47,8 @@ class WinRateBar extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       '($wins W - $losses L)',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: colors.textSecondary,
                         fontSize: 12,
                       ),
                     ),
@@ -54,8 +58,8 @@ class WinRateBar extends StatelessWidget {
               if (total > 0)
                 Text(
                   '总 $total 场',
-                  style: const TextStyle(
-                    color: AppColors.textTertiary,
+                  style: TextStyle(
+                    color: colors.textTertiary,
                     fontSize: 12,
                   ),
                 ),
@@ -68,12 +72,12 @@ class WinRateBar extends StatelessWidget {
           child: Container(
             height: height,
             width: double.infinity,
-            color: total > 0 ? AppColors.loseRed : AppColors.bgSecondary,
+            color: total > 0 ? loseColor : colors.bgSecondary,
             alignment: Alignment.centerLeft,
             child: FractionallySizedBox(
               widthFactor: rate,
               child: Container(
-                color: AppColors.winGreen,
+                color: winColor,
               ),
             ),
           ),

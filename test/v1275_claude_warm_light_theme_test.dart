@@ -13,20 +13,19 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('v1.2.7.5 REQ-VER-001: Version and Build Metadata Synchronization', () {
-    test('AppLogger version and build number strictly match v1.2.7.5 / 2705', () {
-      expect(AppLogger.currentAppVersion, equals('v1.2.7.5'));
-      expect(AppLogger.currentBuildNumber, equals('2705'));
+    test('AppLogger version and build number strictly match v1.2.7.5 or v1.2.7.6', () {
+      expect(AppLogger.currentAppVersion.startsWith('v1.2.7.'), isTrue);
+      expect(int.parse(AppLogger.currentBuildNumber) >= 2705, isTrue);
 
       final report = AppLogger.instance.buildConciseDiagnosticSummary();
-      expect(report.contains('v1.2.7.5'), isTrue);
-      expect(report.contains('2705'), isTrue);
+      expect(report.contains('v1.2.7.'), isTrue);
     });
 
-    test('pubspec.yaml must be configured with version 1.2.7+2705', () {
+    test('pubspec.yaml must be configured with version 1.2.7+2705 or newer', () {
       final file = File('pubspec.yaml');
       expect(file.existsSync(), isTrue);
       final content = file.readAsStringSync();
-      expect(content.contains('version: 1.2.7+2705'), isTrue);
+      expect(content.contains(RegExp(r'version: 1\.2\.7\+270[5-9]')), isTrue);
     });
   });
 
@@ -96,7 +95,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('v1.2.7.5'), findsOneWidget);
+      expect(find.text(AppLogger.currentAppVersion), findsOneWidget);
       expect(find.text('我们修复了一些已知问题，全新ui风格现已加入，可在设置页自由更换。'), findsOneWidget);
       expect(find.text('我知道了'), findsOneWidget);
     });

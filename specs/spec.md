@@ -1,7 +1,7 @@
 # 街霸6助手 (SF6 Assistant) 软件规格说明书 (SRS)
 
-- **文档标识**: SF6-SPEC-v1.2.7.1
-- **目标版本**: `v1.2.7.1` (build `2701`)
+- **文档标识**: SF6-SPEC-v1.2.8
+- **目标版本**: `v1.2.8` (build `2800`)
 - **前序版本**: `v1.2.7.0` (build `2700`)
 - **分析师角色**: 严苛的软件规格分析师 (Strict Software Specification Analyst)
 - **文档状态**: 待人工审核挂起 (PENDING_HUMAN_APPROVAL)
@@ -453,3 +453,23 @@
 
 ---
 *规格说明书编制完成，流水线挂起等待人工审核批准。*
+
+
+---
+
+# 附录：v1.2.8 规格增补说明 (Addendum for v1.2.8 Modular Theming)
+
+## REQ-THM-001: 模块化色彩包架构 (`ThemePack`)
+- **需求描述**：废止分散硬编码的深色常量，创建 `ThemePack` 独立色彩包派生体系（`ClaudeWarmThemePack` 与 `EsportsDarkThemePack`），并通过 `context.themeColors` 动态感知当前激活色彩包。
+- **验收标准**：
+  - 暖纸模式下卡片表面为 `#FFFFFF` 象牙白，画布为 `#FAF7F2` 羊皮纸，文字为 `#1E1D1B` 深碳素黑；
+  - 彻底消灭设置页、管理页、个人主页、战绩展开项等界面的白字黑底与深色卡片失配。
+
+## REQ-THM-002: 默认主题设定为暖纸美学
+- **需求描述**：应用新安装与无本地配置时，默认视觉主题锁定为 `AppThemeMode.claudeWarm`。
+- **验收标准**：
+  - `AppSettings` 默认构造函数与 `fromJson` 缺省反序列化均指向 `claudeWarm`。
+
+## REQ-VER-001: 版本与构建号同步
+- **需求描述**：`pubspec.yaml` 递增至 `1.2.8+2800`，`AppLogger.currentAppVersion` 严格等于 `'v1.2.8'`，构建号为 `'2800'`。
+- **验收标准**：全量 213 项单元测试 100% 通过。

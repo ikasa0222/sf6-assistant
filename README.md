@@ -11,8 +11,8 @@
 <p align="center">
   <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter" alt="Flutter"></a>
   <a href="https://android.com"><img src="https://img.shields.io/badge/Android-5.0%2B-3DDC84?logo=android" alt="Android"></a>
-  <a href="https://github.com/OldSea/SF6_Assistant/releases"><img src="https://img.shields.io/badge/Release-v1.2.7.0-FF9800?logo=github" alt="Version"></a>
-  <a href="test/"><img src="https://img.shields.io/badge/Tests-138%20Passed-4CAF50?logo=checkmarx" alt="Tests"></a>
+  <a href="https://github.com/OldSea/SF6_Assistant/releases"><img src="https://img.shields.io/badge/Release-v1.2.8-FF9800?logo=github" alt="Version"></a>
+  <a href="test/"><img src="https://img.shields.io/badge/Tests-213%20Passed-4CAF50?logo=checkmarx" alt="Tests"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
 </p>
 
@@ -27,7 +27,7 @@
 3. **缺乏顺手的离线中文帧数与变种工具**：实战中遇到打不明白的必杀技，想立刻搞清楚轻/中/重/OD四个版本的具体发生帧、被防差以及有无无敌判定，手头没有兼备 100% 离线、中文对照与变种区分的权威工具。
 4. **对战录像代码使用门槛高**：想去游戏里观看某个对手的录像，缺乏一键复制和游戏内检索的直观指引。
 
-**街霸6助手**正是为此而生——采用**本地优先（Local-First）**架构，把官方数据直接抓取到手机本地 SQLite 数据库永久持久化，**突破官方 100 场限制**，提供 31 全角色权威离线帧数库、实用连招指南、排位走势图表与首页卡片拖拽自定义，所有数据与对策心得完全掌控在玩家自己手中。
+**街霸6助手**正是为此而生——采用**本地优先（Local-First）**架构，把官方数据直接抓取到手机本地 SQLite 数据库永久持久化，**突破官方 100 场限制**，提供 32 全角色权威离线帧数库、实用连招指南、全新「暖纸美学」x「液态玻璃」视觉系统、排位走势图表与首页卡片拖拽自定义，所有数据与对策心得完全掌控在玩家自己手中。
 
 ---
 
@@ -49,15 +49,27 @@
   - 在【设置 -> 首页卡片管理】中通过 `ReorderableListView` 支持手指拖拽自由重排 7 大卡片（玩家主页资料、排位走势、角色天梯榜、近期对局状态、最爱角色与时长、快速统计、能力雷达）；
   - 支持 `Switch` 单独开启或隐藏卡片，`hero` 玩家资料卡片强制常驻锁定，支持一键「恢复默认设置」。
 
-### 3. 31 全角色权威官方帧数表与四版本变种 (Frame Data)
-- **31 全角色完备阵容**：收录卡普空官方、FAT、Supercombo 权威数据源，完整支持包含 **沙加特 (Sagat)、C. 毒蛇 (C.Viper)、亚历克斯 (Alex)、英格丽德 (Ingrid)、亚斯敏 (Yasmine)** 在内的 31 位角色，每角色配备 50+ 真实招式。
+### 3. 全新双核心视觉系统与模块化色彩包 (Design & Theming)
+- **「暖纸美学」默认视觉主题 (Claude Warm Paper)**：
+  - **核心基调**：汲取 Anthropic Claude 典雅书籍扉页质感，全域采用 `#FAF7F2` 温暖羊皮纸底色与 `#FFFFFF` 象牙白立体卡片，搭配极细暖奶油边框 (`#F0EEE6`) 与 `#1E1D1B` 深碳素高对比黑墨文字，彻底杜绝冷调科技灰与发虚白字；
+  - **莫奈动态流动背景 (`MonetAmbientCanvas`)**：页面底层铺设固定动态画布，内含低饱和度柔和光球轻微呼吸漫游，营造莫奈印象派油画般的通透流动质感；
+  - **苹果 iOS 液态玻璃拟态 (`LiquidGlassContainer`)**：底部一级导航升级为悬浮毛玻璃胶囊 Dock 栏 (`backdrop_filter: blur(16px)` + 半透明内衬与立体微倒角)，全面适配全面屏手势横条与安全边界；
+- **「电竞朋克」暗黑主题 (Esports Dark)**：
+  - 维持 `#0D0E12` 战术暗黑底色、`#1E212B` 科技卡片与 `#00E5FF` 赛博霓虹青色高亮，同样配备专属暗黑液态玻璃 Dock 栏；
+- **模块化色彩包架构 (`ThemePack`)**：
+  - 架构全面解耦，通过 `ClaudeWarmThemePack` 与 `EsportsDarkThemePack` 独立色彩包向全域 UI 分发色彩令牌 (`context.themeColors`)，彻底消除硬编码常数，支持设置页一键无感热切换。
+
+### 4. 32 全角色权威官方帧数表与四版本变种 (Frame Data)
+- **32 全角色完备阵容**：收录卡普空官方、FAT、Supercombo 权威数据源，完整支持包含 **阿俊 (Arjun)、沙加特 (Sagat)、C. 毒蛇 (C.Viper)、亚历克斯 (Alex)、英格丽德 (Ingrid)、亚斯敏 (Yasmine)** 在内的 32 位全量角色，每角色配备 50+ 真实招式。
+- **真机双轨资产加载架构**：采用 `rootBundle.loadString` + `FrameDataDatabase.init()` 启动预热，搭配 `File` 单元测试降级兼容，彻底根治移动端非隆角色普通技白板缺陷。
+- **阿俊 (Arjun) 官方权威数据全面对齐**：对齐 Supercombo Wiki 最新参数（5LP 4F/+1F、2MK 8F/-2F、呼吸之环 236K、神柱 214K、未防御灰血投 63214K、SA1/SA2/SA3 权威发生与指令），修复战绩库 Capcom ID 34/35 历史数据错标沙加特的问题。
 - **必杀技轻/中/重/OD真实四版本独立重构**：
   - 彻底根除虚假数学估算，建立 `MoveVariation` 强类型模型；
   - 升龙拳、波动拳、猛虎升龙破等核心必杀技独立呈现各版本发生帧、持续帧、硬直帧、被防帧差、命中差及伤害（如升龙拳 OD 版 6F 发生、-40F 被防大确反、1-8F 完全无敌、单发伤害 1600）；
   - 招式详情变种表高保真着色：L 轻蓝、M 中金、H 重红、OD 紫。
 - **100% 离线优先**：打包内置 2.1 MB 离线结构化数据 (`assets/data/sf6_framedata.json`)，零网络依赖，0ms 秒开。
 
-### 4. 实用连招速查库与四模式指令渲染 (Combos & Commands)
+### 5. 实用连招速查库与四模式指令渲染 (Combos & Commands)
 - **离线连招深度治理**：基于 Supercombo Wiki 深度清洗，剔除乱码、表头污染与错位字段；
 - **标准化起手分类**：规范收敛为 6 大标准中文起手标签（`确反康`、`斗气迸发`、`绿冲起手`、`打断康`、`普通命中`、`版边崩防`）；
 - **四模态指令渲染引擎 (`Sf6CommandView`)**：
@@ -67,26 +79,26 @@
   - `modern`（现代模式彩色胶囊徽章流：`L`, `M`, `H`, `SP`, `AUTO`）
 - **招式资源消耗精准呈现**：普通必杀技 0 气消耗、OD 必杀技 2 格斗气绿色方块、超必杀技呈现 SA 1~3 槽阶梯胶囊。
 
-### 5. 判定框图谱与逐帧播放器 (Hitbox Viewer)
+### 6. 判定框图谱与逐帧播放器 (Hitbox Viewer)
 - **打击/受击判定图谱**：精准展示招式的攻击判定（红框）、受击判定（绿框）与本体位置；
 - **高阶逐帧播放器**：具备播放/暂停切换、多档变速调节（`0.25x` / `0.5x` / `1.0x`）、关键帧锚点（起手 1F、发生点、收招点）瞬移步进。
 
-### 6. 卡普空官方「最爱内容 / 模式游玩时长」真实接入 (Playtime)
+### 7. 卡普空官方「最爱内容 / 模式游玩时长」真实接入 (Playtime)
 - **100% 真实秒数逆向解析**：解构官方前端逻辑，彻底废除按对局数乘以 160 秒的失真估算，直连卡普空底层 `play.base_info.content_play_time_list`；
 - **官方 Top 3 模式占比**：以官方配色比例条与格式化时长（如「120小时30分」）直观展现最爱玩法；
 - **四大模式生涯场次看板**：完整呈现排位赛、比赛间、休闲赛、格斗中心真实生涯战绩。
 
-### 7. 社交圈子与全网玩家搜索 (Social & Search)
+### 8. 社交圈子与全网玩家搜索 (Social & Search)
 - **全网玩家多模态检索**：支持 10 位 Short ID 极速直达、Fighter ID 关键字全网搜索，集成好友、战队与本地对局联想；
 - **战队动态天梯**：实时掌握俱乐部全体成员在线状态、月度贡献度点数与各成员段位；
 - **玩家二级主页**：查看对方公开战绩与角色表现，支持查询与对方的**历史正面对决交手记录（Head-to-Head）**。
 
-### 8. 多账号无感切换与本地安全备份 (Multi-Account & Backup)
+### 9. 多账号无感切换与本地安全备份 (Multi-Account & Backup)
 - **多账号与无感秒切**：支持绑定多个 Capcom ID 或多平台账号，首页与设置页一键秒切当前活跃档案；
 - **全量 JSON 备份与增量恢复**：一键将本地 SQLite 全部战绩、笔记与配置导出为标准 JSON，支持直接保存至公共 Download 目录或唤起系统分享；换机导入自动根据对战主键增量去重合并；
 - **隐私安全第一**：纯客户端单机运行，无任何自建后端，会话凭证使用 Android Keystore 原生加密（`flutter_secure_storage`）。
 
-### 9. 应用内更新与全局诊断黑匣子 (Update & Diagnostics)
+### 10. 应用内更新与全局诊断黑匣子 (Update & Diagnostics)
 - **应用内 GitHub Release 更新**：每日启动自动静默检测，支持 **国内高速镜像通道 (`ghproxy.net`)** 与 GitHub 官方通道；
 - **全局网络诊断控制台**：内置网络抓包与异常拦截日志系统，遇到任何同步异常可一键生成脱敏诊断报告。
 
@@ -168,7 +180,7 @@
 
 - **Windows 终端 (PowerShell)**:
   ```powershell
-  # 自动执行 138 项全量单测质检并编译 arm64-v8a 专属包
+  # 自动执行 213 项全量单测质检并编译 arm64-v8a 专属包
   .\scripts\build_apk.ps1
 
   # 跳过单测极速编译
@@ -182,7 +194,7 @@
 # 1. 拉取 Flutter 依赖包
 flutter pub get
 
-# 2. 运行全量单元测试与回归套件 (138 项测试全部通过)
+# 2. 运行全量单元测试与回归套件 (213 项测试全部通过)
 flutter test --no-pub -j 1
 
 # 3. 编译 arm64-v8a 专属 Release 安装包
@@ -191,7 +203,7 @@ flutter build apk --release --target-platform android-arm64 --android-skip-build
 
 编译产物路径：
 - `build/app/outputs/flutter-apk/app-release.apk`
-- 脚本自动归档并计算 SHA256：`dist/apk/SF6_Assistant_v1.2.7_arm64-v8a.apk` (体积约 26.3 MB)
+- 脚本自动归档并计算 SHA256：`dist/apk/SF6_Assistant_v1.2.8_arm64-v8a.apk` (体积约 26.3 MB)
 
 ---
 

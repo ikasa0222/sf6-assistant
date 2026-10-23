@@ -24,7 +24,12 @@ lib/
 │   ├── constants/         # 常量定义（角色、段位、API、配色）
 │   ├── network/           # 网络通信与 HTML/JSON 逆向解析
 │   ├── storage/           # SQLite 数据库与本地安全存储
-│   ├── theme/             # 全局深色主题与视觉规范
+│   ├── theme/             # 全局主题系统与色彩包架构
+│   │   ├── theme_pack.dart            # ThemePack 抽象基类与独立色彩包派生
+│   │   ├── app_theme_colors.dart      # 动态语义色彩令牌 (context.themeColors)
+│   │   ├── app_theme.dart             # ThemeData 配置与样式定义
+│   │   ├── liquid_glass_container.dart # 苹果 iOS 液态玻璃拟态容器
+│   │   └── monet_ambient_canvas.dart  # 莫奈动态流动背景画布
 │   └── utils/             # 诊断日志系统与辅助函数
 ├── models/                # 领域数据实体模型层
 ├── services/              # 业务逻辑服务层 (ChangeNotifier / 状态管理)
@@ -49,6 +54,9 @@ lib/
 
 | 功能模块 | 具体功能描述 | 涉及的核心源文件路径 |
 | :--- | :--- | :--- |
+| **视觉主题与色彩包架构** | 模块化 `ThemePack` 系统、暖纸美学（羊皮纸底、象牙白卡、碳素墨字）与电竞朋克双主题热切换、液态玻璃悬浮 Dock 栏、莫奈流动背景 | `lib/core/theme/theme_pack.dart`<br>`lib/core/theme/app_theme_colors.dart`<br>`lib/core/theme/liquid_glass_container.dart`<br>`lib/core/theme/monet_ambient_canvas.dart` |
+| **真机双轨资产加载架构** | `rootBundle.loadString` + `FrameDataDatabase.init()` 启动预加载，保留 `File` 单测降级兼容，解决真机 18 个非隆角色普通技白板缺陷 | `lib/data/frame_data_database.dart`<br>`lib/main.dart` |
+| **32 全角色权威帧数与变种** | 支持包含阿俊 (Arjun) 在内的 32 位全量官方角色，Supercombo 权威对齐，四版本独立变种 | `lib/data/frame_data_database.dart`<br>`assets/data/sf6_framedata.json` |
 | **应用引导与崩溃防御** | 全局 ErrorWidget 兜底、方向性安全容器、应用初始化 | `lib/main.dart` |
 | **底部导航与更新弹窗** | 主界面 Tab 切换、每日启动自动更新检测、首次启动更新公告弹出 | `lib/app.dart`<br>`lib/ui/widgets/announcement_dialog.dart` |
 | **官方登录与会话拦截** | WebView 模拟官方登录、Cookie 自动拦截持久化、内置数据嗅探核验工具 | `lib/ui/screens/auth/login_webview_screen.dart`<br>`lib/services/auth_service.dart` |
@@ -109,6 +117,63 @@ lib/
 - 卡普空官方在 `/play` 接口首行会返回一个 `character_id: 0` 或 `"cha"` 的全局总览行。
 - **强制规则**：在 `fromCapcomId` 中严禁将 `0`、`cha`、`all`、`total` 映射为 `random`，必须在数据解析阶段直接剔除，否则会导致随机角色的对战场次累加为全角色的总和。
 - 真实的随机角色由代号 `254`、`255` 或字符串 `'random'` 触发。
+
+---
+
+
+### 3.4 模块化色彩包体系与双主题架构 (`ThemePack`)
+
+为了彻底解决浅色模式下分散硬编码深色常数导致的“黑底卡片突兀”与“白底白字失配”，项目在 `v1.2.8` 全面实施了色彩解耦与模块化重构：
+
+```text
+               ┌───────────────────────┐
+               │ abstract class        │
+               │ ThemePack             │
+               └───────────┬───────────┘
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+┌─────────────────────────┐ ┌─────────────────────────┐
+│ ClaudeWarmThemePack     │ │ EsportsDarkThemePack    │
+│ - 羊皮纸底色: #FAF7F2   │ │ - 暗夜画布: #0D0E12    │
+│ - 象牙白卡片: #FFFFFF   │ │ - 战术卡片: #1E212B    │
+│ - 碳素墨字:   #1E1D1B   │ │ - 赛博青高光: #00E5FF  │
+│ - 赤陶红主色: #D97757   │ │ - 纯白文字:   #F5F5F7  │
+└─────────────────────────┘ └─────────────────────────┘
+             │                           │
+             └─────────────┬─────────────┘
+                           ▼
+               ┌───────────────────────┐
+               │ AppThemeColors        │
+               │ (context.themeColors) │
+               └───────────┬───────────┘
+                           │
+          ┌────────────────┼────────────────┐
+          ▼                ▼                ▼
+     HomeScreen      SettingsScreen   BattleCardItem
+```
+
+1. **核心契约 `ThemePack` (`lib/core/theme/theme_pack.dart`)**：
+   - 规定了界面所有语义化色彩令牌（画布底色 `bgCanvas`、立体卡片 `bgCard`、纯实色卡片 `bgCardSolid`、文字主/次/弱色 `textPrimary`/`textSecondary`/`textTertiary`、边框色 `borderSubtle`、语义色 `winGreen`/`loseRed`/`accentPrimary`/`accentWarning` 等）；
+   - 各主题包独立自洽，绝不在实现内部混入另一套主题的硬编码颜色。
+2. **全局动态中枢 `AppThemeColors` (`lib/core/theme/app_theme_colors.dart`)**：
+   - 通过 `BuildContext.themeColors` 语法糖，全应用任何 Widget 均以 `colors.bgCard`、`colors.textPrimary` 的形式声明式获取当前主题色彩；
+   - 切换主题时，全树自适应重绘，无任何卡顿或颜色残留。
+3. **液态玻璃拟态 `LiquidGlassContainer` (`lib/core/theme/liquid_glass_container.dart`)**：
+   - 底部 Dock 栏统一采用 `BackdropFilter(filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16))` 毛玻璃效果，外加半透明白内衬与极细高光边框，完美适配全面屏手势横条。
+
+### 3.5 移动端真机 Asset Bundle 双轨加载架构 (`FrameDataDatabase`)
+
+在真机打包环境（Android APK / iOS IPA）中，静态资产（如 `assets/data/sf6_framedata.json`）封装在只读安装包内部虚拟文件系统中，`dart:io` 的 `File` 无法直接通过相对路径访问。
+
+为此项目设计了**双轨安全加载架构**：
+1. **主轨（真机运行）**：
+   - 应用引导阶段（`main.dart` 中 `WidgetsFlutterBinding.ensureInitialized()` 后）立即调用 `await FrameDataDatabase.init();`；
+   - 底层使用 Flutter 原生 `rootBundle.loadString('assets/data/sf6_framedata.json')` 异步加载并反序列化，写入内存缓存 `_cachedJsonMoves`；
+   - 32 位角色的招式表和普通拳脚在进入页面前已全部预热就绪，0ms 秒开。
+2. **副轨（单元测试与降级）**：
+   - `_ensureJsonLoaded()` 内部保留 `File('assets/data/sf6_framedata.json')` 探测逻辑；
+   - 在开发机执行不需要启动 Flutter 引擎的纯 Dart / Flutter 单元测试时，无缝降级为本地文件同步读取，保证全量测试 100% 畅通。
 
 ---
 
@@ -392,6 +457,38 @@ lib/
   - 编写 `scripts/crawler_supercombo.py`，采用 Playwright + Edge 智能突破 Cloudflare 抓取全角色最新连段与帧数。
 - **产物更新**：
   - 编译并部署测试版本 `sf6_assistant_v1.2.5c.apk`。
+
+
+### v1.2.8 (build 2800) - 模块化色彩包重构与暖纸美学正式发布
+- **色彩与字体全面模块化 (ThemePack 系统)**：
+  - 新增 `lib/core/theme/theme_pack.dart`，抽象 `ThemePack` 并派生 `ClaudeWarmThemePack` 与 `EsportsDarkThemePack`；
+  - `AppThemeColors` 全面代理当前主题包，通过 `context.themeColors` 分发，全域消除硬编码常数；
+  - 彻底重构设置页、首页卡片管理、个人主页、战绩展开项、走势图 Tooltip 浮窗等 18 个核心文件，杜绝浅色模式下的黑底卡片与白底白字失配；
+  - 默认主题锁定为【暖纸美学】，设置页主题选项加粗加重排版。
+- **全量测试与构建发布**：
+  - 全量自动化测试扩展至 **213 项用例 100% 通过**；
+  - 产出 Release 安装包 `dist/apk/SF6_Assistant_v1.2.8_arm64-v8a.apk` (27.96 MB)。
+
+### v1.2.7.6 (build 2706) - 浅色模式全卡片审查与RankBadge重构
+- 全面审计 `SocialScreen`、`AnalyticsScreen`、`BattleLogScreen`，消除未适配的深色背景；
+- `RankBadge` 浅色自适应为高对比度深碳素墨色与清晰边框；
+- 排位折线图 Y 轴刻度文字与网格线浅色自适应。
+
+### v1.2.7.5 (build 2705) - 暖纸美学与液态玻璃Dock栏初版
+- 引入 Anthropic Claude 暖羊皮纸底色、象牙白卡片与莫奈动态流动背景 (`MonetAmbientCanvas`)；
+- 一级导航改造为苹果 iOS 液态玻璃拟态悬浮 Dock 栏 (`LiquidGlassContainer`)。
+
+### v1.2.7.2 (build 2702) - 阿俊Capcom ID 34与数据库自愈
+- 修复战绩库中 Capcom ID 34 错误映射为沙加特的问题，正确对齐为阿俊 (Arjun)；
+- 数据库启动时扫描并自愈历史战绩中角色 ID 为 sagat 且 Capcom ID 为 34 的旧记录。
+
+### v1.2.7.1 (build 2701) - 真机AssetBundle双轨架构与阿俊SupercomboWiki权威对齐
+- 引入 `rootBundle.loadString` + `FrameDataDatabase.init()` 启动预加载，解决真机 18 个非隆角色普通技白板缺陷，保留 `File` 单测降级兼容；
+- 阿俊 (Arjun) 官方 Supercombo Wiki 权威数据全面矫正，指令修正为呼吸之环 236K、神柱 214K、未防御灰血投 63214K、SA1/SA2/SA3 修正；
+- 补齐阿俊高清透明背景头像资产 `assets/images/characters/arjun.png`。
+
+### v1.2.7.0 (build 2700) - 第32位角色阿俊初步接入
+- 正式收录第 32 位官方角色阿俊 (Arjun)，建立基础立回与机动模型。
 
 ### v1.2.6.5 (build 2605)
 - **GitHub Actions 云端 macOS 自动化无签名 IPA 构建与发布流水线 (REQ-IPA-001)**：

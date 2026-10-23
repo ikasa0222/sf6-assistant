@@ -95,13 +95,13 @@ class AppTheme {
       hintStyle: const TextStyle(color: Color(0xFF969085), fontSize: 14),
     ),
     textTheme: const TextTheme(
-      headlineLarge: TextStyle(fontFamily: 'Georgia', color: Color(0xFFF5F4EE), fontWeight: FontWeight.w600),
-      headlineMedium: TextStyle(fontFamily: 'Georgia', color: Color(0xFFF5F4EE), fontWeight: FontWeight.w600),
-      titleLarge: TextStyle(fontFamily: 'Georgia', color: Color(0xFFF5F4EE), fontWeight: FontWeight.w600),
-      titleMedium: TextStyle(color: Color(0xFFF5F4EE), fontWeight: FontWeight.w500),
-      bodyLarge: TextStyle(color: Color(0xFFF5F4EE), height: 1.6),
-      bodyMedium: TextStyle(color: Color(0xFFB0AEA5), height: 1.6),
-      bodySmall: TextStyle(color: Color(0xFF78766E), height: 1.5),
+      headlineLarge: TextStyle(fontFamily: 'Georgia', color: Color(0xFF1E1D1B), fontWeight: FontWeight.w600),
+      headlineMedium: TextStyle(fontFamily: 'Georgia', color: Color(0xFF1E1D1B), fontWeight: FontWeight.w600),
+      titleLarge: TextStyle(fontFamily: 'Georgia', color: Color(0xFF1E1D1B), fontWeight: FontWeight.w600),
+      titleMedium: TextStyle(color: Color(0xFF1E1D1B), fontWeight: FontWeight.w600),
+      bodyLarge: TextStyle(color: Color(0xFF1E1D1B), height: 1.6),
+      bodyMedium: TextStyle(color: Color(0xFF524E46), height: 1.6),
+      bodySmall: TextStyle(color: Color(0xFF8C8578), height: 1.5),
     ),
   );
 

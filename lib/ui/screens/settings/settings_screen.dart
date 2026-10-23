@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/core/storage/database_helper.dart';
 import 'package:sf6_tracker/core/utils/app_logger.dart';
@@ -15,8 +14,8 @@ import 'package:sf6_tracker/services/backup_service.dart';
 import 'package:sf6_tracker/services/battle_log_service.dart';
 import 'package:sf6_tracker/services/stats_service.dart';
 import 'package:sf6_tracker/services/social_service.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:sf6_tracker/services/media_cache_service.dart';
+
+
 import 'package:sf6_tracker/services/update_service.dart';
 import 'package:sf6_tracker/ui/screens/auth/login_webview_screen.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
@@ -206,7 +205,7 @@ class SettingsScreen extends StatelessWidget {
                                 style: TextButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                   visualDensity: VisualDensity.compact,
-                                  backgroundColor: AppColors.accentNeonCyan.withOpacity(0.15),
+                                  backgroundColor: colors.accentPrimary.withOpacity(0.15),
                                   foregroundColor: colors.accentPrimary,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                                 ),
@@ -423,11 +422,11 @@ class SettingsScreen extends StatelessWidget {
                   title: '电竞朋克',
                   subtitle: '沉浸式经典电竞暗黑底色 · 荧光青粉双色霓虹 · 苹果液态玻璃悬浮 Dock',
                   colorPalette: [
-                    AppColors.bgPrimary,
-                    AppColors.bgCard,
-                    AppColors.accentNeonCyan,
-                    AppColors.accentNeonPink,
-                    AppColors.accentNeonYellow,
+                    Color(0xFF0D0E12),
+                    Color(0xFF1E212B),
+                    Color(0xFF00E5FF),
+                    Color(0xFFFF2A85),
+                    Color(0xFFFFD600),
                   ],
                 ),
               ],
@@ -522,7 +521,7 @@ class SettingsScreen extends StatelessWidget {
                   title: Text('清空本地战绩缓存', style: TextStyle(color: colors.accentError, fontSize: 14)),
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('已清空本地临时缓存。')),
+                      SnackBar(content: Text('已清空本地临时缓存。')),
                     );
                   },
                 ),
@@ -549,11 +548,12 @@ class SettingsScreen extends StatelessWidget {
 }
 
   void _checkForUpdates(BuildContext context) async {
+    final colors = context.themeColors;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(color: AppColors.accentNeonCyan),
+      builder: (_) => Center(
+        child: CircularProgressIndicator(color: colors.accentPrimary),
       ),
     );
 
@@ -566,10 +566,10 @@ class SettingsScreen extends StatelessWidget {
 
     if (UpdateService.instance.errorMessage.isNotEmpty && release == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('未能连接到更新服务器，请确认 GitHub 是否有已发布的 Release 或稍后重试。'),
-          backgroundColor: AppColors.loseRed,
-          duration: Duration(seconds: 4),
+          backgroundColor: colors.loseRed,
+          duration: const Duration(seconds: 4),
         ),
       );
     } else if (release != null && UpdateService.instance.hasNewVersion) {
@@ -578,7 +578,7 @@ class SettingsScreen extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('当前已是最新版本 (${AppLogger.currentAppVersion})，暂无更新！'),
-          backgroundColor: AppColors.winGreen,
+          backgroundColor: colors.winGreen,
         ),
       );
     }
@@ -623,7 +623,7 @@ class SettingsScreen extends StatelessWidget {
           color: isSelected
               ? (mode == AppThemeMode.claudeWarm
                   ? const Color(0xFFD97757).withOpacity(0.08)
-                  : AppColors.accentNeonCyan.withOpacity(0.06))
+                  : const Color(0xFF00E5FF).withOpacity(0.06))
               : Colors.transparent,
         ),
         child: Row(
@@ -637,8 +637,8 @@ class SettingsScreen extends StatelessWidget {
                 color: isSelected
                     ? (mode == AppThemeMode.claudeWarm
                         ? const Color(0xFFD97757)
-                        : AppColors.accentNeonCyan)
-                    : (colors.isClaudeWarm ? const Color(0xFF8C8578) : AppColors.textTertiary),
+                        : const Color(0xFF00E5FF))
+                    : (colors.isClaudeWarm ? const Color(0xFF8C8578) : colors.textTertiary),
               ),
             ),
             const SizedBox(width: 12),
@@ -654,7 +654,7 @@ class SettingsScreen extends StatelessWidget {
                           style: TextStyle(
                             color: colors.isClaudeWarm
                                 ? const Color(0xFF1E1D1B)
-                                : (isSelected ? AppColors.accentNeonCyan : AppColors.textPrimary),
+                                : (isSelected ? const Color(0xFF00E5FF) : colors.textPrimary),
                             fontWeight: FontWeight.w900,
                             fontSize: 14.5,
                             fontFamily: colors.titleFontFamily,
@@ -691,7 +691,7 @@ class SettingsScreen extends StatelessWidget {
                     style: TextStyle(
                       color: colors.isClaudeWarm
                           ? const Color(0xFF524E46)
-                          : AppColors.textSecondary,
+                          : colors.textSecondary,
                       fontSize: 11.5,
                       height: 1.4,
                       fontWeight: colors.isClaudeWarm ? FontWeight.w500 : FontWeight.normal,
@@ -722,6 +722,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showEditProfileDialog(BuildContext context) {
+    final colors = context.themeColors;
     final activePlat = authService.activePlatform;
     final nameController = TextEditingController(text: activePlat?.fighterId ?? 'SF6_Player');
     final shortIdController = TextEditingController(text: activePlat?.shortId ?? '');
@@ -736,13 +737,16 @@ class SettingsScreen extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: AppColors.bgCard,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Row(
+              backgroundColor: colors.bgCardSolid,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: colors.borderSubtle),
+              ),
+              title: Row(
                 children: [
-                  Icon(Icons.edit, color: AppColors.accentNeonCyan),
-                  SizedBox(width: 8),
-                  Text('修改玩家资料与主用角色', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+                  Icon(Icons.edit, color: colors.accentPrimary),
+                  const SizedBox(width: 8),
+                  Text('修改玩家资料与主用角色', style: TextStyle(color: colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               ),
               content: SingleChildScrollView(
@@ -752,34 +756,34 @@ class SettingsScreen extends StatelessWidget {
                   children: [
                     TextField(
                       controller: nameController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: '玩家昵称 (Fighter ID)',
-                        prefixIcon: Icon(Icons.person, size: 20, color: AppColors.accentNeonCyan),
+                        prefixIcon: Icon(Icons.person, size: 20, color: colors.accentPrimary),
                       ),
                     ),
                     const SizedBox(height: 10),
                     TextField(
                       controller: shortIdController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Short ID (个人主页 10 位识别码)',
-                        prefixIcon: Icon(Icons.tag, size: 20, color: AppColors.accentNeonYellow),
+                        prefixIcon: Icon(Icons.tag, size: 20, color: colors.accentWarning),
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Text('选择主玩角色 (Main Character)：', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text('选择主玩角色 (Main Character)：', style: TextStyle(color: colors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.bgSecondary,
+                        color: colors.bgSecondary,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.borderSubtle),
+                        border: Border.all(color: colors.borderSubtle),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: selectedMainCharId,
                           isExpanded: true,
-                          dropdownColor: AppColors.bgCard,
+                          dropdownColor: colors.bgCardSolid,
                           items: Sf6Characters.all.map((c) {
                             return DropdownMenuItem<String>(
                               value: c.id,
@@ -787,14 +791,14 @@ class SettingsScreen extends StatelessWidget {
                                 children: [
                                   CharacterAvatar(characterId: c.id, size: 26, showBorder: false),
                                   const SizedBox(width: 8),
-                                  Text(c.nameZh, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold)),
+                                  Text(c.nameZh, style: TextStyle(color: colors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold)),
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
                                       '(${c.archetype})',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: AppColors.textTertiary, fontSize: 10),
+                                      style: TextStyle(color: colors.textTertiary, fontSize: 10),
                                     ),
                                   ),
                                 ],
@@ -838,7 +842,7 @@ class SettingsScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    Text('选择游玩平台：', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text('选择游玩平台：', style: TextStyle(color: colors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 8,
@@ -848,10 +852,10 @@ class SettingsScreen extends StatelessWidget {
                           label: Text(p.displayName),
                           selected: isSelected,
                           onSelected: (_) => setDialogState(() => selectedPlatform = p),
-                          selectedColor: AppColors.accentNeonCyan.withOpacity(0.3),
-                          backgroundColor: AppColors.bgSecondary,
+                          selectedColor: colors.accentPrimary.withOpacity(0.25),
+                          backgroundColor: colors.bgSecondary,
                           labelStyle: TextStyle(
-                            color: isSelected ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                            color: isSelected ? colors.accentPrimary : colors.textSecondary,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                             fontSize: 12,
                           ),
@@ -864,10 +868,13 @@ class SettingsScreen extends StatelessWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: Text('取消', style: TextStyle(color: AppColors.textSecondary)),
+                  child: Text('取消', style: TextStyle(color: colors.textSecondary)),
                 ),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.accentPrimary,
+                    foregroundColor: colors.isClaudeWarm ? Colors.white : Colors.black,
+                  ),
                   onPressed: () async {
                     final newName = nameController.text.trim().isNotEmpty ? nameController.text.trim() : (activePlat?.fighterId ?? 'SF6_Player');
                     final newSid = shortIdController.text.trim().isNotEmpty ? shortIdController.text.trim() : (activePlat?.shortId ?? '');
@@ -886,11 +893,14 @@ class SettingsScreen extends StatelessWidget {
                     if (dialogContext.mounted) Navigator.pop(dialogContext);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('已成功更新玩家档案：$newName (主用角色: ${Sf6Characters.getById(selectedMainCharId).nameZh})'), backgroundColor: AppColors.winGreen),
+                        SnackBar(
+                          content: Text('已成功更新玩家档案：$newName (主用角色: ${Sf6Characters.getById(selectedMainCharId).nameZh})'),
+                          backgroundColor: colors.winGreen,
+                        ),
                       );
                     }
                   },
-                  child: Text('保存修改', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                  child: const Text('保存修改', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -910,24 +920,25 @@ class SettingsScreen extends StatelessWidget {
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF141622),
+            color: colors.bgCardSolid,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.accentNeonCyan, width: 1.5),
+            border: Border.all(color: colors.borderSubtle, width: 1.5),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.person_add, color: AppColors.accentNeonCyan, size: 20),
-                  SizedBox(width: 8),
+                  Icon(Icons.person_add, color: colors.accentPrimary, size: 20),
+                  const SizedBox(width: 8),
                   Text(
                     '添加玩家账号',
                     style: TextStyle(
-                      color: AppColors.textPrimary,
+                      color: colors.textPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
+                      fontFamily: colors.titleFontFamily,
                     ),
                   ),
                 ],
@@ -938,12 +949,12 @@ class SettingsScreen extends StatelessWidget {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.accentNeonCyan.withOpacity(0.15),
+                    color: colors.accentPrimary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.language, color: AppColors.accentNeonCyan, size: 22),
+                  child: Icon(Icons.language, color: colors.accentPrimary, size: 22),
                 ),
-                title: Text('通过网页登录官方卡普空账号', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
+                title: Text('通过网页登录官方卡普空账号', style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
                 subtitle: Text('支持多账号同时共存，登录后自动嗅探抓取 100 场战绩与官方全量数据', style: TextStyle(color: colors.textSecondary, fontSize: 11)),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -955,18 +966,18 @@ class SettingsScreen extends StatelessWidget {
                   );
                 },
               ),
-              const Divider(color: AppColors.borderSubtle),
+              Divider(color: colors.borderSubtle),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.accentNeonYellow.withOpacity(0.15),
+                    color: colors.accentWarning.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.tag, color: AppColors.accentNeonYellow, size: 22),
+                  child: Icon(Icons.tag, color: colors.accentWarning, size: 22),
                 ),
-                title: Text('通过 10 位 Short ID 快速绑定', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
+                title: Text('通过 10 位 Short ID 快速绑定', style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
                 subtitle: Text('无需密码即可快速添加并绑定其他玩家或小号', style: TextStyle(color: colors.textSecondary, fontSize: 11)),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -981,6 +992,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showConfirmDeleteAccountDialog(BuildContext context, CapcomAccount acc) {
+    final colors = context.themeColors;
     final name = acc.activePlatform?.fighterId.isNotEmpty == true ? acc.activePlatform!.fighterId : acc.displayName;
     final sid = acc.activePlatform?.shortId.isNotEmpty == true ? acc.activePlatform!.shortId : acc.capcomId;
 
@@ -988,27 +1000,30 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (dialogCtx) {
         return AlertDialog(
-          backgroundColor: AppColors.bgCard,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Row(
+          backgroundColor: colors.bgCardSolid,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: colors.borderSubtle),
+          ),
+          title: Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: AppColors.loseRed),
-              SizedBox(width: 8),
-              Text('移除账号确认', style: TextStyle(color: AppColors.textPrimary, fontSize: 16)),
+              Icon(Icons.warning_amber_rounded, color: colors.loseRed),
+              const SizedBox(width: 8),
+              Text('移除账号确认', style: TextStyle(color: colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
           content: Text(
             '确定要从本机移除账号 [$name] (Short ID: $sid) 吗？\n\n提示：该账号已保存在本地数据库中的对战历史、胜率记录不会丢失，再次添加该 Short ID 时即可重新读取。',
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+            style: TextStyle(color: colors.textSecondary, fontSize: 13, height: 1.5),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: Text('取消', style: TextStyle(color: AppColors.textSecondary)),
+              child: Text('取消', style: TextStyle(color: colors.textSecondary)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.loseRed,
+                backgroundColor: colors.loseRed,
                 foregroundColor: Colors.white,
               ),
               onPressed: () async {
@@ -1016,11 +1031,11 @@ class SettingsScreen extends StatelessWidget {
                 await authService.logoutAccount(acc.id);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('已从本机移除账号: $name')),
+                    SnackBar(content: Text('已从本机移除账号: $name'), backgroundColor: colors.loseRed),
                   );
                 }
               },
-              child: Text('确认移除', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text('确认移除', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -1042,13 +1057,16 @@ class SettingsScreen extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: AppColors.bgCard,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Row(
-                 children: [
-                  Icon(Icons.person_add, color: AppColors.accentNeonCyan),
-                  SizedBox(width: 8),
-                  Text('绑定玩家 Short ID / 链接', style: TextStyle(color: AppColors.textPrimary, fontSize: 16)),
+              backgroundColor: colors.bgCardSolid,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: colors.borderSubtle),
+              ),
+              title: Row(
+                children: [
+                  Icon(Icons.person_add, color: colors.accentPrimary),
+                  const SizedBox(width: 8),
+                  Text('绑定玩家 Short ID / 链接', style: TextStyle(color: colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               ),
               content: SingleChildScrollView(
@@ -1068,7 +1086,7 @@ class SettingsScreen extends StatelessWidget {
                         hintText: '例如 1234567890 或 https://.../profile/1234567890',
                       ),
                       onChanged: (val) {
-                        final reg = RegExp(r'/profile/(\d+)');
+                        final reg = RegExp(r'/profile/(\\d+)');
                         final match = reg.firstMatch(val);
                         if (match != null) {
                           controller.text = match.group(1)!;
@@ -1110,7 +1128,7 @@ class SettingsScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    Text('选择游玩平台：', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    Text('选择游玩平台：', style: TextStyle(color: colors.textSecondary, fontSize: 12)),
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 8,
@@ -1120,10 +1138,10 @@ class SettingsScreen extends StatelessWidget {
                           label: Text(p.displayName),
                           selected: isSelected,
                           onSelected: (_) => setDialogState(() => selectedPlatform = p),
-                          selectedColor: AppColors.accentNeonCyan.withOpacity(0.3),
-                          backgroundColor: AppColors.bgSecondary,
+                          selectedColor: colors.accentPrimary.withOpacity(0.25),
+                          backgroundColor: colors.bgSecondary,
                           labelStyle: TextStyle(
-                            color: isSelected ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                            color: isSelected ? colors.accentPrimary : colors.textSecondary,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                             fontSize: 12,
                           ),
@@ -1136,13 +1154,16 @@ class SettingsScreen extends StatelessWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: Text('取消', style: TextStyle(color: AppColors.textSecondary)),
+                  child: Text('取消', style: TextStyle(color: colors.textSecondary)),
                 ),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.accentPrimary,
+                    foregroundColor: colors.isClaudeWarm ? Colors.white : Colors.black,
+                  ),
                   onPressed: () async {
                     String input = controller.text.trim();
-                    final reg = RegExp(r'(\d{8,12})');
+                    final reg = RegExp(r'(\\d{8,12})');
                     final match = reg.firstMatch(input);
                     final extractedId = match != null ? match.group(1)! : input;
                     final lpVal = int.tryParse(lpController.text.trim()) ?? 28000;
@@ -1162,12 +1183,15 @@ class SettingsScreen extends StatelessWidget {
                       if (dialogContext.mounted) Navigator.pop(dialogContext);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('已成功绑定玩家: $fighterName (Short ID: $extractedId)')),
+                          SnackBar(
+                            content: Text('已成功绑定玩家: $fighterName (Short ID: $extractedId)'),
+                            backgroundColor: colors.winGreen,
+                          ),
                         );
                       }
                     }
                   },
-                  child: Text('确认绑定', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                  child: const Text('确认绑定', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -1178,6 +1202,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showGlobalDiagnosticModal(BuildContext context) async {
+    final colors = context.themeColors;
     final activeAccount = authService.activeAccount;
     final activePlatform = authService.activePlatform;
     final dbRecords = await DatabaseHelper.instance.getBattleRecords(
@@ -1192,8 +1217,7 @@ class SettingsScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.bgCard,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (modalContext, setModalState) {
@@ -1225,6 +1249,11 @@ class SettingsScreen extends StatelessWidget {
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
               padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colors.bgCardSolid,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                border: Border.all(color: colors.borderSubtle),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1234,26 +1263,34 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.monitor_heart, color: AppColors.accentNeonYellow, size: 22),
+                          Icon(Icons.monitor_heart, color: colors.accentWarning, size: 22),
                           const SizedBox(width: 8),
-                          Text('运行黑匣子与诊断日志', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+                          Text(
+                            '运行黑匣子与诊断日志',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: colors.textPrimary,
+                              fontFamily: colors.titleFontFamily,
+                            ),
+                          ),
                         ],
                       ),
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.delete_sweep, color: AppColors.textTertiary, size: 20),
+                            icon: Icon(Icons.delete_sweep, color: colors.textTertiary, size: 20),
                             tooltip: '清空历史日志',
                             onPressed: () {
                               AppLogger.instance.clear();
                               setModalState(() {});
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('已清空运行日志缓存'), duration: Duration(seconds: 1)),
+                                SnackBar(content: const Text('已清空运行日志缓存'), backgroundColor: colors.accentPrimary, duration: const Duration(seconds: 1)),
                               );
                             },
                           ),
                           IconButton(
-                            icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                            icon: Icon(Icons.close, color: colors.textSecondary),
                             onPressed: () => Navigator.pop(ctx),
                           ),
                         ],
@@ -1267,17 +1304,17 @@ class SettingsScreen extends StatelessWidget {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _buildLogFilterChip('全部 (${AppLogger.instance.logs.length})', 'ALL', selectedFilter, setModalState),
+                        _buildLogFilterChip(context, '全部 (${AppLogger.instance.logs.length})', 'ALL', selectedFilter, setModalState),
                         const SizedBox(width: 6),
-                        _buildLogFilterChip('异常/警告 ($errorWarnCount)', 'ISSUES', selectedFilter, setModalState, alertColor: AppColors.loseRed),
+                        _buildLogFilterChip(context, '异常/警告 ($errorWarnCount)', 'ISSUES', selectedFilter, setModalState, alertColor: colors.loseRed),
                         const SizedBox(width: 6),
-                        _buildLogFilterChip('同步流水 ($syncCount)', 'SYNC', selectedFilter, setModalState, alertColor: AppColors.winGreen),
+                        _buildLogFilterChip(context, '同步流水 ($syncCount)', 'SYNC', selectedFilter, setModalState, alertColor: colors.winGreen),
                         const SizedBox(width: 6),
-                        _buildLogFilterChip('网络抓包 ($netCount)', 'NET', selectedFilter, setModalState, alertColor: AppColors.accentNeonCyan),
+                        _buildLogFilterChip(context, '网络抓包 ($netCount)', 'NET', selectedFilter, setModalState, alertColor: colors.accentPrimary),
                       ],
                     ),
                   ),
-                  const Divider(height: 18),
+                  Divider(height: 18, color: colors.borderSubtle),
 
                   // Log Entries List
                   Expanded(
@@ -1286,9 +1323,9 @@ class SettingsScreen extends StatelessWidget {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.check_circle_outline, size: 48, color: AppColors.winGreen.withOpacity(0.5)),
+                                Icon(Icons.check_circle_outline, size: 48, color: colors.winGreen.withOpacity(0.5)),
                                 const SizedBox(height: 8),
-                                Text('当前分类下暂无日志记录，运行良好', style: TextStyle(color: AppColors.textTertiary, fontSize: 13)),
+                                Text('当前分类下暂无日志记录，运行良好', style: TextStyle(color: colors.textTertiary, fontSize: 13)),
                               ],
                             ),
                           )
@@ -1301,24 +1338,24 @@ class SettingsScreen extends StatelessWidget {
                               Color badgeBg;
                               switch (entry.level) {
                                 case 'ERROR':
-                                  badgeColor = AppColors.loseRed;
-                                  badgeBg = AppColors.loseRed.withOpacity(0.18);
+                                  badgeColor = colors.loseRed;
+                                  badgeBg = colors.loseRed.withOpacity(0.18);
                                   break;
                                 case 'WARN':
-                                  badgeColor = AppColors.accentNeonYellow;
-                                  badgeBg = AppColors.accentNeonYellow.withOpacity(0.18);
+                                  badgeColor = colors.accentWarning;
+                                  badgeBg = colors.accentWarning.withOpacity(0.18);
                                   break;
                                 case 'SYNC':
-                                  badgeColor = AppColors.winGreen;
-                                  badgeBg = AppColors.winGreen.withOpacity(0.18);
+                                  badgeColor = colors.winGreen;
+                                  badgeBg = colors.winGreen.withOpacity(0.18);
                                   break;
                                 case 'NET':
-                                  badgeColor = AppColors.accentNeonCyan;
-                                  badgeBg = AppColors.accentNeonCyan.withOpacity(0.18);
+                                  badgeColor = colors.accentPrimary;
+                                  badgeBg = colors.accentPrimary.withOpacity(0.18);
                                   break;
                                 default:
-                                  badgeColor = AppColors.textSecondary;
-                                  badgeBg = AppColors.bgSecondary;
+                                  badgeColor = colors.textSecondary;
+                                  badgeBg = colors.bgSecondary;
                               }
 
                               final timeStr = DateFormat('HH:mm:ss.SSS').format(entry.timestamp);
@@ -1326,7 +1363,7 @@ class SettingsScreen extends StatelessWidget {
                               return Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: AppColors.bgSecondary,
+                                  color: colors.bgSecondary,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: badgeColor.withOpacity(0.25)),
                                 ),
@@ -1349,7 +1386,7 @@ class SettingsScreen extends StatelessWidget {
                                         const SizedBox(width: 6),
                                         Text(
                                           '[$timeStr]',
-                                          style: const TextStyle(color: AppColors.textTertiary, fontSize: 10.5, fontFamily: 'monospace'),
+                                          style: TextStyle(color: colors.textTertiary, fontSize: 10.5, fontFamily: 'monospace'),
                                         ),
                                         const SizedBox(width: 6),
                                         Expanded(
@@ -1357,7 +1394,7 @@ class SettingsScreen extends StatelessWidget {
                                             entry.tag,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.bold),
+                                            style: TextStyle(color: colors.textSecondary, fontSize: 11, fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                       ],
@@ -1367,7 +1404,7 @@ class SettingsScreen extends StatelessWidget {
                                       entry.message,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: entry.level == 'ERROR' ? AppColors.loseRed : AppColors.textPrimary,
+                                        color: entry.level == 'ERROR' ? colors.loseRed : colors.textPrimary,
                                         fontFamily: 'monospace',
                                         height: 1.35,
                                       ),
@@ -1387,16 +1424,16 @@ class SettingsScreen extends StatelessWidget {
                         flex: 3,
                         child: ElevatedButton.icon(
                           icon: const Icon(Icons.content_paste_go, color: Colors.black, size: 16),
-                          label: Text('复制精简诊断报告 (发给开发)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12.5)),
+                          label: const Text('复制精简诊断报告 (发给开发)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12.5)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.accentNeonYellow,
+                            backgroundColor: colors.accentWarning,
                             padding: const EdgeInsets.symmetric(vertical: 11),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                           onPressed: () {
                             Clipboard.setData(ClipboardData(text: conciseSummary));
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('已复制精简诊断报告！内容精炼，无冗余刷屏，可直接发给开发排查。'), backgroundColor: AppColors.winGreen),
+                              SnackBar(content: const Text('已复制精简诊断报告！内容精炼，无冗余刷屏，可直接发给开发排查。'), backgroundColor: colors.winGreen),
                             );
                           },
                         ),
@@ -1405,17 +1442,17 @@ class SettingsScreen extends StatelessWidget {
                       Expanded(
                         flex: 2,
                         child: OutlinedButton.icon(
-                          icon: const Icon(Icons.copy_all, size: 15, color: AppColors.accentNeonCyan),
-                          label: Text('复制全量黑匣子', style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 11.5)),
+                          icon: Icon(Icons.copy_all, size: 15, color: colors.accentPrimary),
+                          label: Text('复制全量黑匣子', style: TextStyle(color: colors.accentPrimary, fontSize: 11.5)),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.accentNeonCyan),
+                            side: BorderSide(color: colors.accentPrimary),
                             padding: const EdgeInsets.symmetric(vertical: 11),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                           onPressed: () {
                             Clipboard.setData(ClipboardData(text: fullReport));
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('已复制全量黑匣子流水日志！'), backgroundColor: AppColors.accentNeonCyan),
+                              SnackBar(content: const Text('已复制全量黑匣子流水日志！'), backgroundColor: colors.accentPrimary),
                             );
                           },
                         ),
@@ -1431,16 +1468,18 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLogFilterChip(String label, String value, String selected, void Function(void Function()) setModalState, {Color? alertColor}) {
+  Widget _buildLogFilterChip(BuildContext context, String label, String value, String selected, void Function(void Function()) setModalState, {Color? alertColor}) {
+    final colors = context.themeColors;
     final isSelected = selected == value;
+    final activeColor = alertColor ?? colors.accentPrimary;
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
       onSelected: (_) => setModalState(() => selected = value),
-      selectedColor: (alertColor ?? AppColors.accentNeonCyan).withOpacity(0.25),
-      backgroundColor: AppColors.bgSecondary,
+      selectedColor: activeColor.withOpacity(0.25),
+      backgroundColor: colors.bgSecondary,
       labelStyle: TextStyle(
-        color: isSelected ? (alertColor ?? AppColors.accentNeonCyan) : AppColors.textSecondary,
+        color: isSelected ? activeColor : colors.textSecondary,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         fontSize: 11.5,
       ),
@@ -1453,17 +1492,18 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const Center(
+      builder: (ctx) => Center(
         child: Card(
-          color: AppColors.bgCard,
+          color: colors.bgCardSolid,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: colors.borderSubtle)),
           child: Padding(
-            padding: EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(color: AppColors.accentNeonCyan),
-                SizedBox(height: 16),
-                Text('正在导出全量战绩与笔记备份...', style: TextStyle(color: AppColors.textPrimary)),
+                CircularProgressIndicator(color: colors.accentPrimary),
+                const SizedBox(height: 16),
+                Text('正在导出全量战绩与笔记备份...', style: TextStyle(color: colors.textPrimary)),
               ],
             ),
           ),
@@ -1479,13 +1519,16 @@ class SettingsScreen extends StatelessWidget {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: AppColors.bgCard,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Row(
+          backgroundColor: colors.bgCardSolid,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: colors.borderSubtle),
+          ),
+          title: Row(
             children: [
-              Icon(Icons.check_circle, color: AppColors.winGreen),
-              SizedBox(width: 8),
-              Text('本地备份导出成功', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+              Icon(Icons.check_circle, color: colors.winGreen),
+              const SizedBox(width: 8),
+              Text('本地备份导出成功', style: TextStyle(color: colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
           content: Column(
@@ -1493,14 +1536,14 @@ class SettingsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('已成功备份归档 ${res.recordCount} 局历史对战 (含突破官方限制的无限记录) 及 ${res.noteCount} 条心得笔记。',
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, height: 1.4)),
+                  style: TextStyle(color: colors.textPrimary, fontSize: 13, height: 1.4)),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.bgSecondary,
+                  color: colors.bgSecondary,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.borderSubtle),
+                  border: Border.all(color: colors.borderSubtle),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1509,35 +1552,38 @@ class SettingsScreen extends StatelessWidget {
                     const SizedBox(height: 4),
                     SelectableText(
                       res.filePath,
-                      style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 11, fontFamily: 'monospace'),
+                      style: TextStyle(color: colors.accentPrimary, fontSize: 11, fontFamily: 'monospace'),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 8),
               Text('文件已保存至手机存储，并已调起系统分享。你可将备份文件通过微信、QQ、网盘或邮件长期归档。',
-                  style: TextStyle(color: AppColors.textTertiary, fontSize: 11, height: 1.3)),
+                  style: TextStyle(color: colors.textTertiary, fontSize: 11, height: 1.3)),
             ],
           ),
           actions: [
             TextButton.icon(
-              icon: const Icon(Icons.share, size: 16, color: AppColors.accentNeonCyan),
-              label: Text('再次分享 / 另存为', style: TextStyle(color: AppColors.accentNeonCyan)),
+              icon: Icon(Icons.share, size: 16, color: colors.accentPrimary),
+              label: Text('再次分享 / 另存为', style: TextStyle(color: colors.accentPrimary)),
               onPressed: () {
                 Share.shareXFiles([XFile(res.filePath)], text: '街霸6助手战绩备份');
               },
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colors.accentPrimary,
+                foregroundColor: colors.isClaudeWarm ? Colors.white : Colors.black,
+              ),
               onPressed: () => Navigator.pop(ctx),
-              child: Text('确定', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              child: const Text('确定', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('导出失败: ${res.errorMessage}'), backgroundColor: AppColors.loseRed),
+        SnackBar(content: Text('导出失败: ${res.errorMessage}'), backgroundColor: colors.loseRed),
       );
     }
   }
@@ -1559,25 +1605,31 @@ class SettingsScreen extends StatelessWidget {
             return Container(
               height: MediaQuery.of(ctx).size.height * 0.75,
               padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: AppColors.bgCard,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              decoration: BoxDecoration(
+                color: colors.bgCardSolid,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                border: Border.all(color: colors.borderSubtle),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.restore, color: AppColors.accentNeonCyan),
+                      Icon(Icons.restore, color: colors.accentPrimary),
                       const SizedBox(width: 8),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           '从本地备份恢复战绩与数据',
-                          style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: colors.titleFontFamily,
+                          ),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, color: AppColors.textTertiary),
+                        icon: Icon(Icons.close, color: colors.textTertiary),
                         onPressed: () => Navigator.pop(modalCtx),
                       ),
                     ],
@@ -1588,14 +1640,14 @@ class SettingsScreen extends StatelessWidget {
                     style: TextStyle(color: colors.textSecondary, fontSize: 12),
                   ),
                   const SizedBox(height: 14),
-                  Text('已发现的本地备份文件：', style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text('已发现的本地备份文件：', style: TextStyle(color: colors.accentPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   if (files.isEmpty)
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.bgSecondary,
+                        color: colors.bgSecondary,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text('暂未检测到历史导出备份，可在上方点击“导出战绩与数据备份”先建立备份。', style: TextStyle(color: colors.textSecondary, fontSize: 11)),
@@ -1606,7 +1658,7 @@ class SettingsScreen extends StatelessWidget {
                       child: ListView.separated(
                         shrinkWrap: true,
                         itemCount: files.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        separatorBuilder: (_, __) => Divider(height: 1, color: colors.borderSubtle),
                         itemBuilder: (c, idx) {
                           final f = files[idx];
                           final fileName = f.path.split(Platform.pathSeparator).last;
@@ -1614,16 +1666,17 @@ class SettingsScreen extends StatelessWidget {
                           return ListTile(
                             dense: true,
                             contentPadding: EdgeInsets.zero,
-                            leading: const Icon(Icons.description, color: AppColors.accentNeonYellow, size: 20),
-                            title: Text(fileName, style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
-                            subtitle: Text('$sizeKb KB • 点击立即恢复', style: const TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+                            leading: Icon(Icons.description, color: colors.accentWarning, size: 20),
+                            title: Text(fileName, style: TextStyle(color: colors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
+                            subtitle: Text('$sizeKb KB • 点击立即恢复', style: TextStyle(color: colors.textTertiary, fontSize: 10)),
                             trailing: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.accentNeonCyan,
+                                backgroundColor: colors.accentPrimary,
+                                foregroundColor: colors.isClaudeWarm ? Colors.white : Colors.black,
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 minimumSize: Size.zero,
                               ),
-                              child: Text('导入', style: TextStyle(color: Colors.black, fontSize: 11, fontWeight: FontWeight.bold)),
+                              child: const Text('导入', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                               onPressed: () async {
                                 final res = await BackupService.instance.importBackupFromFile(f);
                                 if (!modalCtx.mounted) return;
@@ -1638,13 +1691,13 @@ class SettingsScreen extends StatelessWidget {
                                   }
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(res.message), backgroundColor: AppColors.winGreen),
+                                      SnackBar(content: Text(res.message), backgroundColor: colors.winGreen),
                                     );
                                   }
                                 } else {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(res.message), backgroundColor: AppColors.loseRed),
+                                      SnackBar(content: Text(res.message), backgroundColor: colors.loseRed),
                                     );
                                   }
                                 }
@@ -1655,18 +1708,19 @@ class SettingsScreen extends StatelessWidget {
                       ),
                     ),
                   const SizedBox(height: 14),
-                  Text('或直接粘贴备份 JSON 文本：', style: TextStyle(color: AppColors.accentNeonYellow, fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text('或直接粘贴备份 JSON 文本：', style: TextStyle(color: colors.accentWarning, fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   TextField(
                     controller: pasteController,
                     maxLines: 3,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontFamily: 'monospace'),
+                    style: TextStyle(color: colors.textPrimary, fontSize: 11, fontFamily: 'monospace'),
                     decoration: InputDecoration(
                       hintText: '在此粘贴导出的 JSON 数据文本...',
-                      hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                      hintStyle: TextStyle(color: colors.textTertiary, fontSize: 11),
                       filled: true,
-                      fillColor: AppColors.bgSecondary,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.borderSubtle)),
+                      fillColor: colors.bgSecondary,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: colors.borderSubtle)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: colors.borderSubtle)),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -1674,22 +1728,22 @@ class SettingsScreen extends StatelessWidget {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.winGreen,
-                        foregroundColor: Colors.black,
+                        backgroundColor: colors.winGreen,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       icon: const Icon(Icons.file_upload, size: 18),
-                      label: Text('解析并合并导入粘贴的数据', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      label: const Text('解析并合并导入粘贴的数据', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       onPressed: () async {
-                        final text = pasteController.text.trim();
-                        if (text.isEmpty) {
+                        final textVal = pasteController.text.trim();
+                        if (textVal.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('请先粘贴备份 JSON 内容')),
+                            SnackBar(content: Text('请先粘贴备份 JSON 内容')),
                           );
                           return;
                         }
-                        final res = await BackupService.instance.importBackupJson(text);
+                        final res = await BackupService.instance.importBackupJson(textVal);
                         if (!modalCtx.mounted) return;
                         Navigator.pop(modalCtx);
                         if (res.success) {
@@ -1702,13 +1756,13 @@ class SettingsScreen extends StatelessWidget {
                           }
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(res.message), backgroundColor: AppColors.winGreen),
+                              SnackBar(content: Text(res.message), backgroundColor: colors.winGreen),
                             );
                           }
                         } else {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(res.message), backgroundColor: AppColors.loseRed),
+                              SnackBar(content: Text(res.message), backgroundColor: colors.loseRed),
                             );
                           }
                         }

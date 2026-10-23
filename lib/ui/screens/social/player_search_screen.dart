@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/core/constants/ranks.dart';
 import 'package:sf6_tracker/core/network/next_data_parser.dart';
@@ -444,9 +443,12 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.themeColors;
+    final isClaudeWarm = colors.isClaudeWarm;
     final hasInput = _searchController.text.trim().isNotEmpty;
 
     return Scaffold(
+      backgroundColor: isClaudeWarm ? Colors.transparent : null,
       appBar: AppBar(
         title: const Text('全网搜索玩家', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         bottom: PreferredSize(
@@ -459,29 +461,29 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
                   child: Container(
                     height: 44,
                     decoration: BoxDecoration(
-                      color: AppColors.bgSecondary,
+                      color: colors.bgSecondary,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: _searchFocusNode.hasFocus ? AppColors.accentNeonCyan : AppColors.borderSubtle,
+                        color: _searchFocusNode.hasFocus ? colors.accentPrimary : colors.borderSubtle,
                       ),
                     ),
                     child: TextField(
                       controller: _searchController,
                       focusNode: _searchFocusNode,
-                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                      style: TextStyle(color: colors.textPrimary, fontSize: 14),
                       textInputAction: TextInputAction.search,
                       onSubmitted: (_) => _performNetworkSearch(),
                       decoration: InputDecoration(
                         hintText: _isShortIdMode ? '输入 10 位玩家识别码 (Short ID)' : '输入 Fighter ID 玩家昵称',
-                        hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 13),
+                        hintStyle: TextStyle(color: colors.textSecondary, fontSize: 13),
                         prefixIcon: Icon(
                           _isShortIdMode ? Icons.tag : Icons.search,
-                          color: _isShortIdMode ? AppColors.accentNeonYellow : AppColors.accentNeonCyan,
+                          color: _isShortIdMode ? colors.accentSecondary : colors.accentPrimary,
                           size: 20,
                         ),
                         suffixIcon: hasInput
                             ? IconButton(
-                                icon: const Icon(Icons.clear, color: AppColors.textSecondary, size: 18),
+                                icon: Icon(Icons.clear, color: colors.textSecondary, size: 18),
                                 onPressed: () {
                                   _searchController.clear();
                                   _searchFocusNode.requestFocus();
@@ -497,8 +499,8 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
                 const SizedBox(width: 8),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accentNeonCyan,
-                    foregroundColor: Colors.black,
+                    backgroundColor: colors.accentPrimary,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
@@ -517,7 +519,7 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
         children: [
           Row(
             children: [
-              const Text('搜索模式: ', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+              Text('搜索模式: ', style: TextStyle(color: colors.textSecondary, fontSize: 12)),
               const SizedBox(width: 8),
               ChoiceChip(
                 label: const Text('Fighter ID 昵称'),
@@ -526,10 +528,10 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
                   setState(() => _isShortIdMode = !val);
                   _filterLocalResults(_searchController.text.trim());
                 },
-                selectedColor: AppColors.accentNeonCyan.withOpacity(0.2),
-                backgroundColor: AppColors.bgSecondary,
+                selectedColor: colors.accentPrimary.withOpacity(0.2),
+                backgroundColor: colors.bgSecondary,
                 labelStyle: TextStyle(
-                  color: !_isShortIdMode ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                  color: !_isShortIdMode ? colors.accentPrimary : colors.textSecondary,
                   fontWeight: !_isShortIdMode ? FontWeight.bold : FontWeight.normal,
                   fontSize: 11,
                 ),
@@ -542,10 +544,10 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
                   setState(() => _isShortIdMode = val);
                   _filterLocalResults(_searchController.text.trim());
                 },
-                selectedColor: AppColors.accentNeonYellow.withOpacity(0.2),
-                backgroundColor: AppColors.bgSecondary,
+                selectedColor: colors.accentSecondary.withOpacity(0.2),
+                backgroundColor: colors.bgSecondary,
                 labelStyle: TextStyle(
-                  color: _isShortIdMode ? AppColors.accentNeonYellow : AppColors.textSecondary,
+                  color: _isShortIdMode ? colors.accentSecondary : colors.textSecondary,
                   fontWeight: _isShortIdMode ? FontWeight.bold : FontWeight.normal,
                   fontSize: 11,
                 ),
@@ -558,10 +560,10 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('最近搜索历史', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                Text('最近搜索历史', style: TextStyle(color: colors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
                 TextButton(
                   onPressed: _clearRecentSearches,
-                  child: const Text('清空历史', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                  child: Text('清空历史', style: TextStyle(color: colors.textSecondary, fontSize: 11)),
                 ),
               ],
             ),
@@ -571,8 +573,8 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
               children: _recentSearches.map((s) {
                 return ActionChip(
                   label: Text(s),
-                  backgroundColor: AppColors.bgSecondary,
-                  labelStyle: const TextStyle(color: AppColors.textPrimary, fontSize: 12),
+                  backgroundColor: colors.bgSecondary,
+                  labelStyle: TextStyle(color: colors.textPrimary, fontSize: 12),
                   onPressed: () {
                     _searchController.text = s;
                     _performNetworkSearch();
@@ -584,7 +586,7 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
           ],
 
           if (_networkResults.isNotEmpty) ...[
-            _buildSectionHeader('官方全网检索匹配 (${_networkResults.length})', AppColors.accentNeonYellow),
+            _buildSectionHeader('官方全网检索匹配 (${_networkResults.length})', colors.accentSecondary),
             const SizedBox(height: 8),
             ..._networkResults.map((r) => _buildPlayerCard(r)),
             const SizedBox(height: 16),
@@ -594,12 +596,12 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               alignment: Alignment.center,
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
-                  SizedBox(width: 12),
-                  Text('正在连接卡普空 Buckler 官方服务器全网匹配中...', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                  const SizedBox(width: 12),
+                  Text('正在连接卡普空 Buckler 官方服务器全网匹配中...', style: TextStyle(color: colors.textSecondary, fontSize: 12)),
                 ],
               ),
             ),
@@ -610,21 +612,21 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.bgSecondary,
+                color: colors.bgSecondary,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.loseRed.withOpacity(0.4)),
+                border: Border.all(color: colors.accentError.withOpacity(0.4)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.info_outline, size: 16, color: AppColors.accentNeonYellow),
+                      Icon(Icons.info_outline, size: 16, color: colors.accentSecondary),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           _networkErrorMessage,
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                          style: TextStyle(color: colors.textSecondary, fontSize: 12),
                         ),
                       ),
                     ],
@@ -634,10 +636,10 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        icon: const Icon(Icons.open_in_browser, size: 16, color: AppColors.accentNeonCyan),
-                        label: Text('在内置浏览器中全网搜索 "${_searchController.text.trim()}"', style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 12)),
+                        icon: Icon(Icons.open_in_browser, size: 16, color: colors.accentPrimary),
+                        label: Text('在内置浏览器中全网搜索 "${_searchController.text.trim()}"', style: TextStyle(color: colors.accentPrimary, fontSize: 12)),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.accentNeonCyan),
+                          side: BorderSide(color: colors.accentPrimary),
                           padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
                         onPressed: () => _openInBrowserSearch(_searchController.text.trim()),
@@ -651,7 +653,7 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
           ],
 
           if (_localResults.isNotEmpty) ...[
-            _buildSectionHeader('本地好友与历史对手联想 (${_localResults.length})', AppColors.accentNeonCyan),
+            _buildSectionHeader('本地好友与历史对手联想 (${_localResults.length})', colors.accentPrimary),
             const SizedBox(height: 8),
             ..._localResults.map((r) => _buildPlayerCard(r)),
             const SizedBox(height: 16),
@@ -659,11 +661,11 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 36),
               alignment: Alignment.center,
-              child: const Column(
+              child: Column(
                 children: [
-                  Icon(Icons.person_search, size: 40, color: AppColors.textTertiary),
-                  SizedBox(height: 10),
-                  Text('本地暂无匹配的记录，点击右上角 "全网搜索" 可检索官方千万玩家', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+                  Icon(Icons.person_search, size: 40, color: colors.textSecondary),
+                  const SizedBox(height: 10),
+                  Text('本地暂无匹配的记录，点击右上角 "全网搜索" 可检索官方千万玩家', style: TextStyle(color: colors.textSecondary, fontSize: 12)),
                 ],
               ),
             ),
@@ -694,6 +696,7 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
   }
 
   Widget _buildPlayerCard(SearchPlayerResult p) {
+    final colors = context.themeColors;
     final char = Sf6Characters.getById(p.mainCharacterId);
     final rank = Sf6Rank.fromLpOrMr(p.lp, mr: p.mr);
     final platformType = PlatformType.fromCode(p.platform);
@@ -705,7 +708,7 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: context.themeColors.isClaudeWarm ? const [BoxShadow(color: Color(0x0A402010), blurRadius: 8, offset: Offset(0, 2))] : null,
         border: Border.all(
-          color: p.isOfficialNetwork ? AppColors.accentNeonYellow.withOpacity(0.5) : AppColors.borderSubtle,
+          color: p.isOfficialNetwork ? colors.accentSecondary.withOpacity(0.5) : colors.borderSubtle,
         ),
       ),
       child: InkWell(
@@ -728,8 +731,8 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
                             p.fighterId,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
+                            style: TextStyle(
+                              color: colors.textPrimary,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -740,14 +743,14 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                           decoration: BoxDecoration(
                             color: p.isOfficialNetwork
-                                ? AppColors.accentNeonYellow.withOpacity(0.15)
-                                : AppColors.accentNeonCyan.withOpacity(0.15),
+                                ? colors.accentSecondary.withOpacity(0.15)
+                                : colors.accentPrimary.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             p.sourceDescription,
                             style: TextStyle(
-                              color: p.isOfficialNetwork ? AppColors.accentNeonYellow : AppColors.accentNeonCyan,
+                              color: p.isOfficialNetwork ? colors.accentSecondary : colors.accentPrimary,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
@@ -770,26 +773,26 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
                           },
                           child: Row(
                             children: [
-                              const Icon(Icons.tag, size: 12, color: AppColors.textTertiary),
+                              Icon(Icons.tag, size: 12, color: colors.textSecondary),
                               Text(
                                 p.shortId,
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                style: TextStyle(color: colors.textSecondary, fontSize: 11),
                               ),
                               const SizedBox(width: 4),
-                              const Icon(Icons.copy, size: 10, color: AppColors.textTertiary),
+                              Icon(Icons.copy, size: 10, color: colors.textSecondary),
                             ],
                           ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           '•  ${platformType.displayName}',
-                          style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                          style: TextStyle(color: colors.textSecondary, fontSize: 11),
                         ),
                         if (p.clubName.isNotEmpty) ...[
                           const SizedBox(width: 6),
                           Text(
                             '[${p.clubName}]',
-                            style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                            style: TextStyle(color: colors.textSecondary, fontSize: 11),
                           ),
                         ],
                       ],
@@ -801,19 +804,19 @@ class _PlayerSearchScreenState extends State<PlayerSearchScreen> {
                         const SizedBox(width: 8),
                         Text(
                           p.mr > 0 ? '${p.mr} MR' : '${p.lp} LP',
-                          style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 12, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: colors.textPrimary, fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           '主力: ${char.nameZh}',
-                          style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                          style: TextStyle(color: colors.textSecondary, fontSize: 11),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 20),
+              Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
             ],
           ),
         ),

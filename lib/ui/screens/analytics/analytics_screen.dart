@@ -81,23 +81,23 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
       if (res.needLogin) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('卡普空官方登录会话已过期，请重新登录'),
-            backgroundColor: AppColors.loseRed,
+          SnackBar(
+            content: const Text('卡普空官方登录会话已过期，请重新登录'),
+            backgroundColor: context.themeColors.loseRed,
           ),
         );
       } else if (res.success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(res.recordsUpdated > 0 ? '同步完成，已更新 ${res.recordsUpdated} 局战绩并重新分析' : '同步完成，当前已是最新战绩分析'),
-            backgroundColor: AppColors.winGreen,
+            backgroundColor: context.themeColors.winGreen,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(res.message.isNotEmpty ? res.message : '网络同步未完成，已加载本地分析数据'),
-            backgroundColor: AppColors.accentNeonYellow,
+            backgroundColor: context.themeColors.accentSecondary,
           ),
         );
       }
@@ -283,7 +283,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
 
     return Container(
-      color: colors.isClaudeWarm ? colors.bgSecondary.withOpacity(0.5) : AppColors.bgSecondary,
+      color: colors.isClaudeWarm ? colors.bgSecondary.withOpacity(0.5) : colors.bgSecondary,
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
-import 'package:sf6_tracker/core/constants/app_colors.dart';
 
 class CharacterAvatar extends StatelessWidget {
   final String characterId;
@@ -74,7 +73,7 @@ class CharacterAvatar extends StatelessWidget {
       return Center(
         child: Icon(
           Icons.help_outline_rounded,
-          color: AppColors.accentNeonCyan,
+          color: const Color(0xFF00E5FF),
           size: size * 0.62,
         ),
       );
@@ -94,7 +93,7 @@ class CharacterAvatar extends StatelessWidget {
 
   Color _getCharacterThemeColor(String charId) {
     final lower = charId.toLowerCase();
-    if (lower == 'random' || lower == 'cha' || lower == '?') return AppColors.accentNeonCyan;
+    if (lower == 'random' || lower == 'cha' || lower == '?') return const Color(0xFF00E5FF);
     if (lower.contains('ryu')) return const Color(0xFFE53935);
     if (lower.contains('ken')) return const Color(0xFFFF9800);
     if (lower.contains('cammy')) return const Color(0xFF00E676);

@@ -2,7 +2,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/core/constants/ranks.dart';
 import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
@@ -351,17 +350,17 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: isMaster ? AppColors.rankMaster.withOpacity(0.15) : colors.accentPrimary.withOpacity(0.15),
+                color: isMaster ? colors.rankMaster.withOpacity(0.15) : colors.accentPrimary.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(
-                  color: isMaster ? AppColors.rankMaster.withOpacity(0.4) : colors.accentPrimary.withOpacity(0.4),
+                  color: isMaster ? colors.rankMaster.withOpacity(0.4) : colors.accentPrimary.withOpacity(0.4),
                   width: 0.8,
                 ),
               ),
               child: Text(
                 isMaster ? '大师排位 (Master League)' : '积分天梯 (LP League)',
                 style: TextStyle(
-                  color: isMaster ? AppColors.rankMaster : colors.accentPrimary,
+                  color: isMaster ? colors.rankMaster : colors.accentPrimary,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),
@@ -415,15 +414,15 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
                     ? [
                         HorizontalLine(
                           y: 1500,
-                          color: AppColors.textTertiary.withOpacity(0.6),
+                          color: colors.textSecondary.withOpacity(0.6),
                           strokeWidth: 1.5,
                           dashArray: [5, 5],
                           label: HorizontalLineLabel(
                             show: true,
                             alignment: Alignment.topRight,
                             padding: const EdgeInsets.only(right: 6, bottom: 2),
-                            style: const TextStyle(
-                              color: AppColors.textTertiary,
+                            style: TextStyle(
+                              color: colors.textSecondary,
                               fontSize: 9,
                               fontWeight: FontWeight.bold,
                             ),
@@ -465,7 +464,7 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
                           axisSide: meta.axisSide,
                           child: Text(
                             DateFormat('MM/dd').format(rec.playedAt),
-                            style: const TextStyle(color: AppColors.textTertiary, fontSize: 9),
+                            style: TextStyle(color: colors.textSecondary, fontSize: 9),
                           ),
                         );
                       }
@@ -479,8 +478,11 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
               lineTouchData: LineTouchData(
                 handleBuiltInTouches: true,
                 touchTooltipData: LineTouchTooltipData(
-                  tooltipBgColor: colors.bgCardSolid.withOpacity(0.95),
+                  tooltipBgColor: colors.isClaudeWarm ? const Color(0xFFFFFFFF) : const Color(0xFF161B22),
                   tooltipRoundedRadius: 8,
+                  fitInsideHorizontally: true,
+                  fitInsideVertically: true,
+                  tooltipBorder: BorderSide(color: colors.borderSubtle, width: 1),
                   getTooltipItems: (touchedSpots) {
                     return touchedSpots.map((spot) {
                       final idx = spot.spotIndex;
@@ -498,15 +500,15 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
                       return LineTooltipItem(
                         '$winStr$changeText',
                         TextStyle(
-                          color: rec.isWin ? AppColors.winGreen : AppColors.loseRed,
+                          color: rec.isWin ? colors.winGreen : colors.loseRed,
                           fontWeight: FontWeight.bold,
                           fontSize: 11,
                         ),
                         children: [
                           TextSpan(
                             text: '\n对手: ${oppChar.nameZh}\n结算: $scoreText | $dateText',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: colors.textPrimary,
                               fontWeight: FontWeight.normal,
                               fontSize: 10,
                               height: 1.4,
@@ -527,7 +529,7 @@ class _RankedScoreChartCardState extends State<RankedScoreChartCard> {
                   gradient: LinearGradient(
                     colors: colors.isClaudeWarm
                         ? const [Color(0xFFD97757), Color(0xFFD97706)]
-                        : const [AppColors.accentNeonCyan, AppColors.brandPurple],
+                        : const [Color(0xFF00E5FF), Color(0xFF7C4DFF)],
                   ),
                   barWidth: 2.5,
                   isStrokeCapRound: true,

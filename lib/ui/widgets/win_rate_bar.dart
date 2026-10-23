@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sf6_tracker/core/constants/app_colors.dart';
+
 import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 
 class WinRateBar extends StatelessWidget {

@@ -3,10 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:sf6_tracker/models/battle_record.dart';
 import 'package:sf6_tracker/models/account_profile.dart';
-import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/ui/widgets/character_avatar.dart';
-import 'package:sf6_tracker/ui/widgets/share_battle_card.dart';
 import 'package:sf6_tracker/ui/widgets/share_battle_dialog.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
 import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
@@ -142,7 +140,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
                           decoration: BoxDecoration(
-                            color: r.playerControlType == 'M' ? AppColors.accentNeonYellow : AppColors.accentNeonCyan,
+                            color: r.playerControlType == 'M' ? const Color(0xFFFFC107) : const Color(0xFF2196F3),
                             borderRadius: BorderRadius.circular(3),
                           ),
                           child: Text(
@@ -160,7 +158,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: (isWin ? AppColors.winGreen : AppColors.loseRed).withOpacity(0.2),
+                          color: (isWin ? colors.winGreen : colors.loseRed).withOpacity(0.18),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -193,7 +191,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
                           decoration: BoxDecoration(
-                            color: r.opponentControlType == 'M' ? AppColors.accentNeonYellow : AppColors.accentNeonCyan,
+                            color: r.opponentControlType == 'M' ? const Color(0xFFFFC107) : const Color(0xFF2196F3),
                             borderRadius: BorderRadius.circular(3),
                           ),
                           child: Text(
@@ -233,8 +231,8 @@ class _BattleCardItemState extends State<BattleCardItem> {
                             if (r.opponentMr != null && r.opponentMr! > 0)
                               Text(
                                 '${r.opponentMr} MR',
-                                style: const TextStyle(
-                                  color: AppColors.rankMaster,
+                                style: TextStyle(
+                                  color: colors.rankMaster,
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -256,7 +254,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
                             '${r.playerMrChange > 0 ? '+' : ''}${r.playerMrChange} MR',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: r.playerMrChange > 0 ? AppColors.winGreen : AppColors.loseRed,
+                              color: r.playerMrChange > 0 ? colors.winGreen : colors.loseRed,
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),
@@ -266,7 +264,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
                             '${r.playerLpChange > 0 ? '+' : ''}${r.playerLpChange} LP',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: r.playerLpChange > 0 ? AppColors.winGreen : AppColors.loseRed,
+                              color: r.playerLpChange > 0 ? colors.winGreen : colors.loseRed,
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),
@@ -275,8 +273,8 @@ class _BattleCardItemState extends State<BattleCardItem> {
                         Text(
                           DateFormat('MM-dd').format(r.playedAt),
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.textTertiary,
+                          style: TextStyle(
+                            color: colors.textSecondary,
                             fontSize: 10,
                             height: 1.1,
                           ),
@@ -284,8 +282,8 @@ class _BattleCardItemState extends State<BattleCardItem> {
                         Text(
                           DateFormat('HH:mm').format(r.playedAt),
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.textTertiary,
+                          style: TextStyle(
+                            color: colors.textSecondary,
                             fontSize: 10,
                             height: 1.1,
                           ),
@@ -312,20 +310,20 @@ class _BattleCardItemState extends State<BattleCardItem> {
                           '模式: ${r.battleType.displayName}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                          style: TextStyle(color: colors.textSecondary, fontSize: 12),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.bgSecondary,
+                          color: colors.bgSecondary,
                           borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: AppColors.borderSubtle),
+                          border: Border.all(color: colors.borderSubtle),
                         ),
                         child: Text(
                           '对手平台: ${_formatPlatform(r.opponentPlatform)}',
-                          style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 11, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: colors.accentPrimary, fontSize: 11, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -335,9 +333,9 @@ class _BattleCardItemState extends State<BattleCardItem> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: AppColors.bgSecondary.withOpacity(0.5),
+                        color: colors.bgSecondary,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.borderSubtle.withOpacity(0.5)),
+                        border: Border.all(color: colors.borderSubtle),
                       ),
                       child: Row(
                         children: [
@@ -348,21 +346,21 @@ class _BattleCardItemState extends State<BattleCardItem> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text('已复制对手 Short ID: ${r.opponentShortId}'),
-                                    backgroundColor: AppColors.winGreen,
+                                    backgroundColor: colors.winGreen,
                                     duration: const Duration(seconds: 2),
                                   ),
                                 );
                               },
                               child: Row(
                                 children: [
-                                  const Icon(Icons.tag, size: 14, color: AppColors.accentNeonYellow),
+                                  Icon(Icons.tag, size: 14, color: colors.accentSecondary),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Short ID: ${r.opponentShortId}',
-                                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                    style: TextStyle(color: colors.textSecondary, fontSize: 12),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Icon(Icons.copy, size: 12, color: AppColors.textTertiary),
+                                  Icon(Icons.copy, size: 12, color: colors.textSecondary),
                                 ],
                               ),
                             ),
@@ -388,19 +386,19 @@ class _BattleCardItemState extends State<BattleCardItem> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppColors.accentNeonCyan.withOpacity(0.15),
+                                  color: colors.accentPrimary.withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: AppColors.accentNeonCyan.withOpacity(0.6)),
+                                  border: Border.all(color: colors.accentPrimary.withOpacity(0.5)),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.person_search, size: 13, color: AppColors.accentNeonCyan),
+                                    Icon(Icons.person_search, size: 13, color: colors.accentPrimary),
                                     SizedBox(width: 4),
                                     Text(
                                       '查看对方资料',
                                       style: TextStyle(
-                                        color: AppColors.accentNeonCyan,
+                                        color: colors.accentPrimary,
                                         fontSize: 11,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -415,10 +413,10 @@ class _BattleCardItemState extends State<BattleCardItem> {
                     const SizedBox(height: 8),
                   ],
                   if (r.rounds.isNotEmpty) ...[
-                    const Text(
+                    Text(
                       '回合详情 (Round Breakdown)',
                       style: TextStyle(
-                        color: AppColors.textSecondary,
+                        color: colors.textSecondary,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -431,10 +429,10 @@ class _BattleCardItemState extends State<BattleCardItem> {
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.bgSecondary,
+                            color: colors.bgSecondary,
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
-                              color: round.isPlayerWin ? AppColors.winGreen.withOpacity(0.4) : AppColors.loseRed.withOpacity(0.4),
+                              color: round.isPlayerWin ? colors.winGreen.withOpacity(0.4) : colors.loseRed.withOpacity(0.4),
                             ),
                           ),
                           child: Row(
@@ -442,12 +440,12 @@ class _BattleCardItemState extends State<BattleCardItem> {
                             children: [
                               Text(
                                 'R${round.roundNum}: ',
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                style: TextStyle(color: colors.textSecondary, fontSize: 12),
                               ),
                               Text(
                                 round.isPlayerWin ? '胜' : '负',
                                 style: TextStyle(
-                                  color: round.isPlayerWin ? AppColors.winGreen : AppColors.loseRed,
+                                  color: round.isPlayerWin ? colors.winGreen : colors.loseRed,
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -455,7 +453,7 @@ class _BattleCardItemState extends State<BattleCardItem> {
                               const SizedBox(width: 4),
                               Text(
                                 '(${round.finishType.displayName})',
-                                style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                                style: TextStyle(color: colors.textSecondary, fontSize: 11),
                               ),
                             ],
                           ),
@@ -495,24 +493,24 @@ class _BattleCardItemState extends State<BattleCardItem> {
                                   onTap: () {
                                     Clipboard.setData(ClipboardData(text: r.replayCode));
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('录像代码已复制！在《街霸6》对战转播输入即可观看'),
-                                        backgroundColor: AppColors.winGreen,
+                                      SnackBar(
+                                        content: const Text('录像代码已复制！在《街霸6》对战转播输入即可观看'),
+                                        backgroundColor: colors.winGreen,
                                         duration: Duration(seconds: 2),
                                       ),
                                     );
                                   },
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(2),
-                                    child: Icon(Icons.copy, size: 14, color: AppColors.accentNeonCyan),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(2),
+                                    child: Icon(Icons.copy, size: 14, color: colors.accentPrimary),
                                   ),
                                 ),
                                 const SizedBox(width: 6),
                                 InkWell(
                                   onTap: () => _showReplayGuideDialog(context),
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(2),
-                                    child: Icon(Icons.help_outline, size: 14, color: AppColors.accentNeonYellow),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(2),
+                                    child: Icon(Icons.help_outline, size: 14, color: colors.accentSecondary),
                                   ),
                                 ),
                               ],

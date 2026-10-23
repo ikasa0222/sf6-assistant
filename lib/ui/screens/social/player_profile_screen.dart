@@ -3,7 +3,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/constants/characters.dart';
 import 'package:sf6_tracker/core/constants/ranks.dart';
 import 'package:sf6_tracker/core/network/next_data_parser.dart';
@@ -105,7 +104,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(nowFollowed ? '已添加特别关注，将置顶显示在好友列表中' : '已取消特别关注'),
-        backgroundColor: nowFollowed ? AppColors.winGreen : AppColors.bgSecondary,
+        backgroundColor: nowFollowed ? context.themeColors.accentTertiary : context.themeColors.bgSecondary,
         duration: const Duration(seconds: 2),
       ),
     );
@@ -323,7 +322,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
         borderRadius: BorderRadius.circular(14),
         boxShadow: context.themeColors.isClaudeWarm ? const [BoxShadow(color: Color(0x0A402010), blurRadius: 8, offset: Offset(0, 2))] : null,
         border: Border.all(
-          color: _isFollowed ? AppColors.accentNeonYellow.withOpacity(0.6) : AppColors.borderSubtle,
+          color: _isFollowed ? context.themeColors.accentSecondary.withOpacity(0.6) : context.themeColors.borderSubtle,
           width: _isFollowed ? 1.5 : 1.0,
         ),
       ),
@@ -346,8 +345,8 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                             widget.fighterId.isNotEmpty ? widget.fighterId : '格斗家_${widget.shortId}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
+                            style: TextStyle(
+                              color: context.themeColors.textPrimary,
                               fontWeight: FontWeight.w900,
                               fontSize: 18,
                             ),
@@ -357,16 +356,16 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.accentNeonYellow.withOpacity(0.18),
+                              color: context.themeColors.accentSecondary.withOpacity(0.18),
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: AppColors.accentNeonYellow, width: 0.8),
+                              border: Border.all(color: context.themeColors.accentSecondary, width: 0.8),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.star, color: AppColors.accentNeonYellow, size: 12),
+                                Icon(Icons.star, color: context.themeColors.accentSecondary, size: 12),
                                 SizedBox(width: 3),
-                                Text('特别关注', style: TextStyle(color: AppColors.accentNeonYellow, fontSize: 10, fontWeight: FontWeight.bold)),
+                                Text('特别关注', style: TextStyle(color: context.themeColors.accentSecondary, fontSize: 10, fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ),
@@ -376,7 +375,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Text('Short ID: ${widget.shortId}', style: const TextStyle(color: AppColors.textTertiary, fontSize: 12, fontFamily: 'monospace')),
+                        Text('Short ID: ${widget.shortId}', style: TextStyle(color: context.themeColors.textTertiary, fontSize: 12, fontFamily: 'monospace')),
                         const SizedBox(width: 6),
                         InkWell(
                           onTap: () {
@@ -385,7 +384,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                               const SnackBar(content: Text('已复制 Short ID'), duration: Duration(seconds: 1)),
                             );
                           },
-                          child: const Icon(Icons.copy, size: 13, color: AppColors.accentNeonCyan),
+                          child: Icon(Icons.copy, size: 13, color: context.themeColors.accentPrimary),
                         ),
                       ],
                     ),
@@ -395,13 +394,13 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                           decoration: BoxDecoration(
-                            color: AppColors.bgSecondary,
+                            color: context.themeColors.bgSecondary,
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: AppColors.borderSubtle),
+                            border: Border.all(color: context.themeColors.borderSubtle),
                           ),
                           child: Text(
                             PlatformType.formatPlatformBadge(widget.platform),
-                            style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: context.themeColors.accentPrimary, fontSize: 10, fontWeight: FontWeight.bold),
                           ),
                         ),
                         if (widget.clubName.isNotEmpty) ...[
@@ -409,13 +408,13 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                             decoration: BoxDecoration(
-                              color: AppColors.accentNeonPink.withOpacity(0.15),
+                              color: context.themeColors.accentPrimary.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: AppColors.accentNeonPink.withOpacity(0.5)),
+                              border: Border.all(color: context.themeColors.accentPrimary.withOpacity(0.5)),
                             ),
                             child: Text(
                               '[${widget.clubName}] ${widget.clubRole.isNotEmpty ? widget.clubRole : "成员"}',
-                              style: const TextStyle(color: AppColors.accentNeonPink, fontSize: 10, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: context.themeColors.accentPrimary, fontSize: 10, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
@@ -438,7 +437,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: widget.isOnline ? AppColors.winGreen : AppColors.textTertiary,
+                      color: widget.isOnline ? context.themeColors.accentTertiary : context.themeColors.textTertiary,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -446,7 +445,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                   Text(
                     widget.statusText + (widget.battleHubServer.isNotEmpty ? ' (${widget.battleHubServer})' : ''),
                     style: TextStyle(
-                      color: widget.isOnline ? AppColors.winGreen : AppColors.textSecondary,
+                      color: widget.isOnline ? context.themeColors.accentTertiary : context.themeColors.textSecondary,
                       fontSize: 12,
                       fontWeight: widget.isOnline ? FontWeight.bold : FontWeight.normal,
                     ),
@@ -460,10 +459,10 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('主力角色: ${char.nameZh}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              Text('主力角色: ${char.nameZh}', style: TextStyle(color: context.themeColors.textSecondary, fontSize: 12)),
               Text(
                 widget.mr > 0 ? '${widget.mr} MR' : '${widget.lp} LP',
-                style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 13, fontWeight: FontWeight.w900),
+                style: TextStyle(color: context.themeColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w900),
               ),
             ],
           ),
@@ -481,7 +480,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
         color: context.themeColors.bgCard,
         borderRadius: BorderRadius.circular(14),
         boxShadow: context.themeColors.isClaudeWarm ? const [BoxShadow(color: Color(0x0A402010), blurRadius: 8, offset: Offset(0, 2))] : null,
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: context.themeColors.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -489,17 +488,13 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.pie_chart_outline, color: AppColors.accentNeonCyan, size: 18),
+                  Icon(Icons.pie_chart_outline, color: context.themeColors.accentPrimary, size: 18),
                   SizedBox(width: 8),
                   Text(
                     '最爱内容 / 游玩时长',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: context.themeColors.titleStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -507,14 +502,14 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppColors.accentNeonYellow.withOpacity(0.15),
+                    color: context.themeColors.accentSecondary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: AppColors.accentNeonYellow.withOpacity(0.5)),
+                    border: Border.all(color: context.themeColors.accentSecondary.withOpacity(0.5)),
                   ),
                   child: Text(
                     '总时长: ${pt.formattedTotalDuration}',
-                    style: const TextStyle(
-                      color: AppColors.accentNeonYellow,
+                    style: TextStyle(
+                      color: context.themeColors.accentSecondary,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -570,8 +565,8 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                       Expanded(
                         child: Text(
                           item.name,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
+                          style: TextStyle(
+                            color: context.themeColors.textPrimary,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -579,8 +574,8 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                       ),
                       Text(
                         item.formattedDuration,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
+                        style: TextStyle(
+                          color: context.themeColors.textPrimary,
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
@@ -589,13 +584,13 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(
-                          color: AppColors.bgSecondary,
+                          color: context.themeColors.bgSecondary,
                           borderRadius: BorderRadius.circular(3),
                         ),
                         child: Text(
                           '${item.percentage}%',
-                          style: const TextStyle(
-                            color: AppColors.textTertiary,
+                          style: TextStyle(
+                            color: context.themeColors.textSecondary,
                             fontSize: 11,
                           ),
                         ),
@@ -615,12 +610,12 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
               physics: const NeverScrollableScrollPhysics(),
               childAspectRatio: 2.1,
               children: [
-                _buildPlayTimeTile('排位赛', pt.ranked, AppColors.accentNeonCyan),
-                _buildPlayTimeTile('比赛间对战', pt.customRoom, AppColors.accentNeonPink),
-                _buildPlayTimeTile('休闲赛', pt.casual, AppColors.winGreen),
-                _buildPlayTimeTile('格斗中心', pt.battleHub, AppColors.accentNeonYellow),
-                _buildPlayTimeTile('练习模式', pt.training, AppColors.textSecondary),
-                _buildPlayTimeTile('环球游历', pt.worldTour, AppColors.textTertiary),
+                _buildPlayTimeTile('排位赛', pt.ranked, context.themeColors.accentPrimary),
+                _buildPlayTimeTile('比赛间对战', pt.customRoom, context.themeColors.accentSecondary),
+                _buildPlayTimeTile('休闲赛', pt.casual, context.themeColors.winGreen),
+                _buildPlayTimeTile('格斗中心', pt.battleHub, context.themeColors.accentSecondary),
+                _buildPlayTimeTile('练习模式', pt.training, context.themeColors.textSecondary),
+                _buildPlayTimeTile('环球游历', pt.worldTour, context.themeColors.textTertiary),
               ],
             ),
           ],
@@ -629,16 +624,16 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.bgSecondary.withOpacity(0.5),
+                color: context.themeColors.bgSecondary,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.borderSubtle.withOpacity(0.3)),
+                border: Border.all(color: context.themeColors.borderSubtle),
               ),
               child: Row(
                 children: [
-                  _buildMatchCountItem('排位', pt.rankedMatches, AppColors.accentNeonCyan),
-                  _buildMatchCountItem('比赛间', pt.customRoomMatches, AppColors.accentNeonPink),
-                  _buildMatchCountItem('休闲', pt.casualMatches, AppColors.winGreen),
-                  _buildMatchCountItem('中心', pt.battleHubMatches, AppColors.accentNeonYellow),
+                  _buildMatchCountItem('排位', pt.rankedMatches, context.themeColors.accentPrimary),
+                  _buildMatchCountItem('比赛间', pt.customRoomMatches, context.themeColors.accentSecondary),
+                  _buildMatchCountItem('休闲', pt.casualMatches, context.themeColors.winGreen),
+                  _buildMatchCountItem('中心', pt.battleHubMatches, context.themeColors.accentSecondary),
                 ],
               ),
             ),
@@ -659,8 +654,8 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           const SizedBox(height: 2),
           Text(
             '$count 场',
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: context.themeColors.textPrimary,
               fontSize: 12,
               fontWeight: FontWeight.w900,
             ),
@@ -674,9 +669,9 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.bgSecondary.withOpacity(0.5),
+        color: context.themeColors.bgSecondary,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.borderSubtle.withOpacity(0.4)),
+        border: Border.all(color: context.themeColors.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -693,8 +688,8 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
             duration,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: context.themeColors.textPrimary,
               fontSize: 12,
               fontWeight: FontWeight.w900,
             ),
@@ -711,7 +706,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
         color: context.themeColors.bgCard,
         borderRadius: BorderRadius.circular(14),
         boxShadow: context.themeColors.isClaudeWarm ? const [BoxShadow(color: Color(0x0A402010), blurRadius: 8, offset: Offset(0, 2))] : null,
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: context.themeColors.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -721,12 +716,11 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.leaderboard_outlined, size: 18, color: AppColors.accentNeonCyan),
+                  Icon(Icons.leaderboard_outlined, size: 18, color: context.themeColors.accentPrimary),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     '角色排位积分榜',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
+                    style: context.themeColors.titleStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -736,13 +730,13 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.accentNeonCyan.withOpacity(0.15),
+                        color: context.themeColors.accentPrimary.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         '${_characterUsages.length} 名角色',
-                        style: const TextStyle(
-                          color: AppColors.accentNeonCyan,
+                        style: TextStyle(
+                          color: context.themeColors.accentPrimary,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
@@ -753,7 +747,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
               ),
               if (!_isLoadingCharacterUsages)
                 IconButton(
-                  icon: const Icon(Icons.refresh, size: 16, color: AppColors.textSecondary),
+                  icon: Icon(Icons.refresh, size: 16, color: context.themeColors.textSecondary),
                   tooltip: '重新拉取角色积分榜',
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
@@ -764,14 +758,14 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           ),
           const SizedBox(height: 12),
           if (_isLoadingCharacterUsages)
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
+                padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Column(
                   children: [
                     SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                     SizedBox(height: 8),
-                    Text('正在拉取该玩家全角色段位积分...', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                    Text('正在拉取该玩家全角色段位积分...', style: TextStyle(color: context.themeColors.textTertiary, fontSize: 11)),
                   ],
                 ),
               ),
@@ -782,15 +776,15 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 child: Column(
                   children: [
-                    Text(_characterUsagesError, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                    Text(_characterUsagesError, style: TextStyle(color: context.themeColors.textSecondary, fontSize: 11)),
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         visualDensity: VisualDensity.compact,
-                        side: const BorderSide(color: AppColors.borderSubtle),
+                        side: BorderSide(color: context.themeColors.borderSubtle),
                       ),
-                      icon: const Icon(Icons.refresh, size: 14, color: AppColors.accentNeonCyan),
-                      label: const Text('重新获取', style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 11)),
+                      icon: Icon(Icons.refresh, size: 14, color: context.themeColors.accentPrimary),
+                      label: Text('重新获取', style: TextStyle(color: context.themeColors.accentPrimary, fontSize: 11)),
                       onPressed: () => _fetchCharacterRankings(force: true),
                     ),
                   ],
@@ -798,10 +792,10 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
               ),
             )
           else if (_characterUsages.isEmpty)
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 14),
-                child: Text('暂无角色排位积分记录', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Text('暂无角色排位积分记录', style: TextStyle(color: context.themeColors.textTertiary, fontSize: 11)),
               ),
             )
           else ...[
@@ -813,8 +807,9 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.bgSecondary,
+                  color: context.themeColors.bgSecondary,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: context.themeColors.borderSubtle.withOpacity(0.5)),
                 ),
                 child: Row(
                   children: [
@@ -826,8 +821,8 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                         children: [
                           Text(
                             c.nameZh,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
+                            style: TextStyle(
+                              color: context.themeColors.textPrimary,
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
                             ),
@@ -837,8 +832,8 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                             u.matches > 0
                                 ? '${u.matches} 场  •  胜率 ${u.winRate.toStringAsFixed(1)}%'
                                 : '暂无对局场次记录',
-                            style: const TextStyle(
-                              color: AppColors.textTertiary,
+                            style: TextStyle(
+                              color: context.themeColors.textSecondary,
                               fontSize: 10,
                             ),
                           ),
@@ -852,8 +847,8 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                         const SizedBox(height: 2),
                         Text(
                           u.mr > 0 ? '${u.mr} MR' : '${u.lp} LP',
-                          style: const TextStyle(
-                            color: AppColors.accentNeonCyan,
+                          style: TextStyle(
+                            color: context.themeColors.textPrimary,
                             fontSize: 11,
                             fontWeight: FontWeight.w900,
                           ),
@@ -870,13 +865,13 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                   icon: Icon(
                     _showAllCharacterUsages ? Icons.expand_less : Icons.expand_more,
                     size: 16,
-                    color: AppColors.accentNeonCyan,
+                    color: context.themeColors.accentPrimary,
                   ),
                   label: Text(
                     _showAllCharacterUsages
                         ? '收起'
                         : '展开全部角色 (${_characterUsages.length})',
-                    style: const TextStyle(color: AppColors.accentNeonCyan, fontSize: 11),
+                    style: TextStyle(color: context.themeColors.accentPrimary, fontSize: 11),
                   ),
                   onPressed: () => setState(() => _showAllCharacterUsages = !_showAllCharacterUsages),
                 ),
@@ -893,7 +888,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
         color: context.themeColors.bgCard,
         borderRadius: BorderRadius.circular(14),
         boxShadow: context.themeColors.isClaudeWarm ? const [BoxShadow(color: Color(0x0A402010), blurRadius: 8, offset: Offset(0, 2))] : null,
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: context.themeColors.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -908,10 +903,10 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                     label: Center(child: Text('与我交手 (${_headToHeadRecords.length}场)')),
                     selected: _selectedTab == 0,
                     onSelected: (_) => setState(() => _selectedTab = 0),
-                    selectedColor: AppColors.accentNeonCyan.withOpacity(0.25),
-                    backgroundColor: AppColors.bgSecondary,
+                    selectedColor: context.themeColors.accentPrimary.withOpacity(0.25),
+                    backgroundColor: context.themeColors.bgSecondary,
                     labelStyle: TextStyle(
-                      color: _selectedTab == 0 ? AppColors.accentNeonCyan : AppColors.textSecondary,
+                      color: _selectedTab == 0 ? context.themeColors.accentPrimary : context.themeColors.textSecondary,
                       fontWeight: _selectedTab == 0 ? FontWeight.bold : FontWeight.normal,
                       fontSize: 12,
                     ),
@@ -926,10 +921,10 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                       setState(() => _selectedTab = 1);
                       if (!_publicReplaysLoaded) _fetchPublicReplays();
                     },
-                    selectedColor: AppColors.accentNeonYellow.withOpacity(0.25),
-                    backgroundColor: AppColors.bgSecondary,
+                    selectedColor: context.themeColors.accentSecondary.withOpacity(0.25),
+                    backgroundColor: context.themeColors.bgSecondary,
                     labelStyle: TextStyle(
-                      color: _selectedTab == 1 ? AppColors.accentNeonYellow : AppColors.textSecondary,
+                      color: _selectedTab == 1 ? context.themeColors.accentSecondary : context.themeColors.textSecondary,
                       fontWeight: _selectedTab == 1 ? FontWeight.bold : FontWeight.normal,
                       fontSize: 12,
                     ),
@@ -961,16 +956,16 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     }
 
     if (_headToHeadRecords.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 24),
+          padding: const EdgeInsets.symmetric(vertical: 24),
           child: Column(
             children: [
-              Icon(Icons.history_toggle_off, color: AppColors.textTertiary, size: 36),
+              Icon(Icons.history_toggle_off, color: context.themeColors.textTertiary, size: 36),
               SizedBox(height: 8),
-              Text('暂无交手记录', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold, fontSize: 13)),
+              Text('暂无交手记录', style: TextStyle(color: context.themeColors.textSecondary, fontWeight: FontWeight.bold, fontSize: 13)),
               SizedBox(height: 4),
-              Text('在排位赛或格斗中心切磋对局后将自动汇总', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+              Text('在排位赛或格斗中心切磋对局后将自动汇总', style: TextStyle(color: context.themeColors.textTertiary, fontSize: 11)),
             ],
           ),
         ),
@@ -989,27 +984,28 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
         Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
           decoration: BoxDecoration(
-            color: AppColors.bgSecondary,
+            color: context.themeColors.bgSecondary,
             borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: context.themeColors.borderSubtle),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               Column(
                 children: [
-                  const Text('历史战绩', style: TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+                  Text('历史战绩', style: TextStyle(color: context.themeColors.textTertiary, fontSize: 10)),
                   const SizedBox(height: 2),
-                  Text('$wins胜 - $losses负', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text('$wins胜 - $losses负', style: TextStyle(color: context.themeColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
                 ],
               ),
               Column(
                 children: [
-                  const Text('我方胜率', style: TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+                  Text('我方胜率', style: TextStyle(color: context.themeColors.textTertiary, fontSize: 10)),
                   const SizedBox(height: 2),
                   Text(
                     '$winRate%',
                     style: TextStyle(
-                      color: double.parse(winRate) >= 50 ? AppColors.winGreen : AppColors.loseRed,
+                      color: double.parse(winRate) >= 50 ? context.themeColors.winGreen : context.themeColors.loseRed,
                       fontWeight: FontWeight.w900,
                       fontSize: 14,
                     ),
@@ -1018,9 +1014,9 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
               ),
               Column(
                 children: [
-                  const Text('交手总数', style: TextStyle(color: AppColors.textTertiary, fontSize: 10)),
+                  Text('交手总数', style: TextStyle(color: context.themeColors.textTertiary, fontSize: 10)),
                   const SizedBox(height: 2),
-                  Text('$total 场', style: const TextStyle(color: AppColors.accentNeonCyan, fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text('$total 场', style: TextStyle(color: context.themeColors.accentPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
                 ],
               ),
             ],
@@ -1050,14 +1046,14 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
 
   Widget _buildPublicReplaysContent() {
     if (_isLoadingPublicReplays) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 24),
+          padding: const EdgeInsets.symmetric(vertical: 24),
           child: Column(
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 8),
-              Text('正在拉取该玩家官方近期公开对局...', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+              Text('正在拉取该玩家官方近期公开对局...', style: TextStyle(color: context.themeColors.textTertiary, fontSize: 12)),
             ],
           ),
         ),
@@ -1070,14 +1066,14 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Column(
             children: [
-              const Icon(Icons.info_outline, color: AppColors.textTertiary, size: 36),
+              Icon(Icons.info_outline, color: context.themeColors.textTertiary, size: 36),
               const SizedBox(height: 8),
-              Text(_publicReplaysError, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              Text(_publicReplaysError, style: TextStyle(color: context.themeColors.textSecondary, fontSize: 12)),
               const SizedBox(height: 12),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accentNeonCyan,
-                  foregroundColor: Colors.black,
+                  backgroundColor: context.themeColors.accentPrimary,
+                  foregroundColor: Colors.white,
                   visualDensity: VisualDensity.compact,
                 ),
                 icon: const Icon(Icons.refresh, size: 16),
@@ -1096,15 +1092,15 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Column(
             children: [
-              const Text('暂无官方公开战绩', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+              Text('暂无官方公开战绩', style: TextStyle(color: context.themeColors.textTertiary, fontSize: 12)),
               const SizedBox(height: 8),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   visualDensity: VisualDensity.compact,
-                  side: const BorderSide(color: AppColors.borderSubtle),
+                  side: BorderSide(color: context.themeColors.borderSubtle),
                 ),
-                icon: const Icon(Icons.refresh, size: 14, color: AppColors.accentNeonCyan),
-                label: const Text('刷新重试', style: TextStyle(color: AppColors.accentNeonCyan, fontSize: 11)),
+                icon: Icon(Icons.refresh, size: 14, color: context.themeColors.accentPrimary),
+                label: Text('刷新重试', style: TextStyle(color: context.themeColors.accentPrimary, fontSize: 11)),
                 onPressed: () => _fetchPublicReplays(force: true),
               ),
             ],
@@ -1139,8 +1135,8 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
             icon: const Icon(Icons.language, size: 16),
             label: const Text('在内置浏览器查看官方 Buckler 主页', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accentNeonCyan,
-              foregroundColor: Colors.black,
+              backgroundColor: context.themeColors.accentPrimary,
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
@@ -1165,10 +1161,10 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                icon: const Icon(Icons.copy, size: 14, color: AppColors.textSecondary),
-                label: const Text('复制 Short ID', style: TextStyle(color: AppColors.textPrimary, fontSize: 12)),
+                icon: Icon(Icons.copy, size: 14, color: context.themeColors.textSecondary),
+                label: Text('复制 Short ID', style: TextStyle(color: context.themeColors.textPrimary, fontSize: 12)),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.borderSubtle),
+                  side: BorderSide(color: context.themeColors.borderSubtle),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
@@ -1183,10 +1179,10 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: OutlinedButton.icon(
-                icon: const Icon(Icons.badge, size: 14, color: AppColors.textSecondary),
-                label: const Text('复制玩家昵称', style: TextStyle(color: AppColors.textPrimary, fontSize: 12)),
+                icon: Icon(Icons.badge, size: 14, color: context.themeColors.textSecondary),
+                label: Text('复制玩家昵称', style: TextStyle(color: context.themeColors.textPrimary, fontSize: 12)),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.borderSubtle),
+                  side: BorderSide(color: context.themeColors.borderSubtle),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),

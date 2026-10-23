@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/storage/secure_storage.dart';
+import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 import 'package:sf6_tracker/models/home_card_config.dart';
 
 class HomeCardsManagementScreen extends StatefulWidget {
@@ -54,24 +54,32 @@ class _HomeCardsManagementScreenState extends State<HomeCardsManagementScreen> {
   }
 
   Future<void> _resetToDefaults() async {
+    final colors = context.themeColors;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgCard,
-        title: const Text('恢复默认设置', style: TextStyle(color: AppColors.textPrimary)),
-        content: const Text(
+        backgroundColor: colors.bgCardSolid,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: colors.borderSubtle, width: 1),
+        ),
+        title: Text('恢复默认设置', style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.bold)),
+        content: Text(
           '确定要将首页卡片顺序和显示状态恢复为默认设置吗？',
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: colors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消', style: TextStyle(color: AppColors.textTertiary)),
+            child: Text('取消', style: TextStyle(color: colors.textSecondary)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colors.accentPrimary,
+              foregroundColor: colors.isClaudeWarm ? Colors.white : Colors.black,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('确认恢复', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+            child: const Text('确认恢复', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -84,9 +92,9 @@ class _HomeCardsManagementScreenState extends State<HomeCardsManagementScreen> {
       await _saveConfigs();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('已恢复为默认卡片布局'),
-            backgroundColor: AppColors.winGreen,
+          SnackBar(
+            content: const Text('已恢复为默认卡片布局'),
+            backgroundColor: colors.winGreen,
           ),
         );
       }
@@ -95,32 +103,44 @@ class _HomeCardsManagementScreenState extends State<HomeCardsManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.themeColors;
     return Scaffold(
+      backgroundColor: colors.bgPrimary,
       appBar: AppBar(
-        title: const Text('首页卡片管理', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          '首页卡片管理',
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.bold,
+            fontFamily: colors.titleFontFamily,
+          ),
+        ),
+        backgroundColor: colors.bgCardSolid,
+        iconTheme: IconThemeData(color: colors.textPrimary),
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: colors.textPrimary),
             tooltip: '恢复默认设置',
             onPressed: _resetToDefaults,
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.accentNeonCyan))
+          ? Center(child: CircularProgressIndicator(color: colors.accentPrimary))
           : Column(
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  color: AppColors.bgSecondary.withOpacity(0.5),
-                  child: const Row(
+                  color: colors.bgSecondary,
+                  child: Row(
                     children: [
-                      Icon(Icons.info_outline, size: 16, color: AppColors.accentNeonCyan),
-                      SizedBox(width: 8),
+                      Icon(Icons.info_outline, size: 16, color: colors.accentPrimary),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           '长按右侧手柄可上下拖拽排序，开关控制模块显隐',
-                          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                          style: TextStyle(color: colors.textSecondary, fontSize: 12),
                         ),
                       ),
                     ],
@@ -141,12 +161,12 @@ class _HomeCardsManagementScreenState extends State<HomeCardsManagementScreen> {
                         key: ValueKey(item.key),
                         margin: const EdgeInsets.symmetric(vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.bgCard,
+                          color: colors.bgCardSolid,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: isHero
-                                ? AppColors.accentNeonCyan.withOpacity(0.4)
-                                : AppColors.borderSubtle,
+                                ? colors.accentPrimary.withOpacity(0.5)
+                                : colors.borderSubtle,
                           ),
                         ),
                         child: ListTile(
@@ -155,10 +175,11 @@ class _HomeCardsManagementScreenState extends State<HomeCardsManagementScreen> {
                             children: [
                               Text(
                                 title,
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
+                                style: TextStyle(
+                                  color: colors.textPrimary,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
+                                  fontFamily: colors.titleFontFamily,
                                 ),
                               ),
                               if (isHero) ...[
@@ -166,13 +187,13 @@ class _HomeCardsManagementScreenState extends State<HomeCardsManagementScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: AppColors.accentNeonCyan.withOpacity(0.15),
+                                    color: colors.accentPrimary.withOpacity(0.15),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     '不可隐藏',
                                     style: TextStyle(
-                                      color: AppColors.accentNeonCyan,
+                                      color: colors.accentPrimary,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -183,8 +204,8 @@ class _HomeCardsManagementScreenState extends State<HomeCardsManagementScreen> {
                           ),
                           subtitle: Text(
                             isHero ? '核心项不可隐藏（展示玩家基础信息）' : desc,
-                            style: const TextStyle(
-                              color: AppColors.textTertiary,
+                            style: TextStyle(
+                              color: colors.textSecondary,
                               fontSize: 11,
                             ),
                           ),
@@ -193,7 +214,7 @@ class _HomeCardsManagementScreenState extends State<HomeCardsManagementScreen> {
                             children: [
                               Switch(
                                 value: isHero ? true : item.isVisible,
-                                activeColor: AppColors.accentNeonCyan,
+                                activeColor: colors.accentPrimary,
                                 onChanged: isHero
                                     ? null
                                     : (val) => _toggleVisibility(index, val),
@@ -201,9 +222,9 @@ class _HomeCardsManagementScreenState extends State<HomeCardsManagementScreen> {
                               const SizedBox(width: 4),
                               ReorderableDragStartListener(
                                 index: index,
-                                child: const Icon(
+                                child: Icon(
                                   Icons.drag_handle,
-                                  color: AppColors.textTertiary,
+                                  color: colors.textSecondary,
                                 ),
                               ),
                             ],
@@ -219,8 +240,8 @@ class _HomeCardsManagementScreenState extends State<HomeCardsManagementScreen> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.textSecondary,
-                        side: const BorderSide(color: AppColors.borderSubtle),
+                        foregroundColor: colors.textSecondary,
+                        side: BorderSide(color: colors.borderSubtle),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),

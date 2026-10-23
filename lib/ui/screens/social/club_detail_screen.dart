@@ -136,7 +136,7 @@ class _ClubDetailScreenState extends State<ClubDetailScreen> {
           // 1. Search Bar & Online Switcher
           Container(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            color: isClaudeWarm ? Colors.transparent : AppColors.bgSecondary.withOpacity(0.5),
+            color: isClaudeWarm ? Colors.transparent : colors.bgSecondary.withOpacity(0.5),
             child: Column(
               children: [
                 TextField(

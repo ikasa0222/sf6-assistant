@@ -1,11 +1,11 @@
 import 'dart:io';
-import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:sf6_tracker/core/constants/app_colors.dart';
+import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 import 'package:sf6_tracker/models/battle_record.dart';
 import 'package:sf6_tracker/ui/widgets/share_battle_card.dart';
 
@@ -62,7 +62,7 @@ class _ShareBattleDialogState extends State<ShareBattleDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('战报图片生成或分享失败: $e'),
-            backgroundColor: AppColors.loseRed,
+            backgroundColor: context.themeColors.loseRed,
           ),
         );
       }
@@ -81,16 +81,18 @@ class _ShareBattleDialogState extends State<ShareBattleDialog> {
 
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('已复制战报文字与录像码至剪贴板'),
-        backgroundColor: AppColors.winGreen,
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: const Text('已复制战报文字与录像码至剪贴板'),
+        backgroundColor: context.themeColors.winGreen,
+        duration: const Duration(seconds: 2),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.themeColors;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -109,8 +111,8 @@ class _ShareBattleDialogState extends State<ShareBattleDialog> {
                 Expanded(
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accentNeonCyan,
-                      foregroundColor: Colors.black,
+                      backgroundColor: colors.accentPrimary,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
@@ -118,7 +120,7 @@ class _ShareBattleDialogState extends State<ShareBattleDialog> {
                         ? const SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
                         : const Icon(Icons.share, size: 18),
                     label: Text(
@@ -131,22 +133,22 @@ class _ShareBattleDialogState extends State<ShareBattleDialog> {
                 const SizedBox(width: 10),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.bgSecondary,
-                    foregroundColor: AppColors.textPrimary,
+                    backgroundColor: colors.bgSecondary,
+                    foregroundColor: colors.textPrimary,
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
-                      side: const BorderSide(color: AppColors.borderSubtle),
+                      side: BorderSide(color: colors.borderSubtle),
                     ),
                   ),
-                  icon: const Icon(Icons.copy, size: 16, color: AppColors.accentNeonYellow),
+                  icon: Icon(Icons.copy, size: 16, color: colors.accentSecondary),
                   label: const Text('复制文本', style: TextStyle(fontSize: 13)),
                   onPressed: _copyBattleText,
                 ),
                 const SizedBox(width: 8),
                 IconButton(
                   tooltip: '关闭',
-                  icon: const Icon(Icons.close, color: AppColors.textTertiary),
+                  icon: Icon(Icons.close, color: colors.textSecondary),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],

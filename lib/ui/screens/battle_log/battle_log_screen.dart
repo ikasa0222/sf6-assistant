@@ -72,23 +72,23 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
 
     if (res.needLogin) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('卡普空官方登录会话已过期，请重新登录'),
-          backgroundColor: AppColors.loseRed,
+        SnackBar(
+          content: const Text('卡普空官方登录会话已过期，请重新登录'),
+          backgroundColor: context.themeColors.loseRed,
         ),
       );
     } else if (res.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(res.recordsUpdated > 0 ? '同步完成，已更新 ${res.recordsUpdated} 局最新对战' : '同步完成，当前已是最新战绩'),
-          backgroundColor: AppColors.winGreen,
+          backgroundColor: context.themeColors.winGreen,
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(res.message.isNotEmpty ? res.message : '网络同步未完成，已展示本地缓存'),
-          backgroundColor: AppColors.accentNeonYellow,
+          backgroundColor: context.themeColors.accentSecondary,
         ),
       );
     }
@@ -258,7 +258,7 @@ class _BattleLogScreenState extends State<BattleLogScreen> {
     }
 
     return Container(
-      color: colors.isClaudeWarm ? Colors.transparent : AppColors.bgSecondary,
+      color: colors.isClaudeWarm ? Colors.transparent : colors.bgSecondary,
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

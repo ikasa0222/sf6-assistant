@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sf6_tracker/core/constants/app_colors.dart';
 import 'package:sf6_tracker/core/network/capcom_sync_engine.dart';
+import 'package:sf6_tracker/core/theme/app_theme_colors.dart';
 import 'package:sf6_tracker/services/auth_service.dart';
 import 'package:sf6_tracker/services/battle_log_service.dart';
 import 'package:sf6_tracker/services/social_service.dart';
@@ -61,19 +61,23 @@ class _QuickSyncDialogState extends State<QuickSyncDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.themeColors;
     return AlertDialog(
-      backgroundColor: AppColors.bgCard,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: colors.bgCardSolid,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: colors.borderSubtle, width: 1),
+      ),
       title: Row(
         children: [
           Icon(
             _isDone ? Icons.check_circle : (_isError ? Icons.error_outline : Icons.sync),
-            color: _isDone ? AppColors.winGreen : (_isError ? AppColors.loseRed : AppColors.accentNeonCyan),
+            color: _isDone ? colors.winGreen : (_isError ? colors.loseRed : colors.accentPrimary),
           ),
           const SizedBox(width: 8),
           Text(
             _isDone ? '同步完成' : (_isError ? '需要重新登录' : '一键官方数据同步'),
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(color: colors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -87,9 +91,9 @@ class _QuickSyncDialogState extends State<QuickSyncDialog> {
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: _progress,
-                backgroundColor: AppColors.bgSecondary,
+                backgroundColor: colors.bgSecondary,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  _isDone ? AppColors.winGreen : (_isError ? AppColors.loseRed : AppColors.accentNeonCyan),
+                  _isDone ? colors.winGreen : (_isError ? colors.loseRed : colors.accentPrimary),
                 ),
                 minHeight: 6,
               ),
@@ -98,7 +102,7 @@ class _QuickSyncDialogState extends State<QuickSyncDialog> {
             Text(
               _status,
               style: TextStyle(
-                color: _isError ? AppColors.loseRed : AppColors.textSecondary,
+                color: _isError ? colors.loseRed : colors.textSecondary,
                 fontSize: 13,
                 height: 1.4,
               ),
@@ -107,7 +111,7 @@ class _QuickSyncDialogState extends State<QuickSyncDialog> {
               const SizedBox(height: 8),
               Text(
                 _errorMessage,
-                style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                style: TextStyle(color: colors.textSecondary, fontSize: 11),
               ),
             ],
           ],
@@ -117,10 +121,13 @@ class _QuickSyncDialogState extends State<QuickSyncDialog> {
         if (_isError) ...[
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消', style: TextStyle(color: AppColors.textSecondary)),
+            child: Text('取消', style: TextStyle(color: colors.textSecondary)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentNeonCyan),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colors.accentPrimary,
+              foregroundColor: colors.isClaudeWarm ? Colors.white : Colors.black,
+            ),
             onPressed: () {
               Navigator.pop(context);
               Navigator.push(
@@ -130,13 +137,16 @@ class _QuickSyncDialogState extends State<QuickSyncDialog> {
                 ),
               );
             },
-            child: const Text('前往网页登录授权', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+            child: const Text('前往网页登录授权', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ] else if (_isDone) ...[
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.winGreen),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colors.winGreen,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(context),
-            child: const Text('完成', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+            child: const Text('完成', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ],
@@ -170,11 +180,12 @@ class _QuickSyncDialogState extends State<QuickSyncDialog> {
 
       await Future.delayed(const Duration(milliseconds: 900));
       if (mounted) {
+        final colors = context.themeColors;
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result.message),
-            backgroundColor: AppColors.winGreen,
+            backgroundColor: colors.winGreen,
           ),
         );
       }

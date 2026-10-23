@@ -212,12 +212,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.textPrimary,
-                      side: const BorderSide(color: AppColors.borderSubtle),
+                      foregroundColor: colors.textPrimary,
+                      side: BorderSide(color: colors.borderSubtle),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    icon: const Icon(Icons.edit, size: 20, color: AppColors.accentNeonYellow),
+                    icon: Icon(Icons.edit, size: 20, color: colors.accentSecondary),
                     label: const Text('手动快速绑定玩家资料', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                     onPressed: () => _showQuickBindDialog(context),
                   ),
@@ -316,13 +316,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 _loadCardConfigs();
                 if (res.needLogin) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('官方会话已过期，请重新登录'), backgroundColor: AppColors.loseRed),
+                    SnackBar(content: const Text('官方会话已过期，请重新登录'), backgroundColor: colors.loseRed),
                   );
                 } else if (res.success) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(res.recordsUpdated > 0 ? '同步完成，已更新 ${res.recordsUpdated} 局最新对战' : '同步完成，已是最新数据'),
-                      backgroundColor: AppColors.winGreen,
+                      backgroundColor: colors.winGreen,
                     ),
                   );
                 }
@@ -352,6 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
     PlatformProfile? activePlatform,
     Sf6Character? mainChar,
   ) {
+    final colors = context.themeColors;
     final visibleConfigs = _cardConfigs
         .where((c) => c.isVisible || c.key == HomeCardConfig.keyHero)
         .toList();
@@ -421,12 +422,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (visibleConfigs.length <= 1) {
       widgets.add(const SizedBox(height: 12));
       widgets.add(
-        const Center(
+        Center(
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
             child: Text(
               '已隐藏其他卡片，可在设置中重新开启',
-              style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
+              style: TextStyle(color: colors.textSecondary, fontSize: 12),
             ),
           ),
         ),
@@ -634,12 +635,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text('全球大师榜排名', style: TextStyle(color: AppColors.textTertiary, fontSize: 11)),
+                    Text('全球大师榜排名', style: TextStyle(color: colors.textSecondary, fontSize: 11)),
                     const SizedBox(height: 2),
                     Text(
                       '#${profile!.globalRank}',
-                      style: const TextStyle(
-                        color: AppColors.rankLegend,
+                      style: TextStyle(
+                        color: colors.rankLegend,
                         fontWeight: FontWeight.w900,
                         fontSize: 14,
                       ),
@@ -704,8 +705,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: form.map((isWin) {
-                        final winColor = colors.isClaudeWarm ? colors.accentTertiary : AppColors.winGreen;
-                        final loseColor = colors.isClaudeWarm ? colors.accentError : AppColors.loseRed;
+                        final winColor = colors.winGreen;
+                        final loseColor = colors.loseRed;
                         return Container(
                           margin: const EdgeInsets.only(right: 6),
                           width: 20,
@@ -753,10 +754,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final winColor = colors.isClaudeWarm
         ? (winRate >= 50.0 ? colors.accentTertiary : colors.accentError)
-        : (winRate >= 50.0 ? AppColors.winGreen : AppColors.loseRed);
+        : (winRate >= 50.0 ? colors.winGreen : colors.loseRed);
     final totalColor = colors.accentPrimary;
     final streakColor = colors.accentSecondary;
-    final maxStreakColor = colors.isClaudeWarm ? const Color(0xFFC86D51) : AppColors.accentNeonPink;
+    final maxStreakColor = colors.accentPrimary;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -812,11 +813,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildRadarCard(RadarStats stats) {
     final colors = context.themeColors;
-    final cOffense = colors.isClaudeWarm ? colors.accentPrimary : AppColors.accentNeonPink;
-    final cDefense = colors.isClaudeWarm ? const Color(0xFF4A7C59) : AppColors.accentNeonCyan;
-    final cAntiAir = colors.isClaudeWarm ? colors.accentSecondary : AppColors.accentNeonYellow;
-    final cDrive = colors.isClaudeWarm ? const Color(0xFF6B8E23) : AppColors.driveGaugeGreen;
-    final cTech = colors.isClaudeWarm ? const Color(0xFFB85D43) : AppColors.driveImpactMagenta;
+    final cOffense = colors.accentPrimary;
+    final cDefense = colors.accentTertiary;
+    final cAntiAir = colors.accentSecondary;
+    final cDrive = colors.accentTertiary;
+    final cTech = colors.accentPrimary;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -1215,7 +1216,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (dialogContext.mounted) Navigator.pop(dialogContext);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('已成功更新玩家档案：$newName (Short ID: $newSid)'), backgroundColor: AppColors.winGreen),
+                        SnackBar(content: Text('已成功更新玩家档案：$newName (Short ID: $newSid)'), backgroundColor: colors.winGreen),
                       );
                     }
                   },
@@ -1356,7 +1357,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('已切换主用角色为：${char.nameZh} (${u.lp} LP)'), backgroundColor: colors.isClaudeWarm ? colors.accentTertiary : AppColors.winGreen),
+                        SnackBar(content: Text('已切换主用角色为：${char.nameZh} (${u.lp} LP)'), backgroundColor: colors.winGreen),
                       );
                     }
                   }
@@ -1687,8 +1688,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 childAspectRatio: 2.1,
                 children: [
                   _buildPlayTimeTile('排位赛', pt.ranked, colors.accentPrimary),
-                  _buildPlayTimeTile('比赛间对战', pt.customRoom, colors.isClaudeWarm ? const Color(0xFFC86D51) : AppColors.accentNeonPink),
-                  _buildPlayTimeTile('休闲赛', pt.casual, colors.isClaudeWarm ? colors.accentTertiary : AppColors.winGreen),
+                  _buildPlayTimeTile('比赛间对战', pt.customRoom, colors.accentSecondary),
+                  _buildPlayTimeTile('休闲赛', pt.casual, colors.winGreen),
                   _buildPlayTimeTile('格斗中心', pt.battleHub, colors.accentSecondary),
                   _buildPlayTimeTile('练习模式', pt.training, colors.textSecondary),
                   _buildPlayTimeTile('环球游历', pt.worldTour, colors.textTertiary),
@@ -1721,8 +1722,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Row(
                       children: [
                         _buildMatchCountItem('排位赛', pt.rankedMatches, colors.accentPrimary),
-                        _buildMatchCountItem('比赛间', pt.customRoomMatches, colors.isClaudeWarm ? const Color(0xFFC86D51) : AppColors.accentNeonPink),
-                        _buildMatchCountItem('休闲赛', pt.casualMatches, colors.isClaudeWarm ? colors.accentTertiary : AppColors.winGreen),
+                        _buildMatchCountItem('比赛间', pt.customRoomMatches, colors.accentSecondary),
+                        _buildMatchCountItem('休闲赛', pt.casualMatches, colors.winGreen),
                         _buildMatchCountItem('格斗中心', pt.battleHubMatches, colors.accentSecondary),
                       ],
                     ),
@@ -2102,7 +2103,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text('排位胜率', style: TextStyle(color: colors.textTertiary, fontSize: 11)),
                         const SizedBox(height: 4),
-                        Text('${winRate.toStringAsFixed(1)}%', style: TextStyle(color: colors.isClaudeWarm ? colors.accentTertiary : AppColors.winGreen, fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text('${winRate.toStringAsFixed(1)}%', style: TextStyle(color: colors.winGreen, fontWeight: FontWeight.bold, fontSize: 14)),
                       ],
                     ),
                   ],
@@ -2127,7 +2128,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Clipboard.setData(ClipboardData(text: text));
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('已复制战绩名片文本到剪贴板！可以直接粘贴分享到微信/QQ群。'), backgroundColor: AppColors.winGreen),
+                      SnackBar(content: const Text('已复制战绩名片文本到剪贴板！可以直接粘贴分享到微信/QQ群。'), backgroundColor: colors.winGreen),
                     );
                   },
                 ),
